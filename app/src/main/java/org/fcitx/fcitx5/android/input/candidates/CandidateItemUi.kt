@@ -15,6 +15,7 @@ import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
+import org.fcitx.fcitx5.android.input.applyNothingTypography
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -47,8 +48,9 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         scaleMode = AutoScaleTextView.Mode.Proportional
         textSize = 20f // sp
         isSingleLine = true
-        gravity = gravityCenter
+        gravity = Gravity.START or Gravity.CENTER_VERTICAL
         setTextColor(theme.candidateTextColor)
+        applyNothingTypography(theme)
     }
 
     override val root = view(::CustomGestureView) {
@@ -61,7 +63,9 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
         add(text, lParams(wrapContent, matchParent) {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
-            leftMargin = dp(12)
+            // A fixed leading rail prevents one- and multi-character candidates from
+            // appearing to jump relative to the primary marker.
+            leftMargin = dp(if (theme.name == "NothingDark") 16 else 12)
         })
         add(primaryMarker, lParams(if (theme.name == "NothingDark") dp(4) else dp(3), dp(18)) {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL

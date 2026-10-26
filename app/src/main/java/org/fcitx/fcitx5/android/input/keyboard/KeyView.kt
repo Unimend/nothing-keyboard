@@ -23,7 +23,6 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.FloatRange
 import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
@@ -31,6 +30,7 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs.PunctuationPosition
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
+import org.fcitx.fcitx5.android.input.applyNothingTypography
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
 import org.fcitx.fcitx5.android.utils.styledFloat
@@ -266,16 +266,11 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         // Doto is reserved for Latin key legends and compact function labels.
         // Android's font fallback keeps unsupported scripts readable.
-        typeface = if (theme.name == "NothingDark") {
-            Typeface.create(
-                ResourcesCompat.getFont(ctx, R.font.doto)
-                    ?: Typeface.create("sans-serif-medium", Typeface.NORMAL),
-                Typeface.BOLD
-            )
+        if (theme.name == "NothingDark") {
+            applyNothingTypography(theme)
         } else {
-            Typeface.create(typeface, def.textStyle)
+            typeface = Typeface.create(typeface, def.textStyle)
         }
-        if (theme.name == "NothingDark") letterSpacing = 0.015f
         setTextColor(
             when (def.variant) {
                 Variant.Normal -> theme.keyTextColor
@@ -318,15 +313,12 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         // TODO hardcoded alt text size
         setTextSize(
             TypedValue.COMPLEX_UNIT_DIP,
-            if (theme.name == "NothingDark") 9.5f else 10.666667f
+            if (theme.name == "NothingDark") 10.5f else 10.666667f
         )
-        typeface = if (theme.name == "NothingDark") {
-            Typeface.create(
-                ResourcesCompat.getFont(ctx, R.font.doto) ?: Typeface.DEFAULT,
-                Typeface.BOLD
-            )
+        if (theme.name == "NothingDark") {
+            applyNothingTypography(theme)
         } else {
-            Typeface.create(typeface, Typeface.BOLD)
+            typeface = Typeface.create(typeface, Typeface.BOLD)
         }
         text = def.altText
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
@@ -339,6 +331,11 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
     }
 
     init {
+        if (theme.name == "NothingDark") {
+            // The top secondary legend makes a mathematically centred letter look too high.
+            // Shift only the visual label; keep the touch target and row geometry untouched.
+            mainText.translationY = dp(2).toFloat()
+        }
         appearanceView.apply {
             add(altText, lParams(wrapContent, wrapContent))
         }

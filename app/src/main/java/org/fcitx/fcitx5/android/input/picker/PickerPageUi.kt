@@ -78,7 +78,11 @@ class PickerPageUi(
 
     private val keyAppearance = Appearance.Text(
         displayText = "",
-        textSize = density.textSize,
+        textSize = if (theme.name == "NothingDark" && density == Density.High) {
+            21f
+        } else {
+            density.textSize
+        },
         variant = Variant.Normal,
         border = if (bordered) Border.On else Border.Off
     )

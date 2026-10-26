@@ -16,6 +16,7 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
+import org.fcitx.fcitx5.android.input.applyNothingTypography
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -59,12 +60,14 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
         } else {
             setTypeface(typeface, Typeface.BOLD)
         }
+        applyNothingTypography(theme)
     }
 
     val label = textView {
         textSize = 12f
         gravity = gravityCenter
         setTextColor(theme.keyTextColor)
+        applyNothingTypography(theme)
     }
 
     override val root = object : CustomGestureView(ctx) {

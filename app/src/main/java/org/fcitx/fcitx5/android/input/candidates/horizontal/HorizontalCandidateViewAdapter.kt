@@ -5,9 +5,9 @@
 
 package org.fcitx.fcitx5.android.input.candidates.horizontal
 
-import android.annotation.SuppressLint
 import android.view.ViewGroup
 import androidx.annotation.CallSuper
+import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.FlexboxLayoutManager
 import org.fcitx.fcitx5.android.core.CandidateWord
@@ -32,11 +32,23 @@ open class HorizontalCandidateViewAdapter(val theme: Theme) :
     var total = -1
         private set
 
-    @SuppressLint("NotifyDataSetChanged")
     fun updateCandidates(data: Array<CandidateWord>, total: Int) {
+        val old = candidates
+        val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
+            override fun getOldListSize() = old.size
+            override fun getNewListSize() = data.size
+
+            override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return old[oldItemPosition].text == data[newItemPosition].text
+            }
+
+            override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
+                return old[oldItemPosition] == data[newItemPosition]
+            }
+        })
         this.candidates = data
         this.total = total
-        notifyDataSetChanged()
+        diff.dispatchUpdatesTo(this)
     }
 
     override fun getItemCount() = candidates.size

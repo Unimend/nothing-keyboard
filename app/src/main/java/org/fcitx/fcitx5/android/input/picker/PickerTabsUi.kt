@@ -11,6 +11,7 @@ import androidx.core.view.isVisible
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
+import org.fcitx.fcitx5.android.input.applyNothingTypography
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import org.fcitx.fcitx5.android.utils.rippleDrawable
@@ -45,6 +46,7 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
         val label = textView {
             textSize = 16f // sp
             typeface = Typeface.DEFAULT_BOLD
+            applyNothingTypography(theme)
             setTextColor(theme.keyTextColor)
         }
 
