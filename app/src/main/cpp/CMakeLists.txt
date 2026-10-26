@@ -64,6 +64,12 @@ target_link_libraries(native-lib
 # copy module libraries from dependency lib
 add_custom_target(copy-fcitx5-modules
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_PROPERTY:fcitx5::Fcitx5Config,IMPORTED_LOCATION>
+        $<TARGET_PROPERTY:fcitx5::Fcitx5Core,IMPORTED_LOCATION>
+        $<TARGET_PROPERTY:fcitx5::Fcitx5Utils,IMPORTED_LOCATION>
+        $<TARGET_PROPERTY:libime::IMECore,IMPORTED_LOCATION>
+        $<TARGET_PROPERTY:libime::IMEPinyin,IMPORTED_LOCATION>
+        $<TARGET_PROPERTY:libime::IMETable,IMPORTED_LOCATION>
         $<TARGET_PROPERTY:fcitx5::clipboard,IMPORTED_LOCATION>
         $<TARGET_PROPERTY:fcitx5::imselector,IMPORTED_LOCATION>
         $<TARGET_PROPERTY:fcitx5::quickphrase,IMPORTED_LOCATION>

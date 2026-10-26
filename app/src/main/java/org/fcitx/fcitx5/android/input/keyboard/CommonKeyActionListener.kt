@@ -22,6 +22,7 @@ import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.Backspace
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Selection
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Stopped
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.FcitxKeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.LangSwitchAction
@@ -32,6 +33,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ShowInputMethodPickerAc
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SpaceLongPressAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SymAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UnicodeAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UndoAction
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.switchToNextIME
@@ -161,6 +163,8 @@ class CommonKeyActionListener :
                     }
                     backspaceSwipeState = Stopped
                 }
+                ClearAllTextAction -> service.clearAllText()
+                UndoAction -> service.undoLastEdit()
                 is PickerSwitchAction -> {
                     // update lastSymbolType only when specified explicitly
                     val key = action.key?.also { k -> lastPickerType = k.name }

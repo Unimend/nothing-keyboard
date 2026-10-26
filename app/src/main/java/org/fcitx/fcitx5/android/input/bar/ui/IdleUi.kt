@@ -98,7 +98,7 @@ class IdleUi(
 
     private val inAnimation by lazy {
         AnimationSet(true).apply {
-            duration = 200L
+            duration = 120L
             addAnimation(AlphaAnimation(0f, 1f))
             // 2 stands for Animation.RELATIVE_TO_PARENT
             addAnimation(TranslateAnimation(2, -0.3f * translateDirection, 2, 0f, 0, 0f, 0, 0f))
@@ -107,7 +107,7 @@ class IdleUi(
 
     private val outAnimation by lazy {
         AnimationSet(true).apply {
-            duration = 200L
+            duration = 120L
             addAnimation(AlphaAnimation(1f, 0f))
             addAnimation(TranslateAnimation(2, 0f, 2, -0.3f * translateDirection, 0, 0f, 0, 0f))
         }
@@ -164,7 +164,7 @@ class IdleUi(
             if (targetRotation == iconRotation) return
             iconAnimate().cancel()
             if (!instant && !disableAnimation) {
-                iconAnimate().setDuration(200L).rotation(targetRotation)
+                iconAnimate().setDuration(120L).rotation(targetRotation)
             } else {
                 iconRotation = targetRotation
             }
@@ -193,8 +193,8 @@ class IdleUi(
     }
 
     private fun enableSlideTransition(inTarget: View, outTarget: View, inGravity: Int, outGravity: Int) {
-        val slideIn = Slide(inGravity).apply { duration = 200L }
-        val slideOut = Slide(outGravity).apply { duration = 200L }
+        val slideIn = Slide(inGravity).apply { duration = 120L }
+        val slideOut = Slide(outGravity).apply { duration = 120L }
         slideIn.addTarget(inTarget)
         slideOut.addTarget(outTarget)
         val set = TransitionSet().apply {

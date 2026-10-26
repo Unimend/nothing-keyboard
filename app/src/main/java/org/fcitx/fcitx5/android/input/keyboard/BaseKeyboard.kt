@@ -179,10 +179,13 @@ abstract class BaseKeyboard(
                 swipeEnabled = true
                 swipeRepeatEnabled = true
                 swipeThresholdX = selectionSwipeThreshold
-                swipeThresholdY = disabledSwipeThreshold
+                swipeThresholdY = inputSwipeThreshold
                 onGestureListener = OnGestureListener { view, event ->
                     when (event.type) {
                         GestureType.Move -> {
+                            if (event.totalY != 0 && event.totalY.absoluteValue >= event.totalX.absoluteValue) {
+                                return@OnGestureListener true
+                            }
                             val count = event.countX
                             if (count != 0) {
                                 onAction(KeyAction.MoveSelectionAction(count))
@@ -191,8 +194,19 @@ abstract class BaseKeyboard(
                             } else false
                         }
                         GestureType.Up -> {
-                            onAction(KeyAction.DeleteSelectionAction(event.totalX))
-                            false
+                            if (event.totalY != 0 && event.totalY.absoluteValue >= event.totalX.absoluteValue) {
+                                InputFeedbacks.hapticFeedback(view, longPress = true)
+                                when {
+                                    // Clearing the whole field requires a longer upward swipe
+                                    // than the ordinary symbol gesture to reduce accidental loss.
+                                    event.totalY <= -2 -> onAction(KeyAction.ClearAllTextAction)
+                                    event.totalY > 0 -> onAction(KeyAction.UndoAction)
+                                }
+                                true
+                            } else {
+                                onAction(KeyAction.DeleteSelectionAction(event.totalX))
+                                false
+                            }
                         }
                         else -> false
                     }

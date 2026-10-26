@@ -47,8 +47,8 @@ open class HorizontalCandidateViewAdapter(val theme: Theme) :
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CandidateViewHolder {
         val ui = CandidateItemUi(parent.context, theme)
         ui.root.apply {
-            minimumWidth = dp(40)
-            setPaddingDp(10, 0, 10, 0)
+            minimumWidth = dp(48)
+            setPaddingDp(14, 0, 14, 0)
             layoutParams = FlexboxLayoutManager.LayoutParams(wrapContent, matchParent)
         }
         return CandidateViewHolder(ui)

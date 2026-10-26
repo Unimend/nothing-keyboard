@@ -6,8 +6,6 @@
 package org.fcitx.fcitx5.android.input.candidates.horizontal
 
 import android.content.res.Configuration
-import android.graphics.drawable.ShapeDrawable
-import android.graphics.drawable.shapes.RectShape
 import androidx.core.view.updateLayoutParams
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.flexbox.FlexboxLayoutManager
@@ -23,7 +21,6 @@ import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEve
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
-import org.fcitx.fcitx5.android.input.candidates.expanded.decoration.FlexboxVerticalDecoration
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AlwaysFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AutoFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
@@ -34,7 +31,6 @@ import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
-import kotlin.math.max
 
 class HorizontalCandidateComponent :
     UniqueViewComponent<HorizontalCandidateComponent, RecyclerView>(), InputBroadcastReceiver {
@@ -139,22 +135,13 @@ class HorizontalCandidateComponent :
         }
     }
 
-    private val dividerDrawable by lazy {
-        ShapeDrawable(RectShape()).apply {
-            val intrinsicSize = max(1, context.dp(1))
-            intrinsicWidth = intrinsicSize
-            intrinsicHeight = intrinsicSize
-            paint.color = theme.dividerColor
-        }
-    }
-
     override val view by lazy {
         object : RecyclerView(context) {
             override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
                 super.onSizeChanged(w, h, oldw, oldh)
                 if (fillStyle == AutoFillWidth) {
                     val maxSpanCount = maxSpanCountPref.getValue()
-                    layoutMinWidth = w / maxSpanCount - dividerDrawable.intrinsicWidth
+                    layoutMinWidth = w / maxSpanCount
                 }
             }
         }.apply {
@@ -162,7 +149,6 @@ class HorizontalCandidateComponent :
             itemAnimator = null
             adapter = this@HorizontalCandidateComponent.adapter
             layoutManager = this@HorizontalCandidateComponent.layoutManager
-            addItemDecoration(FlexboxVerticalDecoration(dividerDrawable))
         }
     }
 
@@ -177,7 +163,7 @@ class HorizontalCandidateComponent :
                 secondLayoutPassNeeded = false
             }
             AutoFillWidth -> {
-                layoutMinWidth = view.width / maxSpanCount - dividerDrawable.intrinsicWidth
+                layoutMinWidth = view.width / maxSpanCount
                 layoutFlexGrow = if (candidates.size < maxSpanCount) 0f else 1f
                 // [^1] total candidates count < maxSpanCount
                 secondLayoutPassNeeded = candidates.size < maxSpanCount

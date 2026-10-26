@@ -60,11 +60,35 @@ public:
     }
 
     void updatePreeditImpl() override {
-        frontend_->updateClientPreedit(filterText(inputPanel().clientPreedit()));
+        const auto clientPreedit = filterText(inputPanel().clientPreedit());
+        if (!clientPreedit.empty()) {
+            panelPreeditPromoted_ = false;
+            frontend_->updateClientPreedit(clientPreedit);
+        } else if (!panelPreeditPromoted_) {
+            frontend_->updateClientPreedit({});
+        }
     }
 
     void updateInputPanel() {
         const InputPanel &ip = inputPanel();
+        const auto panelPreedit = filterText(ip.preedit());
+        const bool promotePanelPreedit =
+                capabilityFlags().test(CapabilityFlag::Preedit) &&
+                inputPanel().clientPreedit().empty() &&
+                !panelPreedit.empty();
+
+        if (promotePanelPreedit) {
+            // Some engines (notably Pinyin) publish the raw syllables as panel
+            // preedit instead of client preedit. Android editors can display it
+            // at the cursor, which gives the expected "letters, then replace"
+            // composition flow.
+            panelPreeditPromoted_ = true;
+            frontend_->updateClientPreedit(panelPreedit);
+        } else if (panelPreeditPromoted_) {
+            panelPreeditPromoted_ = false;
+            frontend_->updateClientPreedit({});
+        }
+
         if (ip.empty()) {
           frontend_->updateInputPanel(/*preedit=*/{},
                                       /*auxUp=*/ip.overlayMessage(),
@@ -84,7 +108,7 @@ public:
             }
         }
         frontend_->updateInputPanel(
-                filterText(ip.preedit()),
+                promotePanelPreedit ? Text() : panelPreedit,
                 filterText(ip.auxUp()),
                 filterText(ip.auxDown()),
                 tabs
@@ -292,6 +316,7 @@ public:
 private:
     AndroidFrontend *frontend_;
     int uid_;
+    bool panelPreeditPromoted_ = false;
 
     inline Text filterText(const Text &orig) {
         return frontend_->instance()->outputFilter(this, orig);

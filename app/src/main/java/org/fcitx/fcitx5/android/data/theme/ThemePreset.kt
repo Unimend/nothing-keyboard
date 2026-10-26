@@ -6,6 +6,36 @@ package org.fcitx.fcitx5.android.data.theme
 
 object ThemePreset {
 
+    /**
+     * High-contrast keyboard theme shared with the Nothing-style widget family.
+     * Red is intentionally reserved for actions and the primary candidate.
+     */
+    val NothingDark = Theme.Builtin(
+        name = "NothingDark",
+        isDark = true,
+        backgroundColor = 0xff000000,
+        barColor = 0xff080808,
+        keyboardColor = 0xff000000,
+        keyBackgroundColor = 0xff171717,
+        keyTextColor = 0xfff5f5f5,
+        candidateTextColor = 0xfff5f5f5,
+        candidateLabelColor = 0xffd71921,
+        candidateCommentColor = 0xff8a8a8a,
+        altKeyBackgroundColor = 0xff0d0d0d,
+        altKeyTextColor = 0xff8e8e8e,
+        accentKeyBackgroundColor = 0xffd71921,
+        accentKeyTextColor = 0xffffffff,
+        keyPressHighlightColor = 0x33ffffff,
+        keyShadowColor = 0xff000000,
+        popupBackgroundColor = 0xff202020,
+        popupTextColor = 0xffffffff,
+        spaceBarColor = 0xff242424,
+        dividerColor = 0xff303030,
+        clipboardEntryColor = 0xff171717,
+        genericActiveBackgroundColor = 0xffd71921,
+        genericActiveForegroundColor = 0xffffffff
+    )
+
     val MaterialLight = Theme.Builtin(
         name = "MaterialLight",
         isDark = false,

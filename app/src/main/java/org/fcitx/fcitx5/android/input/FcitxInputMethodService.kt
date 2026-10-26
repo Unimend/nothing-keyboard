@@ -453,6 +453,31 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
     }
 
+    fun clearAllText() {
+        val ic = currentInputConnection ?: return
+        resetComposingState()
+        ic.beginBatchEdit()
+        ic.performContextMenuAction(android.R.id.selectAll)
+        ic.commitText("", 1)
+        ic.endBatchEdit()
+        selection.resetTo(0, 0)
+        postFcitxJob { reset() }
+    }
+
+    fun undoLastEdit() {
+        val ic = currentInputConnection ?: return
+        if (!ic.performContextMenuAction(android.R.id.undo)) {
+            val now = SystemClock.uptimeMillis()
+            val meta = KeyEvent.META_CTRL_ON
+            ic.sendKeyEvent(
+                KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_Z, 0, meta)
+            )
+            ic.sendKeyEvent(
+                KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_Z, 0, meta)
+            )
+        }
+    }
+
     private fun sendDownKeyEvent(eventTime: Long, keyEventCode: Int, metaState: Int = 0) {
         currentInputConnection?.sendKeyEvent(
             KeyEvent(

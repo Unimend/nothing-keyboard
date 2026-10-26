@@ -19,7 +19,9 @@ class CandidateViewHolder(val ui: CandidateItemUi) : RecyclerView.ViewHolder(ui.
         idx = newIndex
         if (candidate != newCandidate) {
             candidate = newCandidate
-            ui.updateCandidate(newCandidate)
+            ui.updateCandidate(newIndex, newCandidate)
+        } else {
+            ui.updateCandidate(newIndex, newCandidate)
         }
     }
 

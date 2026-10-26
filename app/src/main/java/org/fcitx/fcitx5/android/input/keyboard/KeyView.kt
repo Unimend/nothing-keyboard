@@ -23,12 +23,14 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.FloatRange
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.content.res.ResourcesCompat
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs.PunctuationPosition
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
+import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
 import org.fcitx.fcitx5.android.utils.styledFloat
@@ -66,7 +68,11 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
         bordered = prefs.keyBorder.getValue()
         borderStroke = prefs.keyBorderStroke.getValue()
         rippled = prefs.keyRippleEffect.getValue()
-        radius = dp(prefs.keyRadius.getValue().toFloat())
+        radius = if (theme.name == "NothingDark") {
+            dp(8f)
+        } else {
+            dp(prefs.keyRadius.getValue().toFloat())
+        }
         val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val hMarginPref =
             if (landscape) prefs.keyHorizontalMarginLandscape else prefs.keyHorizontalMargin
@@ -258,8 +264,18 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
         text = def.displayText
         setTextSize(TypedValue.COMPLEX_UNIT_DIP, def.textSize)
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
-        // keep original typeface, apply textStyle only
-        setTypeface(typeface, def.textStyle)
+        // Doto is reserved for Latin key legends and compact function labels.
+        // Android's font fallback keeps unsupported scripts readable.
+        typeface = if (theme.name == "NothingDark") {
+            Typeface.create(
+                ResourcesCompat.getFont(ctx, R.font.doto)
+                    ?: Typeface.create("sans-serif-medium", Typeface.NORMAL),
+                Typeface.BOLD
+            )
+        } else {
+            Typeface.create(typeface, def.textStyle)
+        }
+        if (theme.name == "NothingDark") letterSpacing = 0.015f
         setTextColor(
             when (def.variant) {
                 Variant.Normal -> theme.keyTextColor
@@ -274,6 +290,21 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
             add(mainText, lParams(wrapContent, wrapContent) {
                 centerInParent()
             })
+            if (theme.name == "NothingDark" && def.viewId == R.id.button_space) {
+                add(view(::View).apply {
+                    background = NothingDotMatrixDrawable(
+                        color = theme.altKeyTextColor,
+                        columns = 5,
+                        rows = 1,
+                        dotDiameter = dp(2).toFloat(),
+                        dotGap = dp(3).toFloat()
+                    )
+                }, lParams(dp(30), dp(4)) {
+                    centerHorizontally()
+                    bottomToBottom = parentId
+                    bottomMargin = vMargin + dp(7)
+                })
+            }
         }
     }
 }
@@ -285,8 +316,18 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         isClickable = false
         isFocusable = false
         // TODO hardcoded alt text size
-        setTextSize(TypedValue.COMPLEX_UNIT_DIP, 10.666667f)
-        setTypeface(typeface, Typeface.BOLD)
+        setTextSize(
+            TypedValue.COMPLEX_UNIT_DIP,
+            if (theme.name == "NothingDark") 9.5f else 10.666667f
+        )
+        typeface = if (theme.name == "NothingDark") {
+            Typeface.create(
+                ResourcesCompat.getFont(ctx, R.font.doto) ?: Typeface.DEFAULT,
+                Typeface.BOLD
+            )
+        } else {
+            Typeface.create(typeface, Typeface.BOLD)
+        }
         text = def.altText
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         setTextColor(
@@ -304,7 +345,7 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         applyLayout(resources.configuration.orientation)
     }
 
-    private fun applyTopRightAltTextPosition() {
+    private fun applyTopAltTextPosition() {
         mainText.updateLayoutParams<ConstraintLayout.LayoutParams> {
             // reset
             topMargin = 0
@@ -318,9 +359,11 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
             // reset
             bottomToBottom = unset; bottomMargin = 0
             // set
-            topToTop = parentId; topMargin = vMargin
-            leftToLeft = unset
-            rightToRight = parentId; rightMargin = hMargin + dp(4)
+            // Keep secondary legends centered above their primary letters.
+            topToTop = parentId
+            topMargin = vMargin + dp(2)
+            leftToLeft = parentId
+            rightToRight = parentId; rightMargin = 0
         }
     }
 
@@ -359,10 +402,10 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
     private fun applyLayout(orientation: Int) {
         when (ThemeManager.prefs.punctuationPosition.getValue()) {
             PunctuationPosition.Bottom -> when (orientation) {
-                Configuration.ORIENTATION_LANDSCAPE -> applyTopRightAltTextPosition()
+                Configuration.ORIENTATION_LANDSCAPE -> applyTopAltTextPosition()
                 else -> applyBottomAltTextPosition()
             }
-            PunctuationPosition.TopRight -> applyTopRightAltTextPosition()
+            PunctuationPosition.TopRight -> applyTopAltTextPosition()
             PunctuationPosition.None -> applyNoAltTextPosition()
         }
     }
@@ -373,6 +416,7 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         }
         applyLayout(newConfig.orientation)
     }
+
 }
 
 @SuppressLint("ViewConstructor")
