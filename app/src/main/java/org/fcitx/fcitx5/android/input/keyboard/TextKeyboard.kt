@@ -6,7 +6,9 @@ package org.fcitx.fcitx5.android.input.keyboard
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.ColorStateList
 import android.view.View
+import android.view.animation.DecelerateInterpolator
 import androidx.annotation.Keep
 import androidx.core.view.allViews
 import org.fcitx.fcitx5.android.R
@@ -222,9 +224,32 @@ class TextKeyboard(
     private fun updateCapsButtonIcon() {
         caps.img.apply {
             imageResource = when (capsState) {
-                CapsState.None -> R.drawable.ic_capslock_none
-                CapsState.Once -> R.drawable.ic_capslock_once
-                CapsState.Lock -> R.drawable.ic_capslock_lock
+                CapsState.None -> if (theme.name == "NothingDark") {
+                    R.drawable.ic_pixel_caps_none
+                } else R.drawable.ic_capslock_none
+                CapsState.Once -> if (theme.name == "NothingDark") {
+                    R.drawable.ic_pixel_caps_once
+                } else R.drawable.ic_capslock_once
+                CapsState.Lock -> if (theme.name == "NothingDark") {
+                    R.drawable.ic_pixel_caps_lock
+                } else R.drawable.ic_capslock_lock
+            }
+            if (theme.name == "NothingDark") {
+                imageTintList = ColorStateList.valueOf(
+                    if (capsState == CapsState.None) theme.keyTextColor
+                    else theme.accentKeyBackgroundColor
+                )
+                animate().cancel()
+                alpha = 0.45f
+                scaleX = 0.88f
+                scaleY = 0.88f
+                animate()
+                    .alpha(1f)
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(110L)
+                    .setInterpolator(DecelerateInterpolator())
+                    .start()
             }
         }
     }
