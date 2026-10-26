@@ -12,6 +12,7 @@ import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.applyNothingTypography
 import splitties.views.backgroundColor
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.textView
@@ -24,6 +25,7 @@ class LabeledCandidateItemUi(
 
     override val root = textView {
         setupTextView(this)
+        applyNothingTypography(theme)
     }
 
     fun update(candidate: CandidateWord, active: Boolean) {

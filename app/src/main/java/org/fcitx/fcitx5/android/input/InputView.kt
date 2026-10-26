@@ -74,6 +74,8 @@ class InputView(
     theme: Theme
 ) : BaseInputView(service, fcitx, theme) {
 
+    private val nothingCompactHeightScale = if (theme.name == "NothingDark") 0.9f else 1f
+
     private val keyBorder by ThemeManager.prefs.keyBorder
 
     private val customBackground = imageView {
@@ -173,7 +175,8 @@ class InputView(
                 else -> keyboardHeightPercent
             }.getValue()
             Timber.d("keyboardHeightPx get(): baseType=${baseType}, base=${base}, percent=${percent}")
-            return base * percent / 100
+            // Nothing keeps the existing fixed key gaps while using shorter key caps.
+            return (base * percent / 100 * nothingCompactHeightScale).toInt()
         }
 
     private val keyboardSidePaddingPx: Int
