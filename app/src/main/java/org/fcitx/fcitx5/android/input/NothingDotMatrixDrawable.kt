@@ -20,8 +20,12 @@ class NothingDotMatrixDrawable(
     private val dotGap: Float,
     private val gravity: Int = Gravity.CENTER,
     private val horizontalPadding: Float = 0f,
-    private val verticalPadding: Float = 0f
+    private val verticalPadding: Float = 0f,
+    initialActiveDots: Int = columns * rows,
+    private val inactiveAlpha: Float = 1f
 ) : Drawable() {
+
+    private var activeDots = initialActiveDots.coerceIn(0, columns * rows)
 
     private val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         this.color = color
@@ -44,6 +48,8 @@ class NothingDotMatrixDrawable(
         val radius = dotDiameter / 2f
         repeat(rows) { row ->
             repeat(columns) { column ->
+                val index = row * columns + column
+                paint.alpha = if (index < activeDots) 255 else (255 * inactiveAlpha).toInt()
                 canvas.drawCircle(
                     startX + radius + column * (dotDiameter + dotGap),
                     startY + radius + row * (dotDiameter + dotGap),
@@ -52,6 +58,13 @@ class NothingDotMatrixDrawable(
                 )
             }
         }
+    }
+
+    fun setActiveDots(count: Int) {
+        val next = count.coerceIn(0, columns * rows)
+        if (next == activeDots) return
+        activeDots = next
+        invalidateSelf()
     }
 
     override fun setAlpha(alpha: Int) {

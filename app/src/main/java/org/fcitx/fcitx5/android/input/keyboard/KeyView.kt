@@ -440,7 +440,19 @@ private fun ImageView.configure(theme: Theme, @DrawableRes src: Int, variant: Va
             Variant.Accent -> theme.accentKeyTextColor
         }
     )
-    imageResource = src
+    imageResource = if (theme.name == "NothingDark") {
+        when (src) {
+            R.drawable.ic_capslock_none -> R.drawable.ic_pixel_caps_none
+            R.drawable.ic_capslock_once -> R.drawable.ic_pixel_caps_once
+            R.drawable.ic_capslock_lock -> R.drawable.ic_pixel_caps_lock
+            R.drawable.ic_baseline_backspace_24 -> R.drawable.ic_pixel_backspace
+            R.drawable.ic_baseline_keyboard_return_24 -> R.drawable.ic_pixel_return
+            R.drawable.ic_baseline_language_24 -> R.drawable.ic_pixel_language
+            R.drawable.ic_baseline_tag_faces_24 -> R.drawable.ic_pixel_face
+            R.drawable.ic_baseline_space_bar_24 -> R.drawable.ic_pixel_space
+            else -> src
+        }
+    } else src
 }
 
 @SuppressLint("ViewConstructor")

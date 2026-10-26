@@ -5,6 +5,7 @@
 
 package org.fcitx.fcitx5.android.input.candidates
 
+import android.animation.ValueAnimator
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import android.view.Gravity
@@ -26,21 +27,27 @@ import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.view
 import splitties.views.dsl.core.wrapContent
 import splitties.views.gravityCenter
+import android.view.animation.LinearInterpolator
 
 class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
+    private val nothingMarkerDrawable = if (theme.name == "NothingDark") {
+        NothingDotMatrixDrawable(
+            color = theme.candidateLabelColor,
+            columns = 1,
+            rows = 4,
+            dotDiameter = ctx.dp(2).toFloat(),
+            dotGap = ctx.dp(2).toFloat(),
+            initialActiveDots = 0,
+            inactiveAlpha = 0.2f
+        )
+    } else null
+
+    private var markerAnimator: ValueAnimator? = null
+    private var lastPrimaryText = ""
+
     private val primaryMarker = view(::View) {
-        background = if (theme.name == "NothingDark") {
-            NothingDotMatrixDrawable(
-                color = theme.candidateLabelColor,
-                columns = 1,
-                rows = 4,
-                dotDiameter = dp(2).toFloat(),
-                dotGap = dp(2).toFloat()
-            )
-        } else {
-            ColorDrawable(theme.candidateLabelColor)
-        }
+        background = nothingMarkerDrawable ?: ColorDrawable(theme.candidateLabelColor)
         visibility = View.GONE
     }
 
@@ -74,6 +81,22 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
     fun updateCandidate(index: Int, candidate: CandidateWord) {
         primaryMarker.visibility = if (index == 0) View.VISIBLE else View.GONE
+        if (index == 0 && candidate.text.isNotEmpty() && candidate.text != lastPrimaryText) {
+            lastPrimaryText = candidate.text
+            markerAnimator?.cancel()
+            markerAnimator = ValueAnimator.ofInt(0, 4).apply {
+                duration = 120L
+                interpolator = LinearInterpolator()
+                addUpdateListener {
+                    nothingMarkerDrawable?.setActiveDots(it.animatedValue as Int)
+                }
+                start()
+            }
+        } else if (index != 0) {
+            markerAnimator?.cancel()
+            nothingMarkerDrawable?.setActiveDots(0)
+            lastPrimaryText = ""
+        }
         val fg = theme.candidateTextColor
         val altFg = theme.candidateCommentColor
         text.text = buildSpannedString {
