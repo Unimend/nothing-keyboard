@@ -30,6 +30,7 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs.PunctuationPosition
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
+import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
 import org.fcitx.fcitx5.android.input.applyNothingTypography
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
@@ -264,13 +265,9 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
         text = def.displayText
         setTextSize(TypedValue.COMPLEX_UNIT_DIP, def.textSize)
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
-        // Doto is reserved for Latin key legends and compact function labels.
-        // Android's font fallback keeps unsupported scripts readable.
-        if (theme.name == "NothingDark") {
-            applyNothingTypography(theme)
-        } else {
-            typeface = Typeface.create(typeface, def.textStyle)
-        }
+        // Keep the visual language deliberately split: Doto for Latin letters and
+        // numbers, the system font for punctuation and the symbol library.
+        applyNothingLegendTypography(theme, def.displayText, bold = def.textStyle != Typeface.NORMAL)
         setTextColor(
             when (def.variant) {
                 Variant.Normal -> theme.keyTextColor
@@ -315,11 +312,7 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
             TypedValue.COMPLEX_UNIT_DIP,
             if (theme.name == "NothingDark") 10.5f else 10.666667f
         )
-        if (theme.name == "NothingDark") {
-            applyNothingTypography(theme)
-        } else {
-            typeface = Typeface.create(typeface, Typeface.BOLD)
-        }
+        applyNothingLegendTypography(theme, def.altText)
         text = def.altText
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         setTextColor(
@@ -449,6 +442,7 @@ private fun ImageView.configure(theme: Theme, @DrawableRes src: Int, variant: Va
             R.drawable.ic_baseline_keyboard_return_24 -> R.drawable.ic_pixel_return
             R.drawable.ic_baseline_language_24 -> R.drawable.ic_pixel_language
             R.drawable.ic_baseline_tag_faces_24 -> R.drawable.ic_pixel_face
+            R.drawable.ic_baseline_format_quote_24 -> R.drawable.ic_pixel_quote
             R.drawable.ic_baseline_space_bar_24 -> R.drawable.ic_pixel_space
             else -> src
         }

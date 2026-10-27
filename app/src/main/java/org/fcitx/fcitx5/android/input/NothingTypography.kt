@@ -38,3 +38,14 @@ fun TextView.applyNothingTypography(theme: Theme, bold: Boolean = true) {
     typeface = NothingTypefaceCache.get(this, bold)
     letterSpacing = 0.015f
 }
+
+/** Doto for Latin letters/numbers; Android's system font for punctuation and symbols. */
+fun TextView.applyNothingLegendTypography(theme: Theme, text: CharSequence, bold: Boolean = true) {
+    val useDoto = text.any { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' }
+    if (theme.name == "NothingDark" && useDoto) {
+        applyNothingTypography(theme, bold)
+    } else {
+        typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)
+        letterSpacing = 0f
+    }
+}

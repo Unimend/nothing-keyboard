@@ -13,6 +13,8 @@ import android.text.TextUtils
 import android.view.View
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
+import org.fcitx.fcitx5.android.input.applyNothingTypography
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -20,6 +22,7 @@ import splitties.views.dsl.constraintlayout.bottomOfParent
 import splitties.views.dsl.constraintlayout.centerVertically
 import splitties.views.dsl.constraintlayout.constraintLayout
 import splitties.views.dsl.constraintlayout.endOfParent
+import splitties.views.dsl.constraintlayout.leftOfParent
 import splitties.views.dsl.constraintlayout.lParams
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -36,10 +39,11 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     val textView = textView {
         minLines = 1
         maxLines = 4
-        textSize = 14f
-        setPaddingDp(8, 4, 8, 4)
+        textSize = if (theme.name == "NothingDark") 15f else 14f
+        setPaddingDp(if (theme.name == "NothingDark") 22 else 8, 8, 10, 8)
         ellipsize = TextUtils.TruncateAt.END
         setTextColor(theme.keyTextColor)
+        applyNothingTypography(theme, bold = false)
     }
 
     val pin = imageView {
@@ -50,6 +54,20 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     }
 
     val layout = constraintLayout {
+        if (theme.name == "NothingDark") {
+            add(View(ctx).apply {
+                background = NothingDotMatrixDrawable(
+                    color = Color.rgb(215, 25, 33),
+                    columns = 1,
+                    rows = 4,
+                    dotDiameter = dp(3).toFloat(),
+                    dotGap = dp(2).toFloat()
+                )
+            }, lParams(dp(5), dp(24)) {
+                centerVertically()
+                leftOfParent(dp(8))
+            })
+        }
         add(textView, lParams(matchParent, wrapContent) {
             centerVertically()
         })
@@ -61,17 +79,17 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
 
     override val root = CustomGestureView(ctx).apply {
         isClickable = true
-        minimumHeight = dp(30)
+        minimumHeight = dp(if (theme.name == "NothingDark") 44 else 30)
         foreground = RippleDrawable(
             ColorStateList.valueOf(theme.keyPressHighlightColor), null,
             GradientDrawable().apply {
-                cornerRadius = radius
+                cornerRadius = if (theme.name == "NothingDark") dp(5).toFloat() else radius
                 setColor(Color.WHITE)
             }
         )
         background = GradientDrawable().apply {
-            cornerRadius = radius
-            setColor(theme.clipboardEntryColor)
+            cornerRadius = if (theme.name == "NothingDark") dp(5).toFloat() else radius
+            setColor(if (theme.name == "NothingDark") Color.rgb(13, 13, 13) else theme.clipboardEntryColor)
         }
         add(layout, lParams(matchParent, matchParent))
     }

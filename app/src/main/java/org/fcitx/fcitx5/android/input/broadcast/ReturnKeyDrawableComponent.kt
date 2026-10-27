@@ -53,8 +53,12 @@ class ReturnKeyDrawableComponent :
         if (ThemeManager.activeTheme.name != "NothingDark") return drawable
         return when (drawable) {
             R.drawable.ic_baseline_keyboard_return_24 -> R.drawable.ic_pixel_return
+            R.drawable.ic_baseline_arrow_forward_24 -> R.drawable.ic_pixel_forward
             R.drawable.ic_baseline_search_24 -> R.drawable.ic_pixel_search
             R.drawable.ic_baseline_send_24 -> R.drawable.ic_pixel_send
+            R.drawable.ic_baseline_keyboard_tab_24 -> R.drawable.ic_pixel_next
+            R.drawable.ic_baseline_done_24 -> R.drawable.ic_pixel_done
+            R.drawable.ic_baseline_keyboard_tab_reverse_24 -> R.drawable.ic_pixel_previous
             else -> drawable
         }
     }

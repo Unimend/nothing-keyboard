@@ -10,7 +10,7 @@ import android.view.ViewOutlineProvider
 import android.widget.TextView
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.applyNothingTypography
+import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.centerHorizontally
 import splitties.views.dsl.constraintlayout.constraintLayout
@@ -22,7 +22,7 @@ import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.view
 import splitties.views.gravityCenter
 
-class PopupEntryUi(override val ctx: Context, theme: Theme, keyHeight: Int, radius: Float) : Ui {
+class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeight: Int, radius: Float) : Ui {
 
     var lastShowTime = -1L
 
@@ -33,7 +33,6 @@ class PopupEntryUi(override val ctx: Context, theme: Theme, keyHeight: Int, radi
             if (theme.name == "NothingDark") theme.accentKeyBackgroundColor
             else theme.popupTextColor
         )
-        applyNothingTypography(theme)
     }
 
     override val root = constraintLayout {
@@ -51,5 +50,6 @@ class PopupEntryUi(override val ctx: Context, theme: Theme, keyHeight: Int, radi
 
     fun setText(text: String) {
         textView.text = text
+        textView.applyNothingLegendTypography(theme, text)
     }
 }

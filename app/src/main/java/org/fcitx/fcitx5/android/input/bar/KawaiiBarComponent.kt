@@ -409,9 +409,14 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     override val view by lazy {
         ViewAnimator(context).apply {
-            backgroundColor =
-                if (ThemeManager.prefs.keyBorder.getValue()) Color.TRANSPARENT
-                else theme.barColor
+            background = if (theme.name == "NothingDark") {
+                NothingDitherBarDrawable(resources.displayMetrics.density)
+            } else null
+            if (theme.name != "NothingDark") {
+                backgroundColor =
+                    if (ThemeManager.prefs.keyBorder.getValue()) Color.TRANSPARENT
+                    else theme.barColor
+            }
             add(idleUi.root, lParams(matchParent, matchParent))
             add(candidateUi.root, lParams(matchParent, matchParent))
             add(titleUi.root, lParams(matchParent, matchParent))
@@ -438,6 +443,9 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         isCapabilityFlagsPassword = toolbarNumRowOnPassword && capFlags.has(CapabilityFlag.Password)
         isInlineSuggestionPresent = false
         numberRowState = NumberRowState.Auto
+        // Keep the utility toolbar collapsed when entering a text field. It can still be
+        // opened explicitly from the menu button when needed.
+        isToolbarManuallyToggled = expandToolbarByDefault
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             idleUi.inlineSuggestionsBar.clear()
         }
@@ -460,6 +468,11 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     override fun onWindowAttached(window: InputWindow) {
+        if (window is TextEditingWindow) {
+            titleUi.showBlank()
+            barStateMachine.push(ExtendedWindowAttached)
+            return
+        }
         when (window) {
             is InputWindow.ExtendedInputWindow<*> -> {
                 titleUi.setTitle(window.title)
@@ -537,7 +550,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     companion object {
-        const val HEIGHT = 40
+        const val HEIGHT = 50
     }
 
     fun onKeyboardLayoutSwitched(isNumber: Boolean) {

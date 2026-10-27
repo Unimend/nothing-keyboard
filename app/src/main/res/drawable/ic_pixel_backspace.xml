@@ -2,5 +2,5 @@
     android:width="24dp" android:height="24dp"
     android:viewportWidth="24" android:viewportHeight="24">
     <path android:fillColor="#FFFFFFFF"
-        android:pathData="M8,4h2v2h-2zM6,6h2v2h-2zM18,6h2v2h-2zM4,8h2v2h-2zM10,8h2v2h-2zM14,8h2v2h-2zM18,8h2v2h-2zM2,10h2v2h-2zM12,10h2v2h-2zM18,10h2v2h-2zM4,12h2v2h-2zM10,12h2v2h-2zM14,12h2v2h-2zM18,12h2v2h-2zM6,14h2v2h-2zM18,14h2v2h-2zM8,16h2v2h-2z" />
+        android:pathData="M8,4h1.6v1.6h-1.6zM6,6h1.6v1.6h-1.6zM18,6h1.6v1.6h-1.6zM4,8h1.6v1.6h-1.6zM10,8h1.6v1.6h-1.6zM14,8h1.6v1.6h-1.6zM18,8h1.6v1.6h-1.6zM2,10h1.6v1.6h-1.6zM12,10h1.6v1.6h-1.6zM18,10h1.6v1.6h-1.6zM4,12h1.6v1.6h-1.6zM10,12h1.6v1.6h-1.6zM14,12h1.6v1.6h-1.6zM18,12h1.6v1.6h-1.6zM6,14h1.6v1.6h-1.6zM18,14h1.6v1.6h-1.6zM8,16h1.6v1.6h-1.6z" />
 </vector>

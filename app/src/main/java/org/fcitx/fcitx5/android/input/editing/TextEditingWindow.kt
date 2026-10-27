@@ -16,6 +16,7 @@ import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
+import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.mechdancer.dependency.manager.must
@@ -95,6 +96,9 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
             clipboardButton.setOnClickListener {
                 windowManager.attachWindow(ClipboardWindow())
             }
+            keyboardButton.setOnClickListener {
+                windowManager.attachWindow(KeyboardWindow)
+            }
         }
     }
 
@@ -112,9 +116,5 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
         ui.updateSelection(hasSelection, userSelection)
     }
 
-    override val title by lazy {
-        context.getString(R.string.text_editing)
-    }
-
-    override fun onCreateBarExtension(): View = ui.extension
+    override val showTitle: Boolean = false
 }

@@ -63,6 +63,15 @@ class TitleUi(override val ctx: Context, theme: Theme) : Ui {
 
     fun setTitle(title: String) {
         titleText.text = title
+        backButton.isVisible = true
+        titleText.isVisible = true
+    }
+
+    fun showBlank() {
+        removeExtension()
+        titleText.text = ""
+        backButton.isVisible = false
+        titleText.isVisible = false
     }
 
     fun addExtension(view: View, showTitle: Boolean) {

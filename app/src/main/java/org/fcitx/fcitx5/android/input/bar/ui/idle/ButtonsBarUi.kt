@@ -28,23 +28,23 @@ class ButtonsBarUi(override val ctx: Context, private val theme: Theme) : Ui {
         root.addView(it, FlexboxLayout.LayoutParams(size, size))
     }
 
-    val undoButton = toolButton(R.drawable.ic_baseline_undo_24).apply {
+    val undoButton = toolButton(R.drawable.ic_pixel_undo).apply {
         contentDescription = ctx.getString(R.string.undo)
     }
 
-    val redoButton = toolButton(R.drawable.ic_baseline_redo_24).apply {
+    val redoButton = toolButton(R.drawable.ic_pixel_redo).apply {
         contentDescription = ctx.getString(R.string.redo)
     }
 
-    val cursorMoveButton = toolButton(R.drawable.ic_cursor_move).apply {
+    val cursorMoveButton = toolButton(R.drawable.ic_pixel_cursor_move).apply {
         contentDescription = ctx.getString(R.string.text_editing)
     }
 
-    val clipboardButton = toolButton(R.drawable.ic_clipboard).apply {
+    val clipboardButton = toolButton(R.drawable.ic_pixel_clipboard).apply {
         contentDescription = ctx.getString(R.string.clipboard)
     }
 
-    val moreButton = toolButton(R.drawable.ic_baseline_more_horiz_24).apply {
+    val moreButton = toolButton(R.drawable.ic_pixel_more).apply {
         contentDescription = ctx.getString(R.string.status_area)
     }
 

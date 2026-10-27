@@ -11,6 +11,8 @@ import android.content.pm.ActivityInfo
 import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
+import android.graphics.PixelFormat
+import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
@@ -224,8 +226,14 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             }
         }
         super.onCreate()
+        window.window!!.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            attributes = attributes.apply { format = PixelFormat.TRANSLUCENT }
+            decorView.setBackgroundColor(Color.TRANSPARENT)
+        }
         decorView = window.window!!.decorView
         contentView = decorView.findViewById(android.R.id.content)
+        contentView.setBackgroundColor(Color.TRANSPARENT)
         lastKnownConfig = resources.configuration
     }
 

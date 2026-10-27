@@ -5,6 +5,7 @@
 package org.fcitx.fcitx5.android.input.keyboard
 
 import android.content.Context
+import android.graphics.Color
 import android.graphics.Rect
 import android.view.MotionEvent
 import androidx.annotation.CallSuper
@@ -20,6 +21,7 @@ import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.GestureType
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
 import org.fcitx.fcitx5.android.input.popup.PopupAction
@@ -71,9 +73,34 @@ abstract class BaseKeyboard(
 
     private val selectionSwipeThreshold = dp(10f)
     private val inputSwipeThreshold = dp(36f)
+    private val spaceEditorSwipeThreshold = dp(22f)
 
     // a rather large threshold effectively disables swipe of the direction
     private val disabledSwipeThreshold = dp(800f)
+
+    private fun showGestureFeedback(view: KeyView) {
+        if (theme.name != "NothingDark" || view.width <= 0 || view.height <= 0) return
+        val dots = NothingDotMatrixDrawable(
+            color = Color.rgb(215, 25, 33),
+            columns = 4,
+            rows = 1,
+            dotDiameter = dp(4f).toFloat(),
+            dotGap = dp(3f).toFloat(),
+            initialActiveDots = 0,
+            inactiveAlpha = 0.16f
+        ).apply { setBounds(0, 0, view.width, view.height) }
+        view.overlay.add(dots)
+        var active = 0
+        val step = object : Runnable {
+            override fun run() {
+                active += 1
+                dots.setActiveDots(active)
+                if (active < 4) view.postDelayed(this, 35L)
+                else view.postDelayed({ view.overlay.remove(dots) }, 120L)
+            }
+        }
+        view.post(step)
+    }
 
     private val keyRows: List<ConstraintLayout>
 
@@ -156,12 +183,15 @@ abstract class BaseKeyboard(
                 swipeEnabled = spaceSwipeMoveCursor.getValue()
                 swipeRepeatEnabled = true
                 swipeThresholdX = selectionSwipeThreshold
-                swipeThresholdY = disabledSwipeThreshold
+                swipeThresholdY = spaceEditorSwipeThreshold
                 onGestureListener = OnGestureListener { view, event ->
                     when (event.type) {
-                        GestureType.Move -> when (val count = event.countX) {
-                            0 -> false
-                            else -> {
+                        GestureType.Move -> {
+                            if (event.totalY.absoluteValue > event.totalX.absoluteValue) {
+                                true
+                            } else when (val count = event.countX) {
+                                0 -> false
+                                else -> {
                                 val sym =
                                     if (count > 0) FcitxKeyMapping.FcitxKey_Right else FcitxKeyMapping.FcitxKey_Left
                                 val action = KeyAction.SymAction(KeySym(sym), KeyStates.Virtual)
@@ -171,6 +201,15 @@ abstract class BaseKeyboard(
                                 }
                                 true
                             }
+                        }
+                        }
+                        GestureType.Up -> {
+                            if (event.totalY < 0 && event.totalY.absoluteValue >= event.totalX.absoluteValue) {
+                                showGestureFeedback(view as KeyView)
+                                InputFeedbacks.hapticFeedback(view, longPress = true)
+                                view.postDelayed({ onAction(KeyAction.ShowTextEditingAction) }, 140L)
+                                true
+                            } else false
                         }
                         else -> false
                     }

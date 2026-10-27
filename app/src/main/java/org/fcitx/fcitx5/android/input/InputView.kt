@@ -56,6 +56,7 @@ import splitties.views.dsl.constraintlayout.constraintLayout
 import splitties.views.dsl.constraintlayout.endOfParent
 import splitties.views.dsl.constraintlayout.endToStartOf
 import splitties.views.dsl.constraintlayout.lParams
+import splitties.views.dsl.constraintlayout.matchConstraints
 import splitties.views.dsl.constraintlayout.startOfParent
 import splitties.views.dsl.constraintlayout.startToEndOf
 import splitties.views.dsl.constraintlayout.topOfParent
@@ -232,8 +233,9 @@ class InputView(
             // although it should be default for apps targeting Honeycomb (3.0, API 11) and higher,
             // but it's not the case on some devices ... just set it here
             isMotionEventSplittingEnabled = true
-            add(customBackground, lParams {
-                centerVertically()
+            add(customBackground, lParams(matchParent, matchConstraints) {
+                below(kawaiiBar.view)
+                bottomOfParent()
                 centerHorizontally()
             })
             add(kawaiiBar.view, lParams(matchParent, dp(KawaiiBarComponent.HEIGHT)) {
