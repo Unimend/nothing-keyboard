@@ -464,10 +464,14 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     fun clearAllText() {
         val ic = currentInputConnection ?: return
         resetComposingState()
-        ic.beginBatchEdit()
-        ic.performContextMenuAction(android.R.id.selectAll)
-        ic.commitText("", 1)
-        ic.endBatchEdit()
+        selection.predict(0, 0)
+        ic.withBatchEdit {
+            performContextMenuAction(android.R.id.selectAll)
+            commitText("", 1)
+            // Some editors keep reporting the temporary select-all range after an empty commit.
+            // Explicitly collapse it so every surface observes a normal insertion cursor.
+            setSelection(0, 0)
+        }
         selection.resetTo(0, 0)
         postFcitxJob { reset() }
     }

@@ -27,6 +27,12 @@ visual system ------------------------+----------------+
 Views may render models and emit user intents. They must not infer engine indices, own paging
 state, classify fonts independently or embed feature-specific gesture state.
 
+## Shared semantic controls
+
+Buttons with the same meaning on different surfaces must emit the same command and use the same
+gesture policy, thresholds and executor. A surface may choose placement, size and visual treatment;
+it must not reimplement clear, undo, copy, paste, selection or navigation behavior.
+
 ## First-stage rules
 
 - Measurements and typography live under `input/design`.

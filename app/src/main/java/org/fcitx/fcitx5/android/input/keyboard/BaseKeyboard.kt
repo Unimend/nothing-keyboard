@@ -28,6 +28,7 @@ import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListen
 import org.fcitx.fcitx5.android.input.gesture.GesturePhase
 import org.fcitx.fcitx5.android.input.gesture.GestureSnapshot
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureAction
+import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureConfig
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
@@ -76,12 +77,12 @@ abstract class BaseKeyboard(
 
     var popupActionListener: PopupActionListener? = null
 
-    private val selectionSwipeThreshold = dp(10f)
-    private val inputSwipeThreshold = dp(36f)
-    private val spaceEditorSwipeThreshold = dp(22f)
+    private val selectionSwipeThreshold = dp(KeyboardGestureConfig.SelectionStepDp)
+    private val inputSwipeThreshold = dp(KeyboardGestureConfig.DeleteVerticalStepDp)
+    private val spaceEditorSwipeThreshold = dp(KeyboardGestureConfig.SpaceEditorStepDp)
 
     // a rather large threshold effectively disables swipe of the direction
-    private val disabledSwipeThreshold = dp(800f)
+    private val disabledSwipeThreshold = dp(KeyboardGestureConfig.DisabledAxisDp)
 
     private fun showGestureFeedback(view: KeyView) {
         if (!theme.isNothingStyle || view.width <= 0 || view.height <= 0) return

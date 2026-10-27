@@ -19,6 +19,8 @@ import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
 import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
+import org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor
+import org.fcitx.fcitx5.android.input.editing.EditingCommand
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Reset
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Selection
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Stopped
@@ -67,6 +69,7 @@ class CommonKeyActionListener :
     private val langSwitchKeyBehavior by kbdPrefs.langSwitchKeyBehavior
 
     private var backspaceSwipeState = Stopped
+    private val editingCommands by lazy { AndroidEditingCommandExecutor(service) }
 
     // there should be a new fcitx API for this
     private suspend fun FcitxAPI.commitAndReset() {
@@ -165,8 +168,8 @@ class CommonKeyActionListener :
                     }
                     backspaceSwipeState = Stopped
                 }
-                ClearAllTextAction -> service.clearAllText()
-                UndoAction -> service.undoLastEdit()
+                ClearAllTextAction -> editingCommands.execute(EditingCommand.ClearAll)
+                UndoAction -> editingCommands.execute(EditingCommand.Undo)
                 ShowTextEditingAction -> {
                     service.finishComposing()
                     windowManager.attachWindow(TextEditingWindow())

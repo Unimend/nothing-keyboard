@@ -16,10 +16,18 @@ import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
+import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.GestureType
+import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.gesture.GesturePhase
+import org.fcitx.fcitx5.android.input.gesture.GestureSnapshot
+import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureAction
+import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureConfig
+import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.mechdancer.dependency.manager.must
+import splitties.dimensions.dp
 
 class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     InputBroadcastReceiver {
@@ -34,11 +42,11 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     private val buttonBorder by ThemeManager.prefs.keyBorder
     private val buttonRadius by ThemeManager.prefs.textEditingButtonRadius
 
-    private var hasSelection = false
-    private var userSelection = false
+    private val session = EditingSession()
+    private val commandExecutor by lazy { AndroidEditingCommandExecutor(service) }
 
     private fun sendDirectionKey(keyEventCode: Int) {
-        service.sendCombinationKeyEvents(keyEventCode, shift = hasSelection || userSelection)
+        commandExecutor.execute(session.move(keyEventCode))
     }
 
     private val ui by lazy {
@@ -63,35 +71,54 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
             homeButton.setOnClickListener { sendDirectionKey(KeyEvent.KEYCODE_MOVE_HOME) }
             endButton.setOnClickListener { sendDirectionKey(KeyEvent.KEYCODE_MOVE_END) }
             selectButton.setOnClickListener {
-                if (hasSelection) {
-                    userSelection = false
-                    service.cancelSelection()
-                } else {
-                    userSelection = !userSelection
-                    updateSelection(false, userSelection)
-                }
+                session.toggleSelection()?.let(commandExecutor::execute)
+                updateSelection(session.hasSelection, session.userSelection)
             }
             selectAllButton.setOnClickListener {
-                // activate select button after operation
-                userSelection = true
-                service.currentInputConnection?.performContextMenuAction(android.R.id.selectAll)
+                commandExecutor.execute(session.selectAll())
             }
             cutButton.setOnClickListener {
-                // deactivate select button after operation
-                userSelection = false
-                service.currentInputConnection?.performContextMenuAction(android.R.id.cut)
+                commandExecutor.execute(session.cut())
             }
             copyButton.setOnClickListener {
-                userSelection = false
-                service.currentInputConnection?.performContextMenuAction(android.R.id.copy)
+                commandExecutor.execute(session.copy())
             }
             pasteButton.setOnClickListener {
-                userSelection = false
-                service.currentInputConnection?.performContextMenuAction(android.R.id.paste)
+                commandExecutor.execute(session.paste())
             }
             backspaceButton.onClickWithRepeating {
-                userSelection = false
-                service.sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+                commandExecutor.execute(session.backspace())
+            }
+            backspaceButton.apply {
+                swipeEnabled = true
+                swipeRepeatEnabled = true
+                // Horizontal range selection belongs to the main keyboard. The editing panel's
+                // delete key only shares its vertical clear/undo gestures.
+                swipeThresholdX = dp(KeyboardGestureConfig.DisabledAxisDp)
+                swipeThresholdY = dp(KeyboardGestureConfig.DeleteVerticalStepDp)
+                onGestureListener = OnGestureListener { view, event ->
+                    val phase = when (event.type) {
+                        GestureType.Move -> GesturePhase.Move
+                        GestureType.Up -> GesturePhase.Up
+                        else -> return@OnGestureListener false
+                    }
+                    val decision = KeyboardGesturePolicy.backspace(
+                        GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
+                    )
+                    when (decision.action) {
+                        KeyboardGestureAction.ClearAllText -> {
+                            InputFeedbacks.hapticFeedback(view, longPress = true)
+                            commandExecutor.execute(session.clearAll())
+                            updateSelection(session.hasSelection, session.userSelection)
+                        }
+                        KeyboardGestureAction.Undo -> {
+                            InputFeedbacks.hapticFeedback(view, longPress = true)
+                            commandExecutor.execute(EditingCommand.Undo)
+                        }
+                        else -> Unit
+                    }
+                    decision.consumed
+                }
             }
             clipboardButton.setOnClickListener {
                 windowManager.attachWindow(ClipboardWindow())
@@ -112,8 +139,8 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     override fun onDetached() {}
 
     override fun onSelectionUpdate(start: Int, end: Int) {
-        hasSelection = start != end
-        ui.updateSelection(hasSelection, userSelection)
+        session.updateSelection(start, end)
+        ui.updateSelection(session.hasSelection, session.userSelection)
     }
 
     override val showTitle: Boolean = false
