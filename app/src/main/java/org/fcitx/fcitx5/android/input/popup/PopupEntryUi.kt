@@ -10,7 +10,8 @@ import android.view.ViewOutlineProvider
 import android.widget.TextView
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.centerHorizontally
 import splitties.views.dsl.constraintlayout.constraintLayout
@@ -30,7 +31,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeigh
         textSize = 23f
         gravity = gravityCenter
         setTextColor(
-            if (theme.name == "NothingDark") theme.accentKeyBackgroundColor
+            if (theme.isNothingStyle) theme.accentKeyBackgroundColor
             else theme.popupTextColor
         )
     }

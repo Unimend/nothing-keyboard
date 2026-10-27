@@ -17,9 +17,11 @@ import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
-import org.fcitx.fcitx5.android.input.NothingTypefaceSpan
-import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
-import org.fcitx.fcitx5.android.input.nothingTypeface
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.NothingTypefaceSpan
+import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.nothingTypeface
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -34,13 +36,13 @@ import android.view.animation.LinearInterpolator
 
 class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
-    private val nothingMarkerDrawable = if (theme.name == "NothingDark") {
+    private val nothingMarkerDrawable = if (theme.isNothingStyle) {
         NothingDotMatrixDrawable(
             color = theme.candidateLabelColor,
             columns = 1,
-            rows = 4,
-            dotDiameter = ctx.dp(2).toFloat(),
-            dotGap = ctx.dp(2).toFloat(),
+            rows = NothingDesignTokens.Candidate.MarkerRows,
+            dotDiameter = ctx.dp(NothingDesignTokens.Candidate.MarkerDotDiameterDp).toFloat(),
+            dotGap = ctx.dp(NothingDesignTokens.Candidate.MarkerDotGapDp).toFloat(),
             initialActiveDots = 0,
             inactiveAlpha = 0.2f
         )
@@ -58,7 +60,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         // Candidate words keep one stable reading size. Long words expand their item width and
         // are reached by scrolling; they must never become visually less important by shrinking.
         scaleMode = AutoScaleTextView.Mode.None
-        textSize = 20f // sp
+        textSize = NothingDesignTokens.Candidate.TextSp
         isSingleLine = true
         gravity = Gravity.START or Gravity.CENTER_VERTICAL
         setTextColor(theme.candidateTextColor)
@@ -78,9 +80,15 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
             // A fixed leading rail prevents one- and multi-character candidates from
             // appearing to jump relative to the primary marker.
-            leftMargin = dp(if (theme.name == "NothingDark") 16 else 12)
+            leftMargin = dp(
+                if (theme.isNothingStyle) NothingDesignTokens.Candidate.NothingLeadingRailDp
+                else NothingDesignTokens.Candidate.DefaultLeadingRailDp
+            )
         })
-        add(primaryMarker, lParams(if (theme.name == "NothingDark") dp(4) else dp(3), dp(18)) {
+        add(primaryMarker, lParams(
+            if (theme.isNothingStyle) dp(NothingDesignTokens.Candidate.MarkerWidthDp) else dp(3),
+            dp(NothingDesignTokens.Candidate.MarkerHeightDp)
+        ) {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
         })
     }
@@ -91,7 +99,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
             lastPrimaryText = candidate.text
             markerAnimator?.cancel()
             markerAnimator = ValueAnimator.ofInt(0, 4).apply {
-                duration = 120L
+                duration = NothingDesignTokens.Motion.QuickFeedbackMs
                 interpolator = LinearInterpolator()
                 addUpdateListener {
                     nothingMarkerDrawable?.setActiveDots(it.animatedValue as Int)

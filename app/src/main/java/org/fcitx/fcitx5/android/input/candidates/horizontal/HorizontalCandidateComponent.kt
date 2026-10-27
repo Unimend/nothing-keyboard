@@ -57,7 +57,7 @@ class HorizontalCandidateComponent :
 
     private fun loadMoreCandidates() {
         if (loadMoreInFlight || reachedCandidateEnd) return
-        val offset = adapter.candidates.size
+        val offset = adapter.itemCount
         val total = adapter.total
         if (total >= 0 && offset >= total) {
             reachedCandidateEnd = true
@@ -76,7 +76,7 @@ class HorizontalCandidateComponent :
                 }
                 adapter.appendCandidates(next, total)
                 reachedCandidateEnd = next.size < 32 ||
-                    (total >= 0 && adapter.candidates.size >= total)
+                    (total >= 0 && adapter.itemCount >= total)
             }
         }
     }

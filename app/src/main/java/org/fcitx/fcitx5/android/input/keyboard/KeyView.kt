@@ -30,8 +30,11 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs.PunctuationPosition
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
-import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
-import org.fcitx.fcitx5.android.input.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
+import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
 import org.fcitx.fcitx5.android.utils.styledFloat
@@ -69,8 +72,8 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
         bordered = prefs.keyBorder.getValue()
         borderStroke = prefs.keyBorderStroke.getValue()
         rippled = prefs.keyRippleEffect.getValue()
-        radius = if (theme.name == "NothingDark") {
-            dp(8f)
+        radius = if (theme.isNothingStyle) {
+            dp(NothingDesignTokens.Shape.KeyCornerRadiusDp)
         } else {
             dp(prefs.keyRadius.getValue().toFloat())
         }
@@ -220,7 +223,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
         if (bordered) return
         when (def.viewId) {
             R.id.button_space -> {
-                val bkgRadius = dp(3f)
+                val bkgRadius = dp(NothingDesignTokens.Shape.SpaceCornerRadiusDp)
                 val minHeight = dp(26)
                 val hInset = dp(10)
                 val vInset = if (h < minHeight) 0 else min((h - minHeight) / 2, dp(16))
@@ -282,7 +285,7 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
             add(mainText, lParams(wrapContent, wrapContent) {
                 centerInParent()
             })
-            if (theme.name == "NothingDark" && def.viewId == R.id.button_space) {
+            if (theme.isNothingStyle && def.viewId == R.id.button_space) {
                 add(view(::View).apply {
                     background = NothingDotMatrixDrawable(
                         color = theme.altKeyTextColor,
@@ -310,7 +313,7 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         // TODO hardcoded alt text size
         setTextSize(
             TypedValue.COMPLEX_UNIT_DIP,
-            if (theme.name == "NothingDark") 10.5f else 10.666667f
+            if (theme.isNothingStyle) NothingDesignTokens.Typography.KeyAltLegendSp else 10.666667f
         )
         applyNothingLegendTypography(theme, def.altText)
         text = def.altText
@@ -324,7 +327,7 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
     }
 
     init {
-        if (theme.name == "NothingDark") {
+        if (theme.isNothingStyle) {
             // The top secondary legend makes a mathematically centred letter look too high.
             // Shift only the visual label; keep the touch target and row geometry untouched.
             mainText.translationY = dp(2).toFloat()
@@ -433,20 +436,7 @@ private fun ImageView.configure(theme: Theme, @DrawableRes src: Int, variant: Va
             Variant.Accent -> theme.accentKeyTextColor
         }
     )
-    imageResource = if (theme.name == "NothingDark") {
-        when (src) {
-            R.drawable.ic_capslock_none -> R.drawable.ic_pixel_caps_none
-            R.drawable.ic_capslock_once -> R.drawable.ic_pixel_caps_once
-            R.drawable.ic_capslock_lock -> R.drawable.ic_pixel_caps_lock
-            R.drawable.ic_baseline_backspace_24 -> R.drawable.ic_pixel_backspace
-            R.drawable.ic_baseline_keyboard_return_24 -> R.drawable.ic_pixel_return
-            R.drawable.ic_baseline_language_24 -> R.drawable.ic_pixel_language
-            R.drawable.ic_baseline_tag_faces_24 -> R.drawable.ic_pixel_face
-            R.drawable.ic_baseline_format_quote_24 -> R.drawable.ic_pixel_quote
-            R.drawable.ic_baseline_space_bar_24 -> R.drawable.ic_pixel_space
-            else -> src
-        }
-    } else src
+    imageResource = if (theme.isNothingStyle) NothingGlyphRegistry.resolve(src) else src
 }
 
 @SuppressLint("ViewConstructor")

@@ -18,7 +18,8 @@ import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import splitties.views.imageResource
 
@@ -227,17 +228,17 @@ class TextKeyboard(
     private fun updateCapsButtonIcon() {
         caps.img.apply {
             imageResource = when (capsState) {
-                CapsState.None -> if (theme.name == "NothingDark") {
+                CapsState.None -> if (theme.isNothingStyle) {
                     R.drawable.ic_pixel_caps_none
                 } else R.drawable.ic_capslock_none
-                CapsState.Once -> if (theme.name == "NothingDark") {
+                CapsState.Once -> if (theme.isNothingStyle) {
                     R.drawable.ic_pixel_caps_once
                 } else R.drawable.ic_capslock_once
-                CapsState.Lock -> if (theme.name == "NothingDark") {
+                CapsState.Lock -> if (theme.isNothingStyle) {
                     R.drawable.ic_pixel_caps_lock
                 } else R.drawable.ic_capslock_lock
             }
-            if (theme.name == "NothingDark") {
+            if (theme.isNothingStyle) {
                 imageTintList = ColorStateList.valueOf(
                     if (capsState == CapsState.None) theme.keyTextColor
                     else theme.accentKeyBackgroundColor

@@ -13,6 +13,9 @@ import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.CandidateItemUi
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
+import org.fcitx.fcitx5.android.input.candidates.model.CandidateEntry
+import org.fcitx.fcitx5.android.input.candidates.model.withEngineIndices
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import splitties.dimensions.dp
 import splitties.views.dsl.core.matchParent
 import splitties.views.dsl.core.wrapContent
@@ -25,49 +28,58 @@ open class HorizontalCandidateViewAdapter(val theme: Theme) :
         setHasStableIds(true)
     }
 
-    var candidates: Array<CandidateWord> = arrayOf()
+    var entries: List<CandidateEntry> = emptyList()
         private set
+
+    val candidates: Array<CandidateWord>
+        get() = entries.map { it.word }.toTypedArray()
 
     var total = -1
         private set
 
     fun updateCandidates(data: Array<CandidateWord>, total: Int) {
-        val old = candidates
+        val old = entries
+        val newEntries = data.withEngineIndices()
         val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
             override fun getOldListSize() = old.size
-            override fun getNewListSize() = data.size
+            override fun getNewListSize() = newEntries.size
 
             override fun areItemsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                return old[oldItemPosition].text == data[newItemPosition].text
+                return old[oldItemPosition].engineIndex == newEntries[newItemPosition].engineIndex
             }
 
             override fun areContentsTheSame(oldItemPosition: Int, newItemPosition: Int): Boolean {
-                return old[oldItemPosition] == data[newItemPosition]
+                return old[oldItemPosition] == newEntries[newItemPosition]
             }
         })
-        this.candidates = data
+        entries = newEntries
         this.total = total
         diff.dispatchUpdatesTo(this)
     }
 
     fun appendCandidates(data: Array<CandidateWord>, total: Int) {
         if (data.isEmpty()) return
-        val start = candidates.size
-        candidates += data
+        val start = entries.size
+        entries = entries + data.withEngineIndices(start)
         this.total = total
         notifyItemRangeInserted(start, data.size)
     }
 
-    override fun getItemCount() = candidates.size
+    override fun getItemCount() = entries.size
 
-    override fun getItemId(position: Int) = candidates.getOrNull(position).hashCode().toLong()
+    override fun getItemId(position: Int) = entries.getOrNull(position).hashCode().toLong()
 
     @CallSuper
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CandidateViewHolder {
         val ui = CandidateItemUi(parent.context, theme)
         ui.root.apply {
-            minimumWidth = dp(48)
-            setPaddingDp(14, 0, 14, 0)
+            minimumWidth = dp(NothingDesignTokens.Candidate.MinimumItemWidthDp)
+            setPaddingDp(
+                NothingDesignTokens.Candidate.HorizontalPaddingDp,
+                0,
+                NothingDesignTokens.Candidate.HorizontalPaddingDp,
+                0
+            )
             layoutParams = RecyclerView.LayoutParams(wrapContent, matchParent)
         }
         return CandidateViewHolder(ui)
@@ -75,7 +87,8 @@ open class HorizontalCandidateViewAdapter(val theme: Theme) :
 
     @CallSuper
     override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
-        holder.update(position, candidates[position])
+        val entry = entries[position]
+        holder.update(entry.engineIndex, entry.word)
     }
 
     @CallSuper

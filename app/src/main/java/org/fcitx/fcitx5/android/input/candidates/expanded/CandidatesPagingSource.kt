@@ -8,14 +8,14 @@ import androidx.paging.PagingSource
 import androidx.paging.PagingState
 import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
+import org.fcitx.fcitx5.android.input.candidates.model.CandidateEntry
+import org.fcitx.fcitx5.android.input.candidates.model.withEngineIndices
 import timber.log.Timber
 
-data class IndexedCandidateWord(val index: Int, val candidate: CandidateWord)
-
 class CandidatesPagingSource(val fcitx: FcitxConnection, val total: Int, val offset: Int) :
-    PagingSource<Int, IndexedCandidateWord>() {
+    PagingSource<Int, CandidateEntry>() {
 
-    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, IndexedCandidateWord> {
+    override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CandidateEntry> {
         // use candidate index for key, null means load from beginning (with offset)
         val startIndex = params.key ?: offset
         val pageSize = params.loadSize
@@ -33,15 +33,13 @@ class CandidatesPagingSource(val fcitx: FcitxConnection, val total: Int, val off
         // Paging refreshes or prepends data, so deriving the selection index from that position
         // can commit a neighbouring candidate instead of the one the user actually touched.
         return LoadResult.Page(
-            candidates.mapIndexed { localIndex, candidate ->
-                IndexedCandidateWord(startIndex + localIndex, candidate)
-            },
+            candidates.withEngineIndices(startIndex),
             prevKey,
             nextKey
         )
     }
 
     // always reload from beginning
-    override fun getRefreshKey(state: PagingState<Int, IndexedCandidateWord>) = null
+    override fun getRefreshKey(state: PagingState<Int, CandidateEntry>) = null
 
 }

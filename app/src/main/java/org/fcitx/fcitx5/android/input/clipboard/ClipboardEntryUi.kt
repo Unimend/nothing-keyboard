@@ -14,7 +14,9 @@ import android.view.View
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
-import org.fcitx.fcitx5.android.input.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -39,8 +41,8 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     val textView = textView {
         minLines = 1
         maxLines = 4
-        textSize = if (theme.name == "NothingDark") 15f else 14f
-        setPaddingDp(if (theme.name == "NothingDark") 22 else 8, 8, 10, 8)
+        textSize = if (theme.isNothingStyle) NothingDesignTokens.Typography.ClipboardEntrySp else 14f
+        setPaddingDp(if (theme.isNothingStyle) 22 else 8, 8, 10, 8)
         ellipsize = TextUtils.TruncateAt.END
         setTextColor(theme.keyTextColor)
         applyNothingTypography(theme, bold = false)
@@ -54,7 +56,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     }
 
     val layout = constraintLayout {
-        if (theme.name == "NothingDark") {
+        if (theme.isNothingStyle) {
             add(View(ctx).apply {
                 background = NothingDotMatrixDrawable(
                     color = Color.rgb(215, 25, 33),
@@ -79,17 +81,17 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
 
     override val root = CustomGestureView(ctx).apply {
         isClickable = true
-        minimumHeight = dp(if (theme.name == "NothingDark") 44 else 30)
+        minimumHeight = dp(if (theme.isNothingStyle) 44 else 30)
         foreground = RippleDrawable(
             ColorStateList.valueOf(theme.keyPressHighlightColor), null,
             GradientDrawable().apply {
-                cornerRadius = if (theme.name == "NothingDark") dp(5).toFloat() else radius
+                cornerRadius = if (theme.isNothingStyle) dp(NothingDesignTokens.Shape.ClipboardCornerRadiusDp).toFloat() else radius
                 setColor(Color.WHITE)
             }
         )
         background = GradientDrawable().apply {
-            cornerRadius = if (theme.name == "NothingDark") dp(5).toFloat() else radius
-            setColor(if (theme.name == "NothingDark") Color.rgb(13, 13, 13) else theme.clipboardEntryColor)
+            cornerRadius = if (theme.isNothingStyle) dp(NothingDesignTokens.Shape.ClipboardCornerRadiusDp).toFloat() else radius
+            setColor(if (theme.isNothingStyle) Color.rgb(13, 13, 13) else theme.clipboardEntryColor)
         }
         add(layout, lParams(matchParent, matchParent))
     }

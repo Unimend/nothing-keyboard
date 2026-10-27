@@ -15,6 +15,7 @@ import com.google.android.flexbox.JustifyContent
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateLayout
 import org.fcitx.fcitx5.android.input.candidates.expanded.PagingCandidateViewAdapter
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.candidates.expanded.decoration.FlexboxHorizontalDecoration
 import splitties.dimensions.dp
 import splitties.views.dsl.core.wrapContent
@@ -30,7 +31,10 @@ class FlexboxExpandedCandidateWindow :
                     itemView.apply {
                         minimumWidth = dp(40)
                         setPaddingDp(10, 0, 10, 0)
-                        layoutParams = FlexboxLayoutManager.LayoutParams(wrapContent, dp(48))
+                        layoutParams = FlexboxLayoutManager.LayoutParams(
+                            wrapContent,
+                            dp(NothingDesignTokens.Candidate.ExpandedRowHeightDp)
+                        )
                             .apply { flexGrow = 1f }
                     }
                 }

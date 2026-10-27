@@ -29,6 +29,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
 import org.fcitx.fcitx5.android.input.keyboard.KeyView
 import org.fcitx.fcitx5.android.input.keyboard.TextKeyView
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import splitties.views.dsl.constraintlayout.below
@@ -78,7 +79,7 @@ class PickerPageUi(
 
     private val keyAppearance = Appearance.Text(
         displayText = "",
-        textSize = if (theme.name == "NothingDark" && density == Density.High) {
+        textSize = if (theme.isNothingStyle && density == Density.High) {
             21f
         } else {
             density.textSize

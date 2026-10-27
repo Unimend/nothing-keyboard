@@ -22,6 +22,7 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.GestureType
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
 import org.fcitx.fcitx5.android.input.popup.PopupAction
@@ -79,7 +80,7 @@ abstract class BaseKeyboard(
     private val disabledSwipeThreshold = dp(800f)
 
     private fun showGestureFeedback(view: KeyView) {
-        if (theme.name != "NothingDark" || view.width <= 0 || view.height <= 0) return
+        if (!theme.isNothingStyle || view.width <= 0 || view.height <= 0) return
         val dots = NothingDotMatrixDrawable(
             color = Color.rgb(215, 25, 33),
             columns = 4,

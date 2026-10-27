@@ -58,6 +58,8 @@ import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -409,10 +411,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     override val view by lazy {
         ViewAnimator(context).apply {
-            background = if (theme.name == "NothingDark") {
+            background = if (theme.isNothingStyle) {
                 NothingDitherBarDrawable(resources.displayMetrics.density)
             } else null
-            if (theme.name != "NothingDark") {
+            if (!theme.isNothingStyle) {
                 backgroundColor =
                     if (ThemeManager.prefs.keyBorder.getValue()) Color.TRANSPARENT
                     else theme.barColor
@@ -550,7 +552,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     companion object {
-        const val HEIGHT = 50
+        const val HEIGHT = NothingDesignTokens.Bar.HeightDp
     }
 
     fun onKeyboardLayoutSwitched(isNumber: Boolean) {

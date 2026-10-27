@@ -1,7 +1,7 @@
 /*
  * SPDX-License-Identifier: LGPL-2.1-or-later
  */
-package org.fcitx.fcitx5.android.input
+package org.fcitx.fcitx5.android.input.design
 
 import android.graphics.Typeface
 import android.text.TextPaint
@@ -11,12 +11,35 @@ import androidx.core.content.res.ResourcesCompat
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 
-private object NothingTypefaceCache {
-    @Volatile
-    private var regular: Typeface? = null
+enum class KeyboardTextKind { LatinOrNumber, Cjk, Symbol }
 
-    @Volatile
-    private var bold: Typeface? = null
+object NothingTypographyPolicy {
+    fun classify(text: CharSequence): KeyboardTextKind {
+        var containsLatinOrNumber = false
+        var containsCjk = false
+        text.forEach { character ->
+            when {
+                character in 'A'..'Z' || character in 'a'..'z' || character in '0'..'9' ->
+                    containsLatinOrNumber = true
+                Character.UnicodeScript.of(character.code) in setOf(
+                    Character.UnicodeScript.HAN,
+                    Character.UnicodeScript.HIRAGANA,
+                    Character.UnicodeScript.KATAKANA,
+                    Character.UnicodeScript.HANGUL
+                ) -> containsCjk = true
+            }
+        }
+        return when {
+            containsCjk -> KeyboardTextKind.Cjk
+            containsLatinOrNumber -> KeyboardTextKind.LatinOrNumber
+            else -> KeyboardTextKind.Symbol
+        }
+    }
+}
+
+private object NothingTypefaceCache {
+    @Volatile private var regular: Typeface? = null
+    @Volatile private var bold: Typeface? = null
 
     fun get(textView: TextView, useBold: Boolean): Typeface {
         val cached = if (useBold) bold else regular
@@ -34,15 +57,14 @@ private object NothingTypefaceCache {
     }
 }
 
-/** Keeps every text surface in the Nothing theme on the same font stack. */
 fun TextView.applyNothingTypography(theme: Theme, bold: Boolean = true) {
-    if (theme.name != "NothingDark") return
+    if (!theme.isNothingStyle) return
     typeface = NothingTypefaceCache.get(this, bold)
     letterSpacing = 0.015f
 }
 
 fun TextView.nothingTypeface(theme: Theme, bold: Boolean = true): Typeface? =
-    if (theme.name == "NothingDark") NothingTypefaceCache.get(this, bold) else null
+    if (theme.isNothingStyle) NothingTypefaceCache.get(this, bold) else null
 
 class NothingTypefaceSpan(private val newTypeface: Typeface) : MetricAffectingSpan() {
     override fun updateDrawState(textPaint: TextPaint) = apply(textPaint)
@@ -53,10 +75,11 @@ class NothingTypefaceSpan(private val newTypeface: Typeface) : MetricAffectingSp
     }
 }
 
-/** Doto for Latin letters/numbers; Android's system font for punctuation and symbols. */
+/** Doto for Latin letters/numbers; Android's system font for CJK and symbols. */
 fun TextView.applyNothingLegendTypography(theme: Theme, text: CharSequence, bold: Boolean = true) {
-    val useDoto = text.any { it in 'A'..'Z' || it in 'a'..'z' || it in '0'..'9' }
-    if (theme.name == "NothingDark" && useDoto) {
+    if (theme.isNothingStyle &&
+        NothingTypographyPolicy.classify(text) == KeyboardTextKind.LatinOrNumber
+    ) {
         applyNothingTypography(theme, bold)
     } else {
         typeface = Typeface.create(Typeface.DEFAULT, if (bold) Typeface.BOLD else Typeface.NORMAL)

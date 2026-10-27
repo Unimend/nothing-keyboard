@@ -19,6 +19,7 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.bar.ui.idle.ButtonsBarUi
 import org.fcitx.fcitx5.android.input.bar.ui.idle.ClipboardSuggestionUi
 import org.fcitx.fcitx5.android.input.bar.ui.idle.InlineSuggestionsUi
@@ -98,7 +99,7 @@ class IdleUi(
 
     private val inAnimation by lazy {
         AnimationSet(true).apply {
-            duration = 120L
+            duration = NothingDesignTokens.Motion.QuickFeedbackMs
             addAnimation(AlphaAnimation(0f, 1f))
             // 2 stands for Animation.RELATIVE_TO_PARENT
             addAnimation(TranslateAnimation(2, -0.3f * translateDirection, 2, 0f, 0, 0f, 0, 0f))
@@ -107,7 +108,7 @@ class IdleUi(
 
     private val outAnimation by lazy {
         AnimationSet(true).apply {
-            duration = 120L
+            duration = NothingDesignTokens.Motion.QuickFeedbackMs
             addAnimation(AlphaAnimation(1f, 0f))
             addAnimation(TranslateAnimation(2, 0f, 2, -0.3f * translateDirection, 0, 0f, 0, 0f))
         }
@@ -164,7 +165,7 @@ class IdleUi(
             if (targetRotation == iconRotation) return
             iconAnimate().cancel()
             if (!instant && !disableAnimation) {
-                iconAnimate().setDuration(120L).rotation(targetRotation)
+                iconAnimate().setDuration(NothingDesignTokens.Motion.QuickFeedbackMs).rotation(targetRotation)
             } else {
                 iconRotation = targetRotation
             }
@@ -193,8 +194,8 @@ class IdleUi(
     }
 
     private fun enableSlideTransition(inTarget: View, outTarget: View, inGravity: Int, outGravity: Int) {
-        val slideIn = Slide(inGravity).apply { duration = 120L }
-        val slideOut = Slide(outGravity).apply { duration = 120L }
+        val slideIn = Slide(inGravity).apply { duration = NothingDesignTokens.Motion.QuickFeedbackMs }
+        val slideOut = Slide(outGravity).apply { duration = NothingDesignTokens.Motion.QuickFeedbackMs }
         slideIn.addTarget(inTarget)
         slideOut.addTarget(outTarget)
         val set = TransitionSet().apply {

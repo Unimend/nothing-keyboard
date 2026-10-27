@@ -14,6 +14,8 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import splitties.dimensions.dp
 import splitties.views.backgroundColor
 import splitties.views.dsl.coordinatorlayout.coordinatorLayout
@@ -30,8 +32,8 @@ import timber.log.Timber
 class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     val recyclerView = recyclerView {
-        addItemDecoration(SpacesItemDecoration(dp(if (theme.name == "NothingDark") 6 else 4)))
-        if (theme.name == "NothingDark") backgroundColor = 0xff000000.toInt()
+        addItemDecoration(SpacesItemDecoration(dp(if (theme.isNothingStyle) 6 else 4)))
+        if (theme.isNothingStyle) backgroundColor = 0xff000000.toInt()
     }
 
     val enableUi = ClipboardInstructionUi.Enable(ctx, theme)
@@ -49,7 +51,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     override val root = coordinatorLayout {
         if (!keyBorder) {
-            backgroundColor = if (theme.name == "NothingDark") 0xff000000.toInt() else theme.barColor
+            backgroundColor = if (theme.isNothingStyle) 0xff000000.toInt() else theme.barColor
         }
         add(viewAnimator, defaultLParams(matchParent, matchParent))
     }
@@ -69,7 +71,9 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
     fun switchUiByState(state: ClipboardStateMachine.State) {
         Timber.d("Switch clipboard to $state")
         if (!disableAnimation)
-            TransitionManager.beginDelayedTransition(root, Fade().apply { duration = 100L })
+            TransitionManager.beginDelayedTransition(root, Fade().apply {
+                duration = NothingDesignTokens.Motion.InstantFeedbackMs
+            })
         when (state) {
             ClipboardStateMachine.State.Normal -> {
                 viewAnimator.displayedChild = 0

@@ -12,24 +12,25 @@ import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.CandidateItemUi
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
+import org.fcitx.fcitx5.android.input.candidates.model.CandidateEntry
 
 open class PagingCandidateViewAdapter(val theme: Theme) :
-    PagingDataAdapter<IndexedCandidateWord, CandidateViewHolder>(diffCallback) {
+    PagingDataAdapter<CandidateEntry, CandidateViewHolder>(diffCallback) {
 
     companion object {
         /**
          * Always re-bind all [CandidateViewHolder]s every time to make sure `idx` is up-to-date.
          * [CandidateViewHolder.update] would skip unnecessary UI updates.
          */
-        private val diffCallback = object : DiffUtil.ItemCallback<IndexedCandidateWord>() {
+        private val diffCallback = object : DiffUtil.ItemCallback<CandidateEntry>() {
             override fun areItemsTheSame(
-                oldItem: IndexedCandidateWord,
-                newItem: IndexedCandidateWord
-            ) = oldItem.index == newItem.index
+                oldItem: CandidateEntry,
+                newItem: CandidateEntry
+            ) = oldItem.engineIndex == newItem.engineIndex
 
             override fun areContentsTheSame(
-                oldItem: IndexedCandidateWord,
-                newItem: IndexedCandidateWord
+                oldItem: CandidateEntry,
+                newItem: CandidateEntry
             ) = oldItem == newItem
         }
     }
@@ -48,6 +49,6 @@ open class PagingCandidateViewAdapter(val theme: Theme) :
 
     override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
         val item = getItem(position)
-        holder.update(item?.index ?: -1, item?.candidate ?: CandidateWord.Empty)
+        holder.update(item?.engineIndex ?: -1, item?.word ?: CandidateWord.Empty)
     }
 }

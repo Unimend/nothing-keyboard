@@ -20,7 +20,8 @@ import androidx.recyclerview.widget.RecyclerView
 import org.fcitx.fcitx5.android.core.CandidateAction
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -89,7 +90,7 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
 
         private val label = view(::AutoScaleTextView) {
             scaleMode = AutoScaleTextView.Mode.Proportional
-            textSize = 16f // sp
+            textSize = NothingDesignTokens.Candidate.ExpandedTabTextSp
             isSingleLine = true
             gravity = gravityCenter
             setTextColor(theme.candidateTextColor)
