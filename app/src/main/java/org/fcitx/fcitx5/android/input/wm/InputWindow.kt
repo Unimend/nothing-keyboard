@@ -10,6 +10,7 @@ import androidx.transition.Fade
 import androidx.transition.Slide
 import androidx.transition.Transition
 import org.fcitx.fcitx5.android.input.dependency.context
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.IUniqueComponent
 import org.mechdancer.dependency.ScopeEvent
@@ -17,6 +18,8 @@ import org.mechdancer.dependency.manager.DependencyManager
 import kotlin.reflect.KClass
 
 sealed class InputWindow : Dependent {
+
+    open val surface: InputSurface = InputSurface.Auxiliary
 
     protected val manager: DependencyManager = DependencyManager()
 

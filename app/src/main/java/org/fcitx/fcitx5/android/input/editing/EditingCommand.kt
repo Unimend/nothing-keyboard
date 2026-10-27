@@ -5,6 +5,7 @@ package org.fcitx.fcitx5.android.input.editing
 
 sealed interface EditingCommand {
     data class MoveCursor(val keyCode: Int, val extendSelection: Boolean) : EditingCommand
+    data class ExtendSelection(val steps: Int) : EditingCommand
     data object CancelSelection : EditingCommand
     data object SelectAll : EditingCommand
     data object Cut : EditingCommand

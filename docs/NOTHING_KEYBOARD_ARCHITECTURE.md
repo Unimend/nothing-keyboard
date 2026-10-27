@@ -33,6 +33,16 @@ Buttons with the same meaning on different surfaces must emit the same command a
 gesture policy, thresholds and executor. A surface may choose placement, size and visual treatment;
 it must not reimplement clear, undo, copy, paste, selection or navigation behavior.
 
+The main keyboard and editing panel delete controls share `KeyboardGesturePolicy`: horizontal drag
+extends a deletion range and deletes it on release; upward drag clears all; downward drag undoes.
+During the additive stabilization phase, every surface exposes the complete shared behavior set.
+Feature reduction must happen later through shared capability configuration, never by deleting or
+forking an implementation in one surface.
+
+The active surface is represented by `InputSurfaceSession`; windows declare their semantic surface
+and the window manager publishes transitions. Features should observe this state instead of
+inferring it from concrete View or window classes.
+
 ## First-stage rules
 
 - Measurements and typography live under `input/design`.

@@ -146,14 +146,14 @@ class CommonKeyActionListener :
                                 preeditState.isEmpty &&
                                 horizontalCandidate.adapter.total <= 0 // total is -1 on initialization
                             ) {
-                                service.applySelectionOffset(action.start, action.end)
+                                editingCommands.execute(EditingCommand.ExtendSelection(action.steps))
                                 Selection
                             } else {
                                 Reset
                             }
                         }
                         Selection -> {
-                            service.applySelectionOffset(action.start, action.end)
+                            editingCommands.execute(EditingCommand.ExtendSelection(action.steps))
                         }
                         Reset -> {}
                     }
@@ -162,7 +162,7 @@ class CommonKeyActionListener :
                     when (backspaceSwipeState) {
                         Stopped -> {}
                         Selection -> service.deleteSelection()
-                        Reset -> if (action.totalCnt < 0) { // swipe left
+                        Reset -> if (action.totalCnt != 0) {
                             service.postFcitxJob { reset() }
                         }
                     }

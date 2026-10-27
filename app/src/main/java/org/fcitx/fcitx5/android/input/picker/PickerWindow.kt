@@ -18,6 +18,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.EssentialWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
@@ -32,6 +33,8 @@ class PickerWindow(
     private val followKeyBorder: Boolean = true,
     private val policy: PickerPolicy = DefaultPickerPolicy()
 ) : InputWindow.ExtendedInputWindow<PickerWindow>(), EssentialWindow {
+
+    override val surface = InputSurface.Picker(key.name)
 
     enum class Key : EssentialWindow.Key {
         Symbol,

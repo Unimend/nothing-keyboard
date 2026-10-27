@@ -33,7 +33,7 @@ sealed class KeyAction {
 
     data class LayoutSwitchAction(val act: String = "") : KeyAction()
 
-    data class MoveSelectionAction(val start: Int = 0, val end: Int = 0) : KeyAction()
+    data class MoveSelectionAction(val steps: Int) : KeyAction()
 
     data class DeleteSelectionAction(val totalCnt: Int = 0) : KeyAction()
 

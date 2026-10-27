@@ -32,6 +32,7 @@ import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.Reload
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeList
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 import org.fcitx.fcitx5.android.utils.alpha
@@ -47,6 +48,8 @@ import splitties.views.recyclerview.gridLayoutManager
 
 class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
     InputBroadcastReceiver {
+
+    override val surface = InputSurface.Status
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
     private val fcitx: FcitxConnection by manager.fcitx()

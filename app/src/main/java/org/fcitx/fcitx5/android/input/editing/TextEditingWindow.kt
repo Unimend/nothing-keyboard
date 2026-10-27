@@ -26,11 +26,14 @@ import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureConfig
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
 
 class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     InputBroadcastReceiver {
+
+    override val surface = InputSurface.Editing
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
     private val windowManager: InputWindowManager by manager.must()
@@ -92,9 +95,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
             backspaceButton.apply {
                 swipeEnabled = true
                 swipeRepeatEnabled = true
-                // Horizontal range selection belongs to the main keyboard. The editing panel's
-                // delete key only shares its vertical clear/undo gestures.
-                swipeThresholdX = dp(KeyboardGestureConfig.DisabledAxisDp)
+                swipeThresholdX = dp(KeyboardGestureConfig.SelectionStepDp)
                 swipeThresholdY = dp(KeyboardGestureConfig.DeleteVerticalStepDp)
                 onGestureListener = OnGestureListener { view, event ->
                     val phase = when (event.type) {
@@ -105,7 +106,16 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
                     val decision = KeyboardGesturePolicy.backspace(
                         GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
                     )
-                    when (decision.action) {
+                    when (val action = decision.action) {
+                        is KeyboardGestureAction.MoveSelection -> {
+                            commandExecutor.execute(EditingCommand.ExtendSelection(action.steps))
+                            if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
+                        }
+                        is KeyboardGestureAction.DeleteSelection -> {
+                            if (action.steps != 0) {
+                                commandExecutor.execute(session.backspace())
+                            }
+                        }
                         KeyboardGestureAction.ClearAllText -> {
                             InputFeedbacks.hapticFeedback(view, longPress = true)
                             commandExecutor.execute(session.clearAll())

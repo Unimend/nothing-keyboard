@@ -39,6 +39,7 @@ import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.mechdancer.dependency.manager.must
@@ -48,6 +49,8 @@ import kotlin.math.max
 
 abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     InputWindow.SimpleInputWindow<T>(), InputBroadcastReceiver {
+
+    override val surface = InputSurface.ExpandedCandidates
 
     protected val service by manager.inputMethodService()
     protected val theme by manager.theme()

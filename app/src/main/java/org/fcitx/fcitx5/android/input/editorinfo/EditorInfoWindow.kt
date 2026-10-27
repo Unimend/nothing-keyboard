@@ -11,6 +11,7 @@ import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.wm.InputWindow
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.utils.clipboardManager
 import org.fcitx.fcitx5.android.utils.toast
 import splitties.dimensions.dp
@@ -19,6 +20,8 @@ import splitties.views.dsl.core.horizontalLayout
 import splitties.views.dsl.core.lParams
 
 class EditorInfoWindow : InputWindow.ExtendedInputWindow<EditorInfoWindow>() {
+
+    override val surface = InputSurface.EditorInfo
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
     private val theme by manager.theme()

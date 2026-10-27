@@ -43,6 +43,7 @@ import org.fcitx.fcitx5.android.input.clipboard.ClipboardStateMachine.Transition
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.AppUtil
@@ -55,6 +56,8 @@ import splitties.resources.styledColor
 import splitties.views.dsl.core.withTheme
 
 class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
+
+    override val surface = InputSurface.Clipboard
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
     private val windowManager: InputWindowManager by manager.must()

@@ -15,6 +15,7 @@ import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcaster
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
+import org.fcitx.fcitx5.android.input.session.InputSurfaceSession
 import org.mechdancer.dependency.DynamicScope
 import org.mechdancer.dependency.manager.must
 import org.mechdancer.dependency.minusAssign
@@ -36,6 +37,8 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
 
     private var currentWindow: InputWindow? = null
     private var currentView: View? = null
+
+    val surfaceSession = InputSurfaceSession()
 
     private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
 
@@ -153,6 +156,7 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
         // notify the window it was attached
         window.onAttached()
         currentWindow = window
+        surfaceSession.transitionTo(window.surface)
         // broadcast the new window was added to layout
         broadcaster.onWindowAttached(window)
     }
