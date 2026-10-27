@@ -19,10 +19,9 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.gesture.SwipeTracker
 
 open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
-
-    enum class SwipeAxis { X, Y }
 
     enum class GestureType { Down, Move, Up }
 
@@ -71,12 +70,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     var swipeThresholdY = 24f
 
     private var swipeRepeatTriggered = false
-    private var swipeLastX = -1f
-    private var swipeLastY = -1f
-    private var swipeXUnconsumed = 0f
-    private var swipeYUnconsumed = 0f
-    private var swipeTotalX = 0
-    private var swipeTotalY = 0
+    private val swipeTracker = SwipeTracker()
     private var gestureConsumed = false
 
     var doubleTapEnabled = false
@@ -127,10 +121,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
             if (swipeRepeatEnabled) {
                 swipeRepeatTriggered = false
             }
-            swipeXUnconsumed = 0f
-            swipeYUnconsumed = 0f
-            swipeTotalX = 0
-            swipeTotalY = 0
+            swipeTracker.reset()
             gestureConsumed = false
         }
         // double tap state should be preserved on touch up
@@ -183,8 +174,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                     }
                 }
                 if (swipeEnabled) {
-                    swipeLastX = x
-                    swipeLastY = y
+                    swipeTracker.start(x, y)
                 }
             }
             MotionEvent.ACTION_UP -> {
@@ -232,11 +222,19 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                     }
                 }
                 if (!swipeEnabled || longPressTriggered || repeatStarted) return true
-                val countX = consumeSwipe(x, SwipeAxis.X)
-                val countY = consumeSwipe(y, SwipeAxis.Y)
-                dispatchGestureEvent(GestureType.Move, x, y, countX, countY)
-                swipeLastX = x
-                swipeLastY = y
+                val step = swipeTracker.move(x, y, swipeThresholdX, swipeThresholdY)
+                if (step.crossedThreshold) {
+                    if (swipeRepeatEnabled) swipeRepeatTriggered = true
+                    if (longPressEnabled && !longPressTriggered) {
+                        longPressJob?.cancel()
+                        longPressJob = null
+                    }
+                    if (repeatEnabled && !repeatStarted) {
+                        repeatJob?.cancel()
+                        repeatJob = null
+                    }
+                }
+                dispatchGestureEvent(GestureType.Move, x, y, step.countX, step.countY)
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
@@ -255,52 +253,14 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
         countX: Int = 0,
         countY: Int = 0
     ) {
-        val event = Event(type, gestureConsumed, x, y, countX, countY, swipeTotalX, swipeTotalY)
+        val event = Event(
+            type, gestureConsumed, x, y, countX, countY,
+            swipeTracker.totalX, swipeTracker.totalY
+        )
         val consumed = onGestureListener?.onGesture(this, event) ?: return
         if (consumed && !gestureConsumed) {
             gestureConsumed = true
         }
-    }
-
-    private fun consumeSwipe(current: Float, axis: SwipeAxis): Int {
-        val unconsumed: Float
-        val threshold: Float
-        when (axis) {
-            SwipeAxis.X -> {
-                unconsumed = current - swipeLastX + swipeXUnconsumed
-                threshold = swipeThresholdX
-            }
-            SwipeAxis.Y -> {
-                unconsumed = current - swipeLastY + swipeYUnconsumed
-                threshold = swipeThresholdY
-            }
-        }
-        val remains: Float = unconsumed % threshold
-        val count: Int = (unconsumed / threshold).toInt()
-        if (count != 0) {
-            if (swipeRepeatEnabled && !swipeRepeatTriggered) {
-                swipeRepeatTriggered = true
-            }
-            if (longPressEnabled && !longPressTriggered) {
-                longPressJob?.cancel()
-                longPressJob = null
-            }
-            if (repeatEnabled && !repeatStarted) {
-                repeatJob?.cancel()
-                repeatJob = null
-            }
-        }
-        when (axis) {
-            SwipeAxis.X -> {
-                swipeXUnconsumed = remains
-                swipeTotalX += count
-            }
-            SwipeAxis.Y -> {
-                swipeYUnconsumed = remains
-                swipeTotalY += count
-            }
-        }
-        return count
     }
 
     override fun setOnLongClickListener(l: OnLongClickListener?) {

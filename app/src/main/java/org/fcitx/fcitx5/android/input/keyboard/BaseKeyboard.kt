@@ -25,6 +25,10 @@ import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.GestureType
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
+import org.fcitx.fcitx5.android.input.gesture.GesturePhase
+import org.fcitx.fcitx5.android.input.gesture.GestureSnapshot
+import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureAction
+import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import splitties.dimensions.dp
@@ -186,34 +190,35 @@ abstract class BaseKeyboard(
                 swipeThresholdX = selectionSwipeThreshold
                 swipeThresholdY = spaceEditorSwipeThreshold
                 onGestureListener = OnGestureListener { view, event ->
-                    when (event.type) {
-                        GestureType.Move -> {
-                            if (event.totalY.absoluteValue > event.totalX.absoluteValue) {
-                                true
-                            } else when (val count = event.countX) {
-                                0 -> false
-                                else -> {
-                                val sym =
-                                    if (count > 0) FcitxKeyMapping.FcitxKey_Right else FcitxKeyMapping.FcitxKey_Left
-                                val action = KeyAction.SymAction(KeySym(sym), KeyStates.Virtual)
-                                repeat(count.absoluteValue) {
-                                    onAction(action)
-                                    if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
-                                }
-                                true
+                    val phase = when (event.type) {
+                        GestureType.Move -> GesturePhase.Move
+                        GestureType.Up -> GesturePhase.Up
+                        else -> return@OnGestureListener false
+                    }
+                    val decision = KeyboardGesturePolicy.space(
+                        GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
+                    )
+                    when (val action = decision.action) {
+                        is KeyboardGestureAction.MoveCursor -> {
+                            val sym = if (action.steps > 0) {
+                                FcitxKeyMapping.FcitxKey_Right
+                            } else {
+                                FcitxKeyMapping.FcitxKey_Left
+                            }
+                            val keyAction = KeyAction.SymAction(KeySym(sym), KeyStates.Virtual)
+                            repeat(action.steps.absoluteValue) {
+                                onAction(keyAction)
+                                if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
                             }
                         }
+                        KeyboardGestureAction.OpenEditingPanel -> {
+                            showGestureFeedback(view as KeyView)
+                            InputFeedbacks.hapticFeedback(view, longPress = true)
+                            view.postDelayed({ onAction(KeyAction.ShowTextEditingAction) }, 140L)
                         }
-                        GestureType.Up -> {
-                            if (event.totalY < 0 && event.totalY.absoluteValue >= event.totalX.absoluteValue) {
-                                showGestureFeedback(view as KeyView)
-                                InputFeedbacks.hapticFeedback(view, longPress = true)
-                                view.postDelayed({ onAction(KeyAction.ShowTextEditingAction) }, 140L)
-                                true
-                            } else false
-                        }
-                        else -> false
+                        else -> Unit
                     }
+                    decision.consumed
                 }
             } else if (def is BackspaceKey) {
                 swipeEnabled = true
@@ -221,35 +226,32 @@ abstract class BaseKeyboard(
                 swipeThresholdX = selectionSwipeThreshold
                 swipeThresholdY = inputSwipeThreshold
                 onGestureListener = OnGestureListener { view, event ->
-                    when (event.type) {
-                        GestureType.Move -> {
-                            if (event.totalY != 0 && event.totalY.absoluteValue >= event.totalX.absoluteValue) {
-                                return@OnGestureListener true
-                            }
-                            val count = event.countX
-                            if (count != 0) {
-                                onAction(KeyAction.MoveSelectionAction(count))
-                                if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
-                                true
-                            } else false
-                        }
-                        GestureType.Up -> {
-                            if (event.totalY != 0 && event.totalY.absoluteValue >= event.totalX.absoluteValue) {
-                                InputFeedbacks.hapticFeedback(view, longPress = true)
-                                when {
-                                    // Clearing the whole field requires a longer upward swipe
-                                    // than the ordinary symbol gesture to reduce accidental loss.
-                                    event.totalY <= -2 -> onAction(KeyAction.ClearAllTextAction)
-                                    event.totalY > 0 -> onAction(KeyAction.UndoAction)
-                                }
-                                true
-                            } else {
-                                onAction(KeyAction.DeleteSelectionAction(event.totalX))
-                                false
-                            }
-                        }
-                        else -> false
+                    val phase = when (event.type) {
+                        GestureType.Move -> GesturePhase.Move
+                        GestureType.Up -> GesturePhase.Up
+                        else -> return@OnGestureListener false
                     }
+                    val decision = KeyboardGesturePolicy.backspace(
+                        GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
+                    )
+                    when (val action = decision.action) {
+                        is KeyboardGestureAction.MoveSelection -> {
+                            onAction(KeyAction.MoveSelectionAction(action.steps))
+                            if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
+                        }
+                        is KeyboardGestureAction.DeleteSelection ->
+                            onAction(KeyAction.DeleteSelectionAction(action.steps))
+                        KeyboardGestureAction.ClearAllText -> {
+                            InputFeedbacks.hapticFeedback(view, longPress = true)
+                            onAction(KeyAction.ClearAllTextAction)
+                        }
+                        KeyboardGestureAction.Undo -> {
+                            InputFeedbacks.hapticFeedback(view, longPress = true)
+                            onAction(KeyAction.UndoAction)
+                        }
+                        else -> Unit
+                    }
+                    decision.consumed
                 }
             }
             def.behaviors.forEach {
