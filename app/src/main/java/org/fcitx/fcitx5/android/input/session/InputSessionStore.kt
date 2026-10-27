@@ -3,7 +3,6 @@
  */
 package org.fcitx.fcitx5.android.input.session
 
-import android.view.inputmethod.EditorInfo
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 
@@ -17,17 +16,7 @@ data class EditorSnapshot(
     val imeOptions: Int = 0,
     val privateImeOptions: String? = null,
     val initialSelection: SessionRange = SessionRange()
-) {
-    companion object {
-        fun from(info: EditorInfo) = EditorSnapshot(
-            packageName = info.packageName.orEmpty(),
-            inputType = info.inputType,
-            imeOptions = info.imeOptions,
-            privateImeOptions = info.privateImeOptions,
-            initialSelection = SessionRange(info.initialSelStart, info.initialSelEnd)
-        )
-    }
-}
+)
 
 data class InputSessionSnapshot(
     val lifecycle: InputLifecycle = InputLifecycle.Inactive,
@@ -37,6 +26,7 @@ data class InputSessionSnapshot(
     val surface: InputSurface = InputSurface.None,
     val previousSurface: InputSurface = InputSurface.None,
     val restarting: Boolean = false,
+    val engine: EngineState = EngineState(),
     val revision: Long = 0
 )
 
@@ -54,6 +44,7 @@ sealed interface InputSessionEvent {
 
     data class SelectionChanged(val start: Int, val end: Int) : InputSessionEvent
     data class SurfaceChanged(val surface: InputSurface) : InputSessionEvent
+    data class EngineChanged(val event: EngineStateEvent) : InputSessionEvent
     data object InputViewFinished : InputSessionEvent
     data object InputFinished : InputSessionEvent
 }
@@ -81,6 +72,8 @@ object InputSessionReducer {
             } else {
                 state.copy(surface = event.surface, previousSurface = state.surface)
             }
+            is InputSessionEvent.EngineChanged ->
+                state.copy(engine = EngineStateReducer.reduce(state.engine, event.event))
             InputSessionEvent.InputViewFinished -> state.copy(
                 lifecycle = InputLifecycle.InputStarted,
                 surface = InputSurface.None,

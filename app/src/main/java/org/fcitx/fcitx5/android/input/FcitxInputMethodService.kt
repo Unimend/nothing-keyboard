@@ -70,9 +70,10 @@ import org.fcitx.fcitx5.android.input.cursor.CursorRange
 import org.fcitx.fcitx5.android.input.cursor.CursorTracker
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
-import org.fcitx.fcitx5.android.input.session.EditorSnapshot
+import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
+import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.forceShowSelf
@@ -250,6 +251,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
         lifecycleScope.launch {
             fcitx.runImmediately { eventFlow }.collect {
+                FcitxEngineStateAdapter.map(it)?.let { stateEvent ->
+                    inputSession.dispatch(InputSessionEvent.EngineChanged(stateEvent))
+                }
                 handleFcitxEvent(it)
             }
         }
@@ -764,7 +768,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         val flags = CapabilityFlags.fromEditorInfo(attribute)
         capabilityFlags = flags
         inputSession.dispatch(
-            InputSessionEvent.InputStarted(EditorSnapshot.from(attribute), flags.flags, restarting)
+            InputSessionEvent.InputStarted(attribute.toEditorSnapshot(), flags.flags, restarting)
         )
         // EditorInfo may change between onStartInput and onStartInputView
         inputDeviceMgr.notifyOnStartInput(attribute)
@@ -791,7 +795,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         Timber.d("onStartInputView: restarting=$restarting")
         inputSession.dispatch(
-            InputSessionEvent.InputViewStarted(EditorSnapshot.from(info), restarting)
+            InputSessionEvent.InputViewStarted(info.toEditorSnapshot(), restarting)
         )
         postFcitxJob {
             focus(true)
