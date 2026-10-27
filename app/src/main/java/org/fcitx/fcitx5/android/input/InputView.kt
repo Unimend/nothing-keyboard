@@ -18,7 +18,6 @@ import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -41,6 +40,8 @@ import org.fcitx.fcitx5.android.input.picker.emoticonPicker
 import org.fcitx.fcitx5.android.input.picker.symbolPicker
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.preedit.PreeditComponent
+import org.fcitx.fcitx5.android.input.session.EngineState
+import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.unset
 import org.fcitx.fcitx5.android.utils.windowManager
@@ -342,41 +343,43 @@ class InputView(
         }
     }
 
-    override fun onStartHandleFcitxEvent() {
-        val inputPanelData = fcitx.runImmediately { inputPanelCached }
-        val inputMethodEntry = fcitx.runImmediately { inputMethodEntryCached }
-        val statusAreaActions = fcitx.runImmediately { statusAreaActionsCached }
-        arrayOf(
-            FcitxEvent.InputPanelEvent(inputPanelData),
-            FcitxEvent.IMChangeEvent(inputMethodEntry),
-            FcitxEvent.StatusAreaEvent(
-                FcitxEvent.StatusAreaEvent.Data(statusAreaActions, inputMethodEntry)
-            )
-        ).forEach { handleFcitxEvent(it) }
-    }
+    private var previousEngineState: EngineState? = null
 
-    override fun handleFcitxEvent(it: FcitxEvent<*>) {
-        when (it) {
-            is FcitxEvent.CandidateListEvent -> {
-                broadcaster.onCandidateUpdate(it.data)
-            }
-            is FcitxEvent.ClientPreeditEvent -> {
-                preeditEmptyState.updatePreeditEmptyState(clientPreedit = it.data)
-                broadcaster.onClientPreeditUpdate(it.data)
-            }
-            is FcitxEvent.InputPanelEvent -> {
-                preeditEmptyState.updatePreeditEmptyState(preedit = it.data.preedit)
-                broadcaster.onInputPanelUpdate(it.data)
-            }
-            is FcitxEvent.IMChangeEvent -> {
-                broadcaster.onImeUpdate(it.data)
-            }
-            is FcitxEvent.StatusAreaEvent -> {
-                punctuation.updatePunctuationMapping(it.data.actions)
-                broadcaster.onStatusAreaUpdate(it.data.actions)
-            }
-            else -> {}
+    override fun handleEngineState(state: EngineState) {
+        val previous = previousEngineState
+        val candidatesChanged = previous == null || previous.candidates != state.candidates
+        val clientPreeditChanged = previous == null || previous.clientPreedit != state.clientPreedit
+        val panelChanged = previous == null || previous.inputPanel != state.inputPanel
+        val inputMethodChanged = previous == null || previous.inputMethod != state.inputMethod
+        val statusChanged = previous == null || previous.statusActions != state.statusActions
+        if (candidatesChanged) {
+            broadcaster.onCandidateUpdate(LegacyEngineStateAdapter.candidates(state.candidates))
         }
+        if (clientPreeditChanged) {
+            val preedit = LegacyEngineStateAdapter.text(state.clientPreedit)
+            broadcaster.onClientPreeditUpdate(preedit)
+        }
+        if (panelChanged) {
+            val panel = LegacyEngineStateAdapter.inputPanel(state.inputPanel)
+            broadcaster.onInputPanelUpdate(panel)
+        }
+        if (clientPreeditChanged || panelChanged) {
+            preeditEmptyState.updatePreeditEmptyState(
+                clientPreedit = LegacyEngineStateAdapter.text(state.clientPreedit),
+                preedit = LegacyEngineStateAdapter.text(state.inputPanel.preedit)
+            )
+        }
+        if (inputMethodChanged) {
+            state.inputMethod?.let {
+                broadcaster.onImeUpdate(LegacyEngineStateAdapter.inputMethod(it))
+            }
+        }
+        if (statusChanged) {
+            val actions = LegacyEngineStateAdapter.statusActions(state.statusActions)
+            punctuation.updatePunctuationMapping(actions)
+            broadcaster.onStatusAreaUpdate(actions)
+        }
+        previousEngineState = state
     }
 
     fun updateSelection(start: Int, end: Int) {

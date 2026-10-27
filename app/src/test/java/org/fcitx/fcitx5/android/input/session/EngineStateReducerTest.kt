@@ -43,7 +43,7 @@ class EngineStateReducerTest {
     @Test
     fun statusAreaUpdatesActionsAndInputMethodAtomically() {
         val inputMethod = EngineInputMethod(
-            "pinyin", "Pinyin", "拼音", "拼", "zh_CN", "", true, "", "", ""
+            "pinyin", "Pinyin", "拼音", "拼", "zh_CN", "", "pinyin", true, "", "", ""
         )
         val action = EngineStatusAction(1, false, true, true, "punctuation", "", "", "", emptyList())
 

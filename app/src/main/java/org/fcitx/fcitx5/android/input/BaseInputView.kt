@@ -17,13 +17,13 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs
+import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.utils.item
 import org.fcitx.fcitx5.android.utils.navbarFrameHeight
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
@@ -36,20 +36,13 @@ abstract class BaseInputView(
     val theme: Theme
 ) : ConstraintLayout(service) {
 
-    /**
-     * Update UI (from cached events in FcitxAPI) to match fcitx's state, before ready to receive real events
-     */
-    protected abstract fun onStartHandleFcitxEvent()
-
-    protected abstract fun handleFcitxEvent(it: FcitxEvent<*>)
+    protected abstract fun handleEngineState(state: EngineState)
 
     private var eventHandlerJob: Job? = null
 
-    private fun setupFcitxEventHandler() {
+    private fun setupEngineStateCollector() {
         eventHandlerJob = service.lifecycleScope.launch {
-            fcitx.runImmediately { eventFlow }.collect {
-                handleFcitxEvent(it)
-            }
+            service.inputSession.state.collect { handleEngineState(it.engine) }
         }
     }
 
@@ -57,9 +50,8 @@ abstract class BaseInputView(
         set(value) {
             field = value
             if (field) {
-                onStartHandleFcitxEvent()
                 if (eventHandlerJob == null) {
-                    setupFcitxEventHandler()
+                    setupEngineStateCollector()
                 }
             } else {
                 eventHandlerJob?.cancel()

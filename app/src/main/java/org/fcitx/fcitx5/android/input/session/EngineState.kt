@@ -48,6 +48,7 @@ data class EngineInputMethod(
     val label: String,
     val languageCode: String,
     val icon: String,
+    val addon: String,
     val configurable: Boolean,
     val subModeName: String,
     val subModeLabel: String,

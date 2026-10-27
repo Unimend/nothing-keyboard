@@ -16,13 +16,14 @@ import android.view.WindowInsets
 import android.widget.TextView
 import androidx.annotation.Size
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.floating.PagedCandidatesUi
 import org.fcitx.fcitx5.android.input.preedit.PreeditUi
+import org.fcitx.fcitx5.android.input.session.EngineState
+import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.below
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -55,8 +56,8 @@ class CandidatesView(
     private val itemPaddingVertical by candidatesPrefs.itemPaddingVertical
     private val itemPaddingHorizontal by candidatesPrefs.itemPaddingHorizontal
 
-    private var inputPanel = FcitxEvent.InputPanelEvent.Data()
-    private var paged = FcitxEvent.PagedCandidateEvent.Data.Empty
+    private var inputPanel = LegacyEngineStateAdapter.inputPanel(EngineState().inputPanel)
+    private var paged = LegacyEngineStateAdapter.pagedCandidates(EngineState().pagedCandidates)
 
     /**
      * horizontal, bottom, top
@@ -105,23 +106,22 @@ class CandidatesView(
         onNextPage = { fcitx.launchOnReady { it.offsetCandidatePage(1) } }
     )
 
-    override fun onStartHandleFcitxEvent() {
-        val inputPanelData = fcitx.runImmediately { inputPanelCached }
-        handleFcitxEvent(FcitxEvent.InputPanelEvent(inputPanelData))
-    }
+    private var previousEngineState: EngineState? = null
 
-    override fun handleFcitxEvent(it: FcitxEvent<*>) {
-        when (it) {
-            is FcitxEvent.InputPanelEvent -> {
-                inputPanel = it.data
-                updateUi()
-            }
-            is FcitxEvent.PagedCandidateEvent -> {
-                paged = it.data
-                updateUi()
-            }
-            else -> {}
+    override fun handleEngineState(state: EngineState) {
+        val previous = previousEngineState
+        val panelChanged = previous == null || previous.inputPanel != state.inputPanel
+        val pagedChanged = previous == null || previous.pagedCandidates != state.pagedCandidates
+        if (panelChanged) {
+            inputPanel = LegacyEngineStateAdapter.inputPanel(state.inputPanel)
         }
+        if (pagedChanged) {
+            paged = LegacyEngineStateAdapter.pagedCandidates(state.pagedCandidates)
+        }
+        if (panelChanged || pagedChanged) {
+            updateUi()
+        }
+        previousEngineState = state
     }
 
     private fun evaluateVisibility(): Boolean {

@@ -61,7 +61,7 @@ object FcitxEngineStateAdapter {
         EngineCandidate(label, text, comment, spaceBetweenComment)
 
     private fun InputMethodEntry.toEngineInputMethod() = EngineInputMethod(
-        uniqueName, name, nativeName, label, languageCode, icon, isConfigurable,
+        uniqueName, name, nativeName, label, languageCode, icon, addon, isConfigurable,
         subMode.name, subMode.label, subMode.icon
     )
 

@@ -70,7 +70,7 @@ import org.fcitx.fcitx5.android.input.cursor.CursorRange
 import org.fcitx.fcitx5.android.input.cursor.CursorTracker
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
-import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
+import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
@@ -94,6 +94,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     val inputSession = InputSessionStore()
 
     private lateinit var fcitx: FcitxConnection
+    private lateinit var engineBridge: FcitxEngineBridge
 
     private var jobs = Channel<Job>(capacity = Channel.UNLIMITED)
 
@@ -249,14 +250,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         lifecycleScope.launch {
             jobs.consumeEach { it.join() }
         }
-        lifecycleScope.launch {
-            fcitx.runImmediately { eventFlow }.collect {
-                FcitxEngineStateAdapter.map(it)?.let { stateEvent ->
-                    inputSession.dispatch(InputSessionEvent.EngineChanged(stateEvent))
-                }
-                handleFcitxEvent(it)
-            }
-        }
+        engineBridge = FcitxEngineBridge(fcitx, inputSession, ::handleFcitxEvent)
+        engineBridge.startIn(lifecycleScope)
         pkgNameCache = PackageNameCache(this)
         recreateInputViewPrefs.forEach {
             it.registerOnChangeListener(recreateInputViewListener)
