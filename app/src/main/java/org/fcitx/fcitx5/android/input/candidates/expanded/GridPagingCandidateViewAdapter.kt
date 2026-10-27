@@ -33,14 +33,14 @@ abstract class GridPagingCandidateViewAdapter(theme: Theme) : PagingCandidateVie
     }
 
     fun measureWidth(position: Int): Float {
-        val candidate = getItem(position) ?: return 0f
+        val candidate = getItem(position)?.candidate ?: return 0f
         return measuredWidths[candidate.textWithComment()]
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CandidateViewHolder {
         return super.onCreateViewHolder(parent, viewType).apply {
             itemView.apply {
-                layoutParams = GridLayoutManager.LayoutParams(matchParent, dp(40))
+                layoutParams = GridLayoutManager.LayoutParams(matchParent, dp(48))
             }
         }
     }

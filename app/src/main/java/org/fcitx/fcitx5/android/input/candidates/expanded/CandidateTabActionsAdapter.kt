@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import org.fcitx.fcitx5.android.core.CandidateAction
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
+import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -110,6 +111,7 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
 
         fun update(tab: CandidateAction) {
             label.text = tab.text
+            label.applyNothingLegendTypography(theme, tab.text, bold = false)
             checkable = tab.isCheckable
             root.isActivated = tab.isChecked
         }

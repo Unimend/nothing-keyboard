@@ -4,6 +4,8 @@
 package org.fcitx.fcitx5.android.input
 
 import android.graphics.Typeface
+import android.text.TextPaint
+import android.text.style.MetricAffectingSpan
 import android.widget.TextView
 import androidx.core.content.res.ResourcesCompat
 import org.fcitx.fcitx5.android.R
@@ -37,6 +39,18 @@ fun TextView.applyNothingTypography(theme: Theme, bold: Boolean = true) {
     if (theme.name != "NothingDark") return
     typeface = NothingTypefaceCache.get(this, bold)
     letterSpacing = 0.015f
+}
+
+fun TextView.nothingTypeface(theme: Theme, bold: Boolean = true): Typeface? =
+    if (theme.name == "NothingDark") NothingTypefaceCache.get(this, bold) else null
+
+class NothingTypefaceSpan(private val newTypeface: Typeface) : MetricAffectingSpan() {
+    override fun updateDrawState(textPaint: TextPaint) = apply(textPaint)
+    override fun updateMeasureState(textPaint: TextPaint) = apply(textPaint)
+
+    private fun apply(textPaint: TextPaint) {
+        textPaint.typeface = newTypeface
+    }
 }
 
 /** Doto for Latin letters/numbers; Android's system font for punctuation and symbols. */

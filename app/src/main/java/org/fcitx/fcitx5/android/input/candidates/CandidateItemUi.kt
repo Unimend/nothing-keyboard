@@ -12,11 +12,14 @@ import android.view.Gravity
 import android.view.View
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
+import androidx.core.text.inSpans
 import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
-import org.fcitx.fcitx5.android.input.applyNothingTypography
+import org.fcitx.fcitx5.android.input.NothingTypefaceSpan
+import org.fcitx.fcitx5.android.input.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.nothingTypeface
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -52,12 +55,15 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
     }
 
     private val text = view(::AutoScaleTextView) {
-        scaleMode = AutoScaleTextView.Mode.Proportional
+        // Candidate words keep one stable reading size. Long words expand their item width and
+        // are reached by scrolling; they must never become visually less important by shrinking.
+        scaleMode = AutoScaleTextView.Mode.None
         textSize = 20f // sp
         isSingleLine = true
         gravity = Gravity.START or Gravity.CENTER_VERTICAL
         setTextColor(theme.candidateTextColor)
-        applyNothingTypography(theme)
+        // Chinese candidates use the crisp system CJK font. Latin/pinyin is switched to Doto
+        // when content is bound, instead of forcing the whole mixed line through font fallback.
     }
 
     override val root = view(::CustomGestureView) {
@@ -99,6 +105,8 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         }
         val fg = theme.candidateTextColor
         val altFg = theme.candidateCommentColor
+        text.applyNothingLegendTypography(theme, candidate.text)
+        val commentTypeface = text.nothingTypeface(theme, bold = false)
         text.text = buildSpannedString {
             color(fg) {
                 append(candidate.text)
@@ -108,7 +116,13 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
                     append(" ")
                 }
                 color(altFg) {
-                    append(candidate.comment)
+                    if (commentTypeface != null) {
+                        inSpans(NothingTypefaceSpan(commentTypeface)) {
+                            append(candidate.comment)
+                        }
+                    } else {
+                        append(candidate.comment)
+                    }
                 }
             }
         }

@@ -6,9 +6,8 @@
 package org.fcitx.fcitx5.android.input.candidates.horizontal
 
 import android.content.res.Configuration
-import androidx.core.view.updateLayoutParams
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.flexbox.FlexboxLayoutManager
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
@@ -21,7 +20,6 @@ import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEve
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
-import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AlwaysFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AutoFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
@@ -52,16 +50,36 @@ class HorizontalCandidateComponent :
     }
 
     private var layoutMinWidth = 0
-    private var layoutFlexGrow = 1f
 
-    /**
-     * (for [HorizontalCandidateMode.AutoFillWidth] only)
-     * Second layout pass is needed when:
-     * [^1] total candidates count < maxSpanCount && [^2] RecyclerView cannot display all of them
-     * In that case, displayed candidates should be stretched evenly (by setting flexGrow to 1.0f).
-     */
-    private var secondLayoutPassNeeded = false
-    private var secondLayoutPassDone = false
+    private var candidateGeneration = 0
+    private var loadMoreInFlight = false
+    private var reachedCandidateEnd = false
+
+    private fun loadMoreCandidates() {
+        if (loadMoreInFlight || reachedCandidateEnd) return
+        val offset = adapter.candidates.size
+        val total = adapter.total
+        if (total >= 0 && offset >= total) {
+            reachedCandidateEnd = true
+            return
+        }
+        val generation = candidateGeneration
+        loadMoreInFlight = true
+        fcitx.launchOnReady { api ->
+            val next = api.getCandidates(offset, 32)
+            view.post {
+                if (generation != candidateGeneration) return@post
+                loadMoreInFlight = false
+                if (next.isEmpty()) {
+                    reachedCandidateEnd = true
+                    return@post
+                }
+                adapter.appendCandidates(next, total)
+                reachedCandidateEnd = next.size < 32 ||
+                    (total >= 0 && adapter.candidates.size >= total)
+            }
+        }
+    }
 
     // Since expanded candidate window is created once the expand button was clicked,
     // we need to replay the last offset
@@ -84,12 +102,12 @@ class HorizontalCandidateComponent :
         object : HorizontalCandidateViewAdapter(theme) {
             override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
                 super.onBindViewHolder(holder, position)
-                holder.itemView.updateLayoutParams<FlexboxLayoutManager.LayoutParams> {
-                    minWidth = layoutMinWidth
-                    flexGrow = layoutFlexGrow
-                }
+                holder.itemView.minimumWidth = layoutMinWidth
                 holder.itemView.setOnClickListener {
-                    fcitx.launchOnReady { it.select(holder.idx) }
+                    val candidateIndex = holder.idx
+                    if (candidateIndex >= 0) {
+                        fcitx.launchOnReady { it.select(candidateIndex) }
+                    }
                 }
                 holder.itemView.setOnLongClickListener {
                     inputView.showCandidateActionMenu(holder.idx, holder.candidate.text, holder.ui.root)
@@ -105,33 +123,12 @@ class HorizontalCandidateComponent :
         }
     }
 
-    val layoutManager: FlexboxLayoutManager by lazy {
-        object : FlexboxLayoutManager(context) {
-            override fun canScrollVertically() = false
-            override fun canScrollHorizontally() = false
+    val layoutManager: LinearLayoutManager by lazy {
+        object : LinearLayoutManager(context, HORIZONTAL, false) {
             override fun onLayoutCompleted(state: RecyclerView.State) {
                 super.onLayoutCompleted(state)
-                val cnt = this.childCount
-                if (secondLayoutPassNeeded) {
-                    if (cnt < adapter.candidates.size) {
-                        // [^2] RecyclerView can't display all candidates
-                        // update LayoutParams in onLayoutCompleted would trigger another
-                        // onLayoutCompleted, skip the second one to avoid infinite loop
-                        if (secondLayoutPassDone) return
-                        secondLayoutPassDone = true
-                        for (i in 0 until cnt) {
-                            getChildAt(i)!!.updateLayoutParams<LayoutParams> {
-                                flexGrow = 1f
-                            }
-                        }
-                    } else {
-                        secondLayoutPassNeeded = false
-                    }
-                }
-                refreshExpanded(cnt)
+                refreshExpanded(childCount)
             }
-            // no need to override `generate{,Default}LayoutParams`, because HorizontalCandidateViewAdapter
-            // guarantees ViewHolder's layoutParams to be `FlexboxLayoutManager.LayoutParams`
         }
     }
 
@@ -147,36 +144,39 @@ class HorizontalCandidateComponent :
         }.apply {
             id = R.id.candidate_view
             itemAnimator = null
+            overScrollMode = RecyclerView.OVER_SCROLL_NEVER
+            isHorizontalScrollBarEnabled = false
             adapter = this@HorizontalCandidateComponent.adapter
             layoutManager = this@HorizontalCandidateComponent.layoutManager
+            addOnScrollListener(object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    if (dx <= 0) return
+                    val lastVisible = this@HorizontalCandidateComponent.layoutManager
+                        .findLastVisibleItemPosition()
+                    if (lastVisible >= this@HorizontalCandidateComponent.adapter.itemCount - 4) {
+                        loadMoreCandidates()
+                    }
+                }
+            })
         }
     }
 
     override fun onCandidateUpdate(data: FcitxEvent.CandidateListEvent.Data) {
+        // A new composition starts a new search, so its candidate rail must start at the primary
+        // candidate. Subsequent user drags remain untouched until the candidate data changes.
+        val previousCandidates = adapter.candidates
+        candidateGeneration++
+        loadMoreInFlight = false
+        reachedCandidateEnd = false
         val candidates = data.candidates
         val total = data.total
-        val maxSpanCount = maxSpanCountPref.getValue()
-        when (fillStyle) {
-            NeverFillWidth -> {
-                layoutMinWidth = 0
-                layoutFlexGrow = 0f
-                secondLayoutPassNeeded = false
-            }
-            AutoFillWidth -> {
-                layoutMinWidth = view.width / maxSpanCount
-                layoutFlexGrow = if (candidates.size < maxSpanCount) 0f else 1f
-                // [^1] total candidates count < maxSpanCount
-                secondLayoutPassNeeded = candidates.size < maxSpanCount
-                secondLayoutPassDone = false
-            }
-            AlwaysFillWidth -> {
-                layoutMinWidth = 0
-                layoutFlexGrow = 1f
-                secondLayoutPassNeeded = false
-            }
-        }
+        layoutMinWidth = if (fillStyle == NeverFillWidth) 0
+            else view.width / maxSpanCountPref.getValue()
         adapter.updateCandidates(candidates, total)
-        // not sure why empty candidates won't trigger `FlexboxLayoutManager#onLayoutCompleted()`
+        if (!previousCandidates.contentEquals(candidates)) {
+            view.scrollToPosition(0)
+        }
+        // An empty adapter may not trigger LayoutManager.onLayoutCompleted().
         if (candidates.isEmpty()) {
             refreshExpanded(0)
         }

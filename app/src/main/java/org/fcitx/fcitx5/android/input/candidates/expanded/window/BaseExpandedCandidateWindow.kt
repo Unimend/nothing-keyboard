@@ -179,7 +179,12 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
 
     fun bindCandidateUiViewHolder(holder: CandidateViewHolder) {
         holder.itemView.setOnClickListener {
-            fcitx.launchOnReady { it.select(holder.idx) }
+            // Snapshot the immutable engine index at touch completion. Never infer it from the
+            // RecyclerView position: paging may refresh between layout and click dispatch.
+            val candidateIndex = holder.idx
+            if (candidateIndex >= 0) {
+                fcitx.launchOnReady { it.select(candidateIndex) }
+            }
         }
         holder.itemView.setOnLongClickListener {
             inputView.showCandidateActionMenu(holder.idx, holder.candidate.text, holder.ui.root)
