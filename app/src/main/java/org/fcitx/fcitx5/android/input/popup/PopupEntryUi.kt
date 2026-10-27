@@ -10,7 +10,8 @@ import android.view.ViewOutlineProvider
 import android.widget.TextView
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.centerHorizontally
@@ -51,6 +52,6 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeigh
 
     fun setText(text: String) {
         textView.text = text
-        textView.applyNothingLegendTypography(theme, text)
+        textView.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
     }
 }

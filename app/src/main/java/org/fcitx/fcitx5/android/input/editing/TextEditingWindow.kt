@@ -12,23 +12,16 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
-import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
-import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.GestureType
-import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
-import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
-import org.fcitx.fcitx5.android.input.gesture.GesturePhase
-import org.fcitx.fcitx5.android.input.gesture.GestureSnapshot
-import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureAction
-import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureConfig
-import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
+import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.mechdancer.dependency.manager.must
-import splitties.dimensions.dp
 
 class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     InputBroadcastReceiver {
@@ -47,6 +40,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
 
     private val session = EditingSession()
     private val commandExecutor by lazy { AndroidEditingCommandExecutor(service) }
+    private val navigator by lazy { InputNavigator(service, windowManager) }
 
     private fun sendDirectionKey(keyEventCode: Int) {
         commandExecutor.execute(session.move(keyEventCode))
@@ -92,49 +86,29 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
             backspaceButton.onClickWithRepeating {
                 commandExecutor.execute(session.backspace())
             }
-            backspaceButton.apply {
-                swipeEnabled = true
-                swipeRepeatEnabled = true
-                swipeThresholdX = dp(KeyboardGestureConfig.SelectionStepDp)
-                swipeThresholdY = dp(KeyboardGestureConfig.DeleteVerticalStepDp)
-                onGestureListener = OnGestureListener { view, event ->
-                    val phase = when (event.type) {
-                        GestureType.Move -> GesturePhase.Move
-                        GestureType.Up -> GesturePhase.Up
-                        else -> return@OnGestureListener false
-                    }
-                    val decision = KeyboardGesturePolicy.backspace(
-                        GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
-                    )
-                    when (val action = decision.action) {
-                        is KeyboardGestureAction.MoveSelection -> {
-                            commandExecutor.execute(EditingCommand.ExtendSelection(action.steps))
-                            if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
-                        }
-                        is KeyboardGestureAction.DeleteSelection -> {
-                            if (action.steps != 0) {
-                                commandExecutor.execute(session.backspace())
-                            }
-                        }
-                        KeyboardGestureAction.ClearAllText -> {
-                            InputFeedbacks.hapticFeedback(view, longPress = true)
-                            commandExecutor.execute(session.clearAll())
-                            updateSelection(session.hasSelection, session.userSelection)
-                        }
-                        KeyboardGestureAction.Undo -> {
-                            InputFeedbacks.hapticFeedback(view, longPress = true)
-                            commandExecutor.execute(EditingCommand.Undo)
-                        }
-                        else -> Unit
-                    }
-                    decision.consumed
-                }
-            }
+            BackspaceGestureController.bind(
+                backspaceButton,
+                theme,
+                hapticOnRepeat,
+                BackspaceGestureController.Actions(
+                    moveSelection = {
+                        commandExecutor.execute(EditingCommand.ExtendSelection(it))
+                    },
+                    deleteSelection = {
+                        if (it != 0) commandExecutor.execute(EditingCommand.DeleteSelection)
+                    },
+                    clearAll = {
+                        commandExecutor.execute(session.clearAll())
+                        updateSelection(session.hasSelection, session.userSelection)
+                    },
+                    undo = { commandExecutor.execute(EditingCommand.Undo) }
+                )
+            )
             clipboardButton.setOnClickListener {
-                windowManager.attachWindow(ClipboardWindow())
+                navigator.navigate(InputNavigationCommand.ShowClipboard)
             }
             keyboardButton.setOnClickListener {
-                windowManager.attachWindow(KeyboardWindow)
+                navigator.navigate(InputNavigationCommand.ShowKeyboard())
             }
         }
     }

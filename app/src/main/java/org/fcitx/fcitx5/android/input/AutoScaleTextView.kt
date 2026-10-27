@@ -9,6 +9,10 @@ import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
+import android.graphics.Typeface
+import android.text.Spanned
+import android.text.TextPaint
+import android.text.style.CharacterStyle
 import android.util.AttributeSet
 import android.view.Gravity
 import android.widget.TextView
@@ -54,14 +58,50 @@ class AutoScaleTextView @JvmOverloads constructor(
     private var textScaleX = 1.0f
     private var textScaleY = 1.0f
 
+    private fun invalidateTextMetrics() {
+        needsMeasureText = true
+        needsCalculateTransform = true
+        requestLayout()
+        invalidate()
+    }
+
     override fun setText(charSequence: CharSequence?, bufferType: BufferType) {
-        if (charSequence == null || !text.contentEquals(charSequence)) {
-            needsMeasureText = true
-            needsCalculateTransform = true
+        if (charSequence == null || !text.contentEquals(charSequence) || charSequence is Spanned) {
             super.setText(charSequence, bufferType)
-            requestLayout()
-            invalidate()
+            invalidateTextMetrics()
         }
+    }
+
+    override fun setTextSize(unit: Int, size: Float) {
+        super.setTextSize(unit, size)
+        invalidateTextMetrics()
+    }
+
+    override fun setTypeface(typeface: Typeface?) {
+        super.setTypeface(typeface)
+        invalidateTextMetrics()
+    }
+
+    override fun setTypeface(typeface: Typeface?, style: Int) {
+        super.setTypeface(typeface, style)
+        invalidateTextMetrics()
+    }
+
+    override fun setLetterSpacing(letterSpacing: Float) {
+        super.setLetterSpacing(letterSpacing)
+        invalidateTextMetrics()
+    }
+
+    override fun setTextScaleX(size: Float) {
+        super.setTextScaleX(size)
+        invalidateTextMetrics()
+    }
+
+    override fun setGravity(gravity: Int) {
+        super.setGravity(gravity)
+        needsCalculateTransform = true
+        requestLayout()
+        invalidate()
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -87,19 +127,37 @@ class AutoScaleTextView @JvmOverloads constructor(
 
     private fun measureTextBounds(): Rect {
         if (needsMeasureText) {
-            val paint = paint
-            paint.getFontMetrics(fontMetrics)
+            var width = 0f
+            var top = Float.POSITIVE_INFINITY
+            var bottom = Float.NEGATIVE_INFINITY
+            forEachStyledRun { value, start, end, runPaint ->
+                width += runPaint.measureText(value, start, end)
+                val metrics = runPaint.fontMetrics
+                top = min(top, metrics.top)
+                bottom = max(bottom, metrics.bottom)
+            }
+            if (!top.isFinite() || !bottom.isFinite()) {
+                paint.getFontMetrics(fontMetrics)
+                top = fontMetrics.top
+                bottom = fontMetrics.bottom
+            } else {
+                fontMetrics.top = top
+                fontMetrics.ascent = top
+                fontMetrics.descent = bottom
+                fontMetrics.bottom = bottom
+            }
             val codePointCount = Character.codePointCount(text, 0, text.length)
             if (codePointCount == 1) {
                 // use actual text bounds when there is only one "character",
                 // e.g. full-width punctuation
-                paint.getTextBounds(text.toString(), 0, text.length, textBounds)
+                val runPaint = styledPaintAt(0)
+                runPaint.getTextBounds(text.toString(), 0, text.length, textBounds)
             } else {
                 textBounds.set(
                     /* left = */ 0,
-                    /* top = */ floor(fontMetrics.top).toInt(),
-                    /* right = */ ceil(paint.measureText(text.toString())).toInt(),
-                    /* bottom = */ ceil(fontMetrics.bottom).toInt()
+                    /* top = */ floor(top).toInt(),
+                    /* right = */ ceil(width).toInt(),
+                    /* bottom = */ ceil(bottom).toInt()
                 )
             }
             needsMeasureText = false
@@ -188,13 +246,44 @@ class AutoScaleTextView @JvmOverloads constructor(
             calculateTransform(width, height)
             needsCalculateTransform = false
         }
-        val paint = paint
-        paint.color = currentTextColor
         canvas.withSave {
             translate(scrollX.toFloat(), scrollY.toFloat())
             translate(baselineX, baselineY)
             scale(textScaleX, textScaleY)
-            drawText(text.toString(), 0.0f, 0.0f, paint)
+            var runX = 0f
+            forEachStyledRun { value, start, end, runPaint ->
+                drawText(value, start, end, runX, 0f, runPaint)
+                runX += runPaint.measureText(value, start, end)
+            }
+        }
+    }
+
+    private fun styledPaintAt(index: Int): TextPaint {
+        val runPaint = TextPaint(paint).apply { color = currentTextColor }
+        val spanned = text as? Spanned ?: return runPaint
+        spanned.getSpans(index, min(index + 1, spanned.length), CharacterStyle::class.java)
+            .forEach { it.updateDrawState(runPaint) }
+        return runPaint
+    }
+
+    private inline fun forEachStyledRun(
+        block: (value: String, start: Int, end: Int, paint: TextPaint) -> Unit
+    ) {
+        val value = text.toString()
+        if (value.isEmpty()) return
+        val spanned = text as? Spanned
+        if (spanned == null) {
+            block(value, 0, value.length, TextPaint(paint).apply { color = currentTextColor })
+            return
+        }
+        var start = 0
+        while (start < spanned.length) {
+            val end = spanned.nextSpanTransition(start, spanned.length, CharacterStyle::class.java)
+            val runPaint = TextPaint(paint).apply { color = currentTextColor }
+            spanned.getSpans(start, end, CharacterStyle::class.java)
+                .forEach { it.updateDrawState(runPaint) }
+            block(value, start, end, runPaint)
+            start = end
         }
     }
 

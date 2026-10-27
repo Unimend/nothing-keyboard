@@ -28,6 +28,7 @@ import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
+import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
@@ -67,6 +68,11 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.cursor.CursorRange
 import org.fcitx.fcitx5.android.input.cursor.CursorTracker
+import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
+import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
+import org.fcitx.fcitx5.android.input.session.EditorSnapshot
+import org.fcitx.fcitx5.android.input.session.InputSessionEvent
+import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.forceShowSelf
@@ -83,6 +89,8 @@ import timber.log.Timber
 import kotlin.math.max
 
 class FcitxInputMethodService : LifecycleInputMethodService() {
+
+    val inputSession = InputSessionStore()
 
     private lateinit var fcitx: FcitxConnection
 
@@ -129,6 +137,37 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private val composing = CursorRange()
     private var composingText = FormattedText.Empty
+
+    private val destructiveEditing = DestructiveEditingController(
+        object : DestructiveEditingHost {
+            override val editingConnection: InputConnection?
+                get() = currentInputConnection
+            override val editingSelection: CursorRange
+                get() = selection.latest
+            override val hasActiveComposition: Boolean
+                get() = composing.isNotEmpty()
+            override val shouldSimulateBackspaceKey: Boolean
+                get() = currentInputEditorInfo.privateImeOptions != DeleteSurroundingFlag ||
+                    currentInputEditorInfo.inputType and InputType.TYPE_MASK_CLASS ==
+                    InputType.TYPE_NULL
+
+            override fun predictEditingSelection(start: Int, end: Int) {
+                selection.predict(start, end)
+            }
+
+            override fun resetEditingSelection(start: Int, end: Int) {
+                selection.resetTo(start, end)
+            }
+
+            override fun resetEditingComposition() = resetComposingState()
+
+            override fun sendBackspaceKey() = sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+
+            override fun resetInputEngine() {
+                postFcitxJob { reset() }
+            }
+        }
+    )
 
     private fun resetComposingState() {
         composing.clear()
@@ -246,7 +285,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
                 if (it.states.virtual) {
                     // KeyEvent from virtual keyboard
                     when (it.sym.sym) {
-                        FcitxKeyMapping.FcitxKey_BackSpace -> handleBackspaceKey()
+                        FcitxKeyMapping.FcitxKey_BackSpace -> deleteBackward()
                         FcitxKeyMapping.FcitxKey_Return -> handleReturnKey()
                         FcitxKeyMapping.FcitxKey_Left -> handleArrowKey(KeyEvent.KEYCODE_DPAD_LEFT)
                         FcitxKeyMapping.FcitxKey_Right -> handleArrowKey(KeyEvent.KEYCODE_DPAD_RIGHT)
@@ -357,35 +396,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
     }
 
-    private fun handleBackspaceKey() {
-        val lastSelection = selection.latest
-        if (lastSelection.isNotEmpty()) {
-            selection.predict(lastSelection.start)
-        } else if (lastSelection.start > 0) {
-            selection.predictOffset(-1)
-        }
-        // In practice nobody (apart from ourselves) would set `privateImeOptions` to our
-        // `DeleteSurroundingFlag`, leading to a behavior of simulating backspace key pressing
-        // in almost every EditText.
-        if (currentInputEditorInfo.privateImeOptions != DeleteSurroundingFlag ||
-            currentInputEditorInfo.inputType and InputType.TYPE_MASK_CLASS == InputType.TYPE_NULL
-        ) {
-            sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
-            return
-        }
-        if (lastSelection.isEmpty()) {
-            if (lastSelection.start <= 0) {
-                sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
-                return
-            }
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                currentInputConnection.deleteSurroundingTextInCodePoints(1, 0)
-            } else {
-                currentInputConnection.deleteSurroundingText(1, 0)
-            }
-        } else {
-            currentInputConnection.commitText("", 0)
-        }
+    fun deleteBackward() {
+        destructiveEditing.deleteBackward()
     }
 
     private fun handleReturnKey() {
@@ -430,6 +442,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     fun commitText(text: String, cursor: Int = -1) {
         val ic = currentInputConnection ?: return
+        destructiveEditing.invalidateUndo()
         // when composing text equals commit content, finish composing text as-is
         if (composing.isNotEmpty() && composingText.toString() == text) {
             val c = if (cursor == -1) text.length else cursor
@@ -462,32 +475,11 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     fun clearAllText() {
-        val ic = currentInputConnection ?: return
-        resetComposingState()
-        selection.predict(0, 0)
-        ic.withBatchEdit {
-            performContextMenuAction(android.R.id.selectAll)
-            commitText("", 1)
-            // Some editors keep reporting the temporary select-all range after an empty commit.
-            // Explicitly collapse it so every surface observes a normal insertion cursor.
-            setSelection(0, 0)
-        }
-        selection.resetTo(0, 0)
-        postFcitxJob { reset() }
+        destructiveEditing.clearAll()
     }
 
     fun undoLastEdit() {
-        val ic = currentInputConnection ?: return
-        if (!ic.performContextMenuAction(android.R.id.undo)) {
-            val now = SystemClock.uptimeMillis()
-            val meta = KeyEvent.META_CTRL_ON
-            ic.sendKeyEvent(
-                KeyEvent(now, now, KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_Z, 0, meta)
-            )
-            ic.sendKeyEvent(
-                KeyEvent(now, now, KeyEvent.ACTION_UP, KeyEvent.KEYCODE_Z, 0, meta)
-            )
-        }
+        destructiveEditing.undo()
     }
 
     private fun sendDownKeyEvent(eventTime: Long, keyEventCode: Int, metaState: Int = 0) {
@@ -523,10 +515,11 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     fun deleteSelection() {
-        val lastSelection = selection.latest
-        if (lastSelection.isEmpty()) return
-        selection.predict(lastSelection.start)
-        currentInputConnection?.commitText("", 1)
+        destructiveEditing.deleteSelection()
+    }
+
+    fun invalidateDestructiveUndo() {
+        destructiveEditing.invalidateUndo()
     }
 
     fun sendCombinationKeyEvents(
@@ -770,6 +763,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         resetComposingState()
         val flags = CapabilityFlags.fromEditorInfo(attribute)
         capabilityFlags = flags
+        inputSession.dispatch(
+            InputSessionEvent.InputStarted(EditorSnapshot.from(attribute), flags.flags, restarting)
+        )
         // EditorInfo may change between onStartInput and onStartInputView
         inputDeviceMgr.notifyOnStartInput(attribute)
         Timber.d("onStartInput: initialSel=${selection.current}, restarting=$restarting")
@@ -794,6 +790,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         Timber.d("onStartInputView: restarting=$restarting")
+        inputSession.dispatch(
+            InputSessionEvent.InputViewStarted(EditorSnapshot.from(info), restarting)
+        )
         postFcitxJob {
             focus(true)
         }
@@ -824,6 +823,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     ) {
         // onUpdateSelection can left behind when user types quickly enough, eg. long press backspace
         cursorUpdateIndex += 1
+        inputSession.dispatch(InputSessionEvent.SelectionChanged(newSelStart, newSelEnd))
         Timber.d("onUpdateSelection: old=[$oldSelStart,$oldSelEnd] new=[$newSelStart,$newSelEnd] cand=[$candidatesStart,$candidatesEnd]")
         handleCursorUpdate(
             newSelStart,
@@ -1086,6 +1086,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
+        inputSession.dispatch(InputSessionEvent.InputViewFinished)
         decorLocationUpdated = false
         inputDeviceMgr.onFinishInputView()
         currentInputConnection?.apply {
@@ -1102,6 +1103,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInput() {
         Timber.d("onFinishInput")
+        inputSession.dispatch(InputSessionEvent.InputFinished)
         postFcitxJob {
             focus(false)
         }

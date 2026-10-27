@@ -32,8 +32,8 @@ import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
-import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
-import org.fcitx.fcitx5.android.input.design.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
@@ -270,7 +270,7 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         // Keep the visual language deliberately split: Doto for Latin letters and
         // numbers, the system font for punctuation and the symbol library.
-        applyNothingLegendTypography(theme, def.displayText, bold = def.textStyle != Typeface.NORMAL)
+        applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = def.textStyle != Typeface.NORMAL)
         setTextColor(
             when (def.variant) {
                 Variant.Normal -> theme.keyTextColor
@@ -315,8 +315,8 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
             TypedValue.COMPLEX_UNIT_DIP,
             if (theme.isNothingStyle) NothingDesignTokens.Typography.KeyAltLegendSp else 10.666667f
         )
-        applyNothingLegendTypography(theme, def.altText)
         text = def.altText
+        applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         setTextColor(
             when (def.variant) {

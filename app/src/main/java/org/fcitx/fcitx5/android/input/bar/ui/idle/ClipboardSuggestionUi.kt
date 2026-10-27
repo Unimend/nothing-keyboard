@@ -8,6 +8,8 @@ import android.content.Context
 import android.text.TextUtils
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.rippleDrawable
 import splitties.dimensions.dp
@@ -63,6 +65,11 @@ class ClipboardSuggestionUi(override val ctx: Context, private val theme: Theme)
     val suggestionView = CustomGestureView(ctx).apply {
         add(layout, lParams(wrapContent, matchParent))
         background = rippleDrawable(theme.keyPressHighlightColor)
+    }
+
+    fun setContent(value: CharSequence) {
+        text.text = value
+        text.applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
     }
 
     override val root = constraintLayout {

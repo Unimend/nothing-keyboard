@@ -5,7 +5,6 @@
 package org.fcitx.fcitx5.android.input.keyboard
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.Rect
 import android.view.MotionEvent
 import androidx.annotation.CallSuper
@@ -21,15 +20,16 @@ import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.GestureType
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
 import org.fcitx.fcitx5.android.input.gesture.GesturePhase
 import org.fcitx.fcitx5.android.input.gesture.GestureSnapshot
+import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureAction
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureConfig
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
+import org.fcitx.fcitx5.android.input.feedback.KeyboardFeedback
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import splitties.dimensions.dp
@@ -83,30 +83,6 @@ abstract class BaseKeyboard(
 
     // a rather large threshold effectively disables swipe of the direction
     private val disabledSwipeThreshold = dp(KeyboardGestureConfig.DisabledAxisDp)
-
-    private fun showGestureFeedback(view: KeyView) {
-        if (!theme.isNothingStyle || view.width <= 0 || view.height <= 0) return
-        val dots = NothingDotMatrixDrawable(
-            color = Color.rgb(215, 25, 33),
-            columns = 4,
-            rows = 1,
-            dotDiameter = dp(4f).toFloat(),
-            dotGap = dp(3f).toFloat(),
-            initialActiveDots = 0,
-            inactiveAlpha = 0.16f
-        ).apply { setBounds(0, 0, view.width, view.height) }
-        view.overlay.add(dots)
-        var active = 0
-        val step = object : Runnable {
-            override fun run() {
-                active += 1
-                dots.setActiveDots(active)
-                if (active < 4) view.postDelayed(this, 35L)
-                else view.postDelayed({ view.overlay.remove(dots) }, 120L)
-            }
-        }
-        view.post(step)
-    }
 
     private val keyRows: List<ConstraintLayout>
 
@@ -209,12 +185,11 @@ abstract class BaseKeyboard(
                             val keyAction = KeyAction.SymAction(KeySym(sym), KeyStates.Virtual)
                             repeat(action.steps.absoluteValue) {
                                 onAction(keyAction)
-                                if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
+                                KeyboardFeedback.step(view, hapticOnRepeat)
                             }
                         }
                         KeyboardGestureAction.OpenEditingPanel -> {
-                            showGestureFeedback(view as KeyView)
-                            InputFeedbacks.hapticFeedback(view, longPress = true)
+                            KeyboardFeedback.confirmation(view, theme)
                             view.postDelayed({ onAction(KeyAction.ShowTextEditingAction) }, 140L)
                         }
                         else -> Unit
@@ -222,38 +197,21 @@ abstract class BaseKeyboard(
                     decision.consumed
                 }
             } else if (def is BackspaceKey) {
-                swipeEnabled = true
-                swipeRepeatEnabled = true
-                swipeThresholdX = selectionSwipeThreshold
-                swipeThresholdY = inputSwipeThreshold
-                onGestureListener = OnGestureListener { view, event ->
-                    val phase = when (event.type) {
-                        GestureType.Move -> GesturePhase.Move
-                        GestureType.Up -> GesturePhase.Up
-                        else -> return@OnGestureListener false
-                    }
-                    val decision = KeyboardGesturePolicy.backspace(
-                        GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
+                BackspaceGestureController.bind(
+                    this,
+                    theme,
+                    hapticOnRepeat,
+                    BackspaceGestureController.Actions(
+                        moveSelection = {
+                            onAction(KeyAction.MoveSelectionAction(it))
+                        },
+                        deleteSelection = {
+                            onAction(KeyAction.DeleteSelectionAction(it))
+                        },
+                        clearAll = { onAction(KeyAction.ClearAllTextAction) },
+                        undo = { onAction(KeyAction.UndoAction) }
                     )
-                    when (val action = decision.action) {
-                        is KeyboardGestureAction.MoveSelection -> {
-                            onAction(KeyAction.MoveSelectionAction(action.steps))
-                            if (hapticOnRepeat) InputFeedbacks.hapticFeedback(view)
-                        }
-                        is KeyboardGestureAction.DeleteSelection ->
-                            onAction(KeyAction.DeleteSelectionAction(action.steps))
-                        KeyboardGestureAction.ClearAllText -> {
-                            InputFeedbacks.hapticFeedback(view, longPress = true)
-                            onAction(KeyAction.ClearAllTextAction)
-                        }
-                        KeyboardGestureAction.Undo -> {
-                            InputFeedbacks.hapticFeedback(view, longPress = true)
-                            onAction(KeyAction.UndoAction)
-                        }
-                        else -> Unit
-                    }
-                    decision.consumed
-                }
+                )
             }
             def.behaviors.forEach {
                 when (it) {

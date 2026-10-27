@@ -12,15 +12,13 @@ import android.view.Gravity
 import android.view.View
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
-import androidx.core.text.inSpans
 import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
-import org.fcitx.fcitx5.android.input.design.NothingTypefaceSpan
-import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
-import org.fcitx.fcitx5.android.input.design.nothingTypeface
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
@@ -113,8 +111,6 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         }
         val fg = theme.candidateTextColor
         val altFg = theme.candidateCommentColor
-        text.applyNothingLegendTypography(theme, candidate.text)
-        val commentTypeface = text.nothingTypeface(theme, bold = false)
         text.text = buildSpannedString {
             color(fg) {
                 append(candidate.text)
@@ -124,15 +120,10 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
                     append(" ")
                 }
                 color(altFg) {
-                    if (commentTypeface != null) {
-                        inSpans(NothingTypefaceSpan(commentTypeface)) {
-                            append(candidate.comment)
-                        }
-                    } else {
-                        append(candidate.comment)
-                    }
+                    append(candidate.comment)
                 }
             }
         }
+        text.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
     }
 }

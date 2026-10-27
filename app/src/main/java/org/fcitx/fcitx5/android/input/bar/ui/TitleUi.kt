@@ -5,11 +5,12 @@
 package org.fcitx.fcitx5.android.input.bar.ui
 
 import android.content.Context
-import android.graphics.Typeface
 import android.view.View
 import androidx.core.view.isVisible
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.after
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -27,14 +28,14 @@ import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.wrapContent
 import splitties.views.gravityVerticalCenter
 
-class TitleUi(override val ctx: Context, theme: Theme) : Ui {
+class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     private val backButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_back_24, theme).apply {
         contentDescription = ctx.getString(R.string.back_to_keyboard)
     }
 
     private val titleText = textView {
-        typeface = Typeface.defaultFromStyle(Typeface.BOLD)
+        applyNothingTextRole(theme, NothingTextRole.ControlLabel)
         setTextColor(theme.altKeyTextColor)
         gravity = gravityVerticalCenter
         textSize = 16f
@@ -63,6 +64,7 @@ class TitleUi(override val ctx: Context, theme: Theme) : Ui {
 
     fun setTitle(title: String) {
         titleText.text = title
+        titleText.applyNothingTextRole(theme, NothingTextRole.ControlLabel)
         backButton.isVisible = true
         titleText.isVisible = true
     }

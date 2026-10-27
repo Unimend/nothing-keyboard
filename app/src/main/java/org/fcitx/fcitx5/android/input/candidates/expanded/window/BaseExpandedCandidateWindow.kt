@@ -38,7 +38,8 @@ import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
-import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
@@ -61,6 +62,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val windowManager: InputWindowManager by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
+    private val navigator by lazy { InputNavigator(service, windowManager) }
 
     protected val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
 
@@ -166,7 +168,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         offsetJob = service.lifecycleScope.launch {
             horizontalCandidate.expandedCandidateOffset.collect {
                 if (it <= 0) {
-                    windowManager.attachWindow(KeyboardWindow)
+                    navigator.navigate(InputNavigationCommand.ShowKeyboard())
                 } else {
                     candidateLayout.resetPosition()
                     adapter.refreshWithOffset(it)
@@ -212,7 +214,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
 
     override fun onPreeditEmptyStateUpdate(empty: Boolean) {
         if (empty) {
-            windowManager.attachWindow(KeyboardWindow)
+            navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
     }
 

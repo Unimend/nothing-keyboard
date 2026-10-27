@@ -4,17 +4,18 @@
  */
 package org.fcitx.fcitx5.android.input.picker
 
-import androidx.core.content.ContextCompat
 import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
+import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
-import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
@@ -43,10 +44,12 @@ class PickerWindow(
     }
 
     private val theme by manager.theme()
+    private val service by manager.inputMethodService()
     private val windowManager: InputWindowManager by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
+    private val navigator by lazy { InputNavigator(service, windowManager) }
 
     private val keyBorder by ThemeManager.prefs.keyBorder
 
@@ -60,14 +63,7 @@ class PickerWindow(
     private val keyActionListener = KeyActionListener { it, source ->
         when (it) {
             is KeyAction.LayoutSwitchAction -> {
-                // Switch to NumberKeyboard before attaching KeyboardWindow
-                (windowManager.getEssentialWindow(KeyboardWindow) as KeyboardWindow)
-                    .switchLayout(it.act)
-                // The real switchLayout (detachCurrentLayout and attachLayout) in KeyboardWindow is postponed,
-                // so we have to postpone attachWindow as well
-                ContextCompat.getMainExecutor(context).execute {
-                    windowManager.attachWindow(KeyboardWindow)
-                }
+                navigator.navigate(InputNavigationCommand.ShowKeyboard(it.act))
             }
 
             is KeyAction.FcitxKeyAction -> {

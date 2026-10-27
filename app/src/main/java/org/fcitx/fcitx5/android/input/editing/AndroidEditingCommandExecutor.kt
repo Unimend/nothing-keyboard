@@ -27,16 +27,18 @@ class AndroidEditingCommandExecutor(
             }
             EditingCommand.CancelSelection -> service.cancelSelection()
             EditingCommand.SelectAll -> contextAction(android.R.id.selectAll)
-            EditingCommand.Cut -> contextAction(android.R.id.cut)
+            EditingCommand.Cut -> contextAction(android.R.id.cut, invalidatesUndo = true)
             EditingCommand.Copy -> contextAction(android.R.id.copy)
-            EditingCommand.Paste -> contextAction(android.R.id.paste)
-            EditingCommand.Backspace -> service.sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            EditingCommand.Paste -> contextAction(android.R.id.paste, invalidatesUndo = true)
+            EditingCommand.Backspace -> service.deleteBackward()
+            EditingCommand.DeleteSelection -> service.deleteSelection()
             EditingCommand.ClearAll -> service.clearAllText()
             EditingCommand.Undo -> service.undoLastEdit()
         }
     }
 
-    private fun contextAction(id: Int) {
+    private fun contextAction(id: Int, invalidatesUndo: Boolean = false) {
+        if (invalidatesUndo) service.invalidateDestructiveUndo()
         service.currentInputConnection?.performContextMenuAction(id)
     }
 }

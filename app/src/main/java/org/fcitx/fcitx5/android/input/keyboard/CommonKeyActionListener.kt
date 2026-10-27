@@ -5,10 +5,10 @@
 
 package org.fcitx.fcitx5.android.input.keyboard
 
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.core.FcitxAPI
+import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.broadcast.PreeditEmptyStateComponent
@@ -18,9 +18,10 @@ import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
-import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
 import org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Reset
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Selection
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Stopped
@@ -38,7 +39,6 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SpaceLongPressAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SymAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UnicodeAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UndoAction
-import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.switchToNextIME
 import org.mechdancer.dependency.Dependent
@@ -61,8 +61,6 @@ class CommonKeyActionListener :
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val windowManager: InputWindowManager by manager.must()
 
-    private var lastPickerType by AppPrefs.getInstance().internal.lastPickerType
-
     private val kbdPrefs = AppPrefs.getInstance().keyboard
 
     private val spaceKeyLongPressBehavior by kbdPrefs.spaceKeyLongPressBehavior
@@ -70,12 +68,16 @@ class CommonKeyActionListener :
 
     private var backspaceSwipeState = Stopped
     private val editingCommands by lazy { AndroidEditingCommandExecutor(service) }
+    private val navigator by lazy { InputNavigator(service, windowManager) }
 
     // there should be a new fcitx API for this
+    private fun FcitxAPI.hasPreedit(): Boolean =
+        clientPreeditCached.isNotEmpty() || inputPanelCached.preedit.isNotEmpty()
+
     private suspend fun FcitxAPI.commitAndReset() {
         if (inputMethodEntryCached.languageCode.startsWith("zh")) {
             // Chinese: select 1st candidate, except prediction candidates
-            if (clientPreeditCached.isNotEmpty() || inputPanelCached.preedit.isNotEmpty()) {
+            if (hasPreedit()) {
                 // preedit not empty, maybe there are candidates to select ...
                 select(0)
             }
@@ -101,7 +103,16 @@ class CommonKeyActionListener :
                     sendKey(action.act, action.states.states, action.code)
                 }
                 is SymAction -> service.postFcitxJob {
-                    sendKey(action.sym, action.states)
+                    if (
+                        action.sym.sym == FcitxKeyMapping.FcitxKey_Return &&
+                        hasPreedit()
+                    ) {
+                        // Return completes active input instead of leaking through as an editor
+                        // newline: Chinese selects candidate 0; other languages commit raw text.
+                        commitAndReset()
+                    } else {
+                        sendKey(action.sym, action.states)
+                    }
                 }
                 is CommitAction -> service.postFcitxJob {
                     commitAndReset()
@@ -161,7 +172,7 @@ class CommonKeyActionListener :
                 is DeleteSelectionAction -> {
                     when (backspaceSwipeState) {
                         Stopped -> {}
-                        Selection -> service.deleteSelection()
+                        Selection -> editingCommands.execute(EditingCommand.DeleteSelection)
                         Reset -> if (action.totalCnt != 0) {
                             service.postFcitxJob { reset() }
                         }
@@ -170,19 +181,9 @@ class CommonKeyActionListener :
                 }
                 ClearAllTextAction -> editingCommands.execute(EditingCommand.ClearAll)
                 UndoAction -> editingCommands.execute(EditingCommand.Undo)
-                ShowTextEditingAction -> {
-                    service.finishComposing()
-                    windowManager.attachWindow(TextEditingWindow())
-                }
-                is PickerSwitchAction -> {
-                    // update lastSymbolType only when specified explicitly
-                    val key = action.key?.also { k -> lastPickerType = k.name }
-                        ?: runCatching { PickerWindow.Key.valueOf(lastPickerType) }.getOrNull()
-                        ?: PickerWindow.Key.Emoji
-                    ContextCompat.getMainExecutor(service).execute {
-                        windowManager.attachWindow(key)
-                    }
-                }
+                ShowTextEditingAction -> navigator.navigate(InputNavigationCommand.ShowEditing)
+                is PickerSwitchAction ->
+                    navigator.navigate(InputNavigationCommand.ShowPicker(action.key))
                 is SpaceLongPressAction -> {
                     when (spaceKeyLongPressBehavior) {
                         SpaceLongPressBehavior.None -> {}

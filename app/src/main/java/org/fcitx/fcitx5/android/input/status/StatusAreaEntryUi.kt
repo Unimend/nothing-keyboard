@@ -5,7 +5,6 @@
 package org.fcitx.fcitx5.android.input.status
 
 import android.content.Context
-import android.graphics.Typeface
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.OvalShape
 import android.icu.text.BreakIterator
@@ -16,7 +15,8 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.design.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -53,21 +53,13 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
 
     val textIcon = view(::AutoScaleTextView) {
         setTextSize(TypedValue.COMPLEX_UNIT_DIP, 20f)
-        // keep original typeface, apply textStyle only
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            // 600 = Semi Bold, 700 = Bold which is too heavy
-            typeface = Typeface.create(typeface, 600, false)
-        } else {
-            setTypeface(typeface, Typeface.BOLD)
-        }
-        applyNothingTypography(theme)
     }
 
     val label = textView {
         textSize = 12f
         gravity = gravityCenter
         setTextColor(theme.keyTextColor)
-        applyNothingTypography(theme)
+        applyNothingTextRole(theme, NothingTextRole.ControlLabel)
     }
 
     override val root = object : CustomGestureView(ctx) {
@@ -108,11 +100,13 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
             icon.visibility = View.GONE
             textIcon.visibility = View.VISIBLE
             textIcon.text = getFirstCharacter(entry.label)
+            textIcon.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
             textIcon.setTextColor(contentColor)
         }
         bkgDrawable.paint.color =
             if (entry.active) theme.genericActiveBackgroundColor else theme.keyBackgroundColor
         label.text = entry.label
+        label.applyNothingTextRole(theme, NothingTextRole.ControlLabel)
     }
 
     private fun getFirstCharacter(s: String): String {

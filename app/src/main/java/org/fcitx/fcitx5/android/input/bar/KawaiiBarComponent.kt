@@ -53,7 +53,6 @@ import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateStyle
 import org.fcitx.fcitx5.android.input.candidates.expanded.window.FlexboxExpandedCandidateWindow
 import org.fcitx.fcitx5.android.input.candidates.expanded.window.GridExpandedCandidateWindow
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
-import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
@@ -63,7 +62,8 @@ import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
-import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
@@ -96,6 +96,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
+    private val navigator by lazy { InputNavigator(service, windowManager) }
 
     private val prefs = AppPrefs.getInstance()
 
@@ -128,11 +129,11 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                 if (it.text.isEmpty()) {
                     isClipboardFresh = false
                 } else {
-                    idleUi.clipboardUi.text.text = if (it.sensitive && clipboardMaskSensitive) {
+                    idleUi.clipboardUi.setContent(if (it.sensitive && clipboardMaskSensitive) {
                         ClipboardEntry.BULLET.repeat(min(42, it.text.length))
                     } else {
                         it.text.take(42)
-                    }
+                    })
                     isClipboardFresh = true
                     launchClipboardTimeoutJob()
                 }
@@ -300,10 +301,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                     service.sendCombinationKeyEvents(KeyEvent.KEYCODE_Z, ctrl = true, shift = true)
                 }
                 cursorMoveButton.setOnClickListener {
-                    windowManager.attachWindow(TextEditingWindow())
+                    navigator.navigate(InputNavigationCommand.ShowEditing)
                 }
                 clipboardButton.setOnClickListener {
-                    windowManager.attachWindow(ClipboardWindow())
+                    navigator.navigate(InputNavigationCommand.ShowClipboard)
                 }
                 moreButton.setOnClickListener {
                     windowManager.attachWindow(StatusAreaWindow())
@@ -386,7 +387,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     // set expand candidate button to close expand candidate
     private fun setExpandButtonToDetach() {
         candidateUi.expandButton.setOnClickListener {
-            windowManager.attachWindow(KeyboardWindow)
+            navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
         candidateUi.expandButton.setIcon(R.drawable.ic_baseline_expand_less_24)
         candidateUi.expandButton.contentDescription = context.getString(R.string.hide_candidates_list)
@@ -480,7 +481,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                 titleUi.setTitle(window.title)
                 window.onCreateBarExtension()?.let { titleUi.addExtension(it, window.showTitle) }
                 titleUi.setReturnButtonOnClickListener {
-                    windowManager.attachWindow(KeyboardWindow)
+                    navigator.navigate(InputNavigationCommand.ShowKeyboard())
                 }
                 barStateMachine.push(ExtendedWindowAttached)
             }

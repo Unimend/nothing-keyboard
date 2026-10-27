@@ -18,7 +18,8 @@ import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.applyNothingLegendTypography
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import splitties.views.imageResource
@@ -174,7 +175,7 @@ class TextKeyboard(
             ime.subMode.run { label.ifEmpty { name.ifEmpty { null } } }?.let { append(" ($it)") }
         }
         space.mainText.text = label
-        space.mainText.applyNothingLegendTypography(theme, label)
+        space.mainText.applyNothingTextRole(theme, NothingTextRole.ControlLabel)
         if (capsState != CapsState.None) {
             switchCapsState()
         }
@@ -269,6 +270,7 @@ class TextKeyboard(
                 if (str.length != 1 || !str[0].isLetter()) return@forEach
                 if (keepLettersUppercase) str.uppercase() else transformAlphabet(str)
             }
+            it.mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
         }
     }
 
@@ -277,12 +279,14 @@ class TextKeyboard(
             if (it is AltTextKeyView) {
                 it.def as KeyDef.Appearance.AltText
                 it.altText.text = transformPunctuation(it.def.altText)
+                it.altText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
             } else {
                 it.def as KeyDef.Appearance.Text
                 it.mainText.text = it.def.displayText.let { str ->
                     if (str[0].run { isLetter() || isWhitespace() }) return@forEach
                     transformPunctuation(str)
                 }
+                it.mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
             }
         }
     }

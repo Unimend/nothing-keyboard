@@ -14,7 +14,8 @@ import android.view.View
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
-import org.fcitx.fcitx5.android.input.design.applyNothingTypography
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -45,7 +46,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
         setPaddingDp(if (theme.isNothingStyle) 22 else 8, 8, 10, 8)
         ellipsize = TextUtils.TruncateAt.END
         setTextColor(theme.keyTextColor)
-        applyNothingTypography(theme, bold = false)
+        applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
     }
 
     val pin = imageView {
@@ -98,6 +99,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
 
     fun setEntry(text: String, pinned: Boolean) {
         textView.text = text
+        textView.applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
         pin.visibility = if (pinned) View.VISIBLE else View.GONE
     }
 }

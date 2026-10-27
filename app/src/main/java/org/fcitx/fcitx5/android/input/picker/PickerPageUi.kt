@@ -15,12 +15,19 @@ import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
+import org.fcitx.fcitx5.android.input.design.NothingTextRole
+import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
 import org.fcitx.fcitx5.android.input.keyboard.ImageKeyView
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.FcitxKeyAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.MoveSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SymAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UndoAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener.Source
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
@@ -49,7 +56,7 @@ import splitties.views.dsl.core.matchParent
 
 class PickerPageUi(
     override val ctx: Context,
-    theme: Theme,
+    private val theme: Theme,
     density: Density,
     bordered: Boolean = false
 ) : Ui {
@@ -73,6 +80,7 @@ class PickerPageUi(
     }
 
     private val popupOnKeyPress by AppPrefs.getInstance().keyboard.popupOnKeyPress
+    private val hapticOnRepeat by AppPrefs.getInstance().keyboard.hapticOnRepeat
 
     var keyActionListener: KeyActionListener? = null
     var popupActionListener: PopupActionListener? = null
@@ -116,6 +124,25 @@ class PickerPageUi(
             setOnClickListener(listener)
             repeatEnabled = true
             onRepeatListener = action
+            BackspaceGestureController.bind(
+                this,
+                theme,
+                hapticOnRepeat,
+                BackspaceGestureController.Actions(
+                    moveSelection = {
+                        keyActionListener?.onKeyAction(MoveSelectionAction(it), Source.Keyboard)
+                    },
+                    deleteSelection = {
+                        keyActionListener?.onKeyAction(DeleteSelectionAction(it), Source.Keyboard)
+                    },
+                    clearAll = {
+                        keyActionListener?.onKeyAction(ClearAllTextAction, Source.Keyboard)
+                    },
+                    undo = {
+                        keyActionListener?.onKeyAction(UndoAction, Source.Keyboard)
+                    }
+                )
+            )
         }
     }
 
@@ -187,6 +214,7 @@ class PickerPageUi(
                 } else {
                     isEnabled = true
                     mainText.text = items[i]
+                    mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
                     setOnClickListener { onItemClick(items[i]) }
                 }
                 swipeEnabled = false
@@ -211,6 +239,7 @@ class PickerPageUi(
                     val item = items[i]
                     val transformed = policy.transform(item)
                     mainText.text = transformed
+                    mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
                     setOnClickListener {
                         onItemClick(transformed)
                     }

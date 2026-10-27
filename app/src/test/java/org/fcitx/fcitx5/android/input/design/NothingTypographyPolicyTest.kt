@@ -4,6 +4,8 @@
 package org.fcitx.fcitx5.android.input.design
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class NothingTypographyPolicyTest {
@@ -29,5 +31,22 @@ class NothingTypographyPolicyTest {
             KeyboardTextKind.Symbol,
             NothingTypographyPolicy.classify("？！@#")
         )
+    }
+
+    @Test
+    fun mixedContentOnlyStylesLatinAndDigitsWithDoto() {
+        assertTrue(NothingTypographyPolicy.usesDoto('A'))
+        assertTrue(NothingTypographyPolicy.usesDoto('7'))
+        assertFalse(NothingTypographyPolicy.usesDoto('你'))
+        assertFalse(NothingTypographyPolicy.usesDoto('@'))
+        assertFalse(NothingTypographyPolicy.usesDoto('！'))
+    }
+
+    @Test
+    fun pureLatinAndNumbersUseWholeDotoTypeface() {
+        assertTrue(NothingTypographyPolicy.canUseWholeDotoTypeface("Q"))
+        assertTrue(NothingTypographyPolicy.canUseWholeDotoTypeface("PINYIN 123"))
+        assertFalse(NothingTypographyPolicy.canUseWholeDotoTypeface("1?#"))
+        assertFalse(NothingTypographyPolicy.canUseWholeDotoTypeface("杭州"))
     }
 }

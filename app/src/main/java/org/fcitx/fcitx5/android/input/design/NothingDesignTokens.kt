@@ -25,6 +25,16 @@ object NothingDesignTokens {
     object Motion {
         const val InstantFeedbackMs = 100L
         const val QuickFeedbackMs = 120L
+        const val DotStepMs = 35L
+    }
+
+    object GestureFeedback {
+        const val Columns = 1
+        const val Rows = 4
+        const val DotDiameterDp = 4f
+        const val DotGapDp = 3f
+        const val EdgePaddingDp = 7f
+        const val InactiveAlpha = 0.16f
     }
 
     object Bar {
