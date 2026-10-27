@@ -67,6 +67,9 @@ class DeveloperFragment : PaddingPreferenceFragment() {
             addPreference(R.string.real_time_logs) {
                 startActivity<LogActivity>()
             }
+            addPreference(R.string.input_core_diagnostics) {
+                startActivity<InputCoreDiagnosticsActivity>()
+            }
             addPreference(MySwitchPreference(context).apply {
                 key = AppPrefs.getInstance().internal.verboseLog.key
                 setTitle(R.string.verbose_log)

@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
+import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
@@ -31,6 +32,7 @@ class FcitxEngineBridge(
         check(collectionJob == null) { "FcitxEngineBridge may only be started once" }
         collectionJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             connection.runImmediately { eventFlow }.collect { event ->
+                InputCoreDiagnostics.recordEngineEvent(event::class.simpleName ?: "FcitxEvent")
                 publishState(event)
                 if (event is FcitxEvent.ReadyEvent) publishCachedState()
                 effectSink(event)

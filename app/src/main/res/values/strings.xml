@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="input_core_diagnostics">Input core diagnostics</string>
+    <string name="input_core_diagnostics_hint">Type here to inspect the engine state</string>
     <string name="app_name_release">Fcitx5</string>
     <string name="app_name_debug">Fcitx5 (Debug)</string>
     <string name="save">Save</string>

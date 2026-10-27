@@ -70,6 +70,7 @@ import org.fcitx.fcitx5.android.input.cursor.CursorRange
 import org.fcitx.fcitx5.android.input.cursor.CursorTracker
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
+import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
@@ -252,6 +253,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
         engineBridge = FcitxEngineBridge(fcitx, inputSession, ::handleFcitxEvent)
         engineBridge.startIn(lifecycleScope)
+        lifecycleScope.launch {
+            inputSession.state.collect(InputCoreDiagnostics::publishSession)
+        }
         pkgNameCache = PackageNameCache(this)
         recreateInputViewPrefs.forEach {
             it.registerOnChangeListener(recreateInputViewListener)
