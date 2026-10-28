@@ -20,7 +20,7 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs
 import org.fcitx.fcitx5.android.input.candidates.interaction.triggerCandidateAction
 import org.fcitx.fcitx5.android.input.lifecycle.InputSurfaceLifetime
@@ -113,7 +113,7 @@ abstract class BaseInputView(
         }
     }
 
-    private val navbarBackground by ThemeManager.prefs.navbarBackground
+    private val navbarBackground by InputThemeSettings.navbarBackground
 
     protected fun getNavBarBottomInset(windowInsets: WindowInsets): Int {
         if (navbarBackground != ThemePrefs.NavbarBackground.Full) {

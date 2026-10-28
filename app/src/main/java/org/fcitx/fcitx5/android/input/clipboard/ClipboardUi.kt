@@ -11,7 +11,7 @@ import androidx.transition.Fade
 import androidx.transition.TransitionManager
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
@@ -50,7 +50,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         add(enableUi.root, lParams(matchParent, matchParent))
     }
 
-    private val keyBorder by ThemeManager.prefs.keyBorder
+    private val keyBorder by InputThemeSettings.keyBorder
 
     override val root = coordinatorLayout {
         if (!keyBorder) {

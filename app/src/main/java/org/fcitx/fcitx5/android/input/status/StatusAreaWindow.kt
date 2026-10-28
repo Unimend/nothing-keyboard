@@ -17,7 +17,7 @@ import kotlinx.coroutines.flow.map
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.input.settings.InputSettings
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.dependency.inputView
@@ -169,7 +169,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
         }
     }
 
-    private val keyBorder by ThemeManager.prefs.keyBorder
+    private val keyBorder by InputThemeSettings.keyBorder
 
     val view by lazy {
         context.recyclerView {

@@ -9,3 +9,8 @@ import kotlinx.coroutines.Job
 fun interface EngineCommandPort {
     fun submit(command: EngineCommand): Job
 }
+
+/** Engine boundary for state reconciliation whose queued command may become stale before execution. */
+interface GuardedEngineCommandPort : EngineCommandPort {
+    fun submit(command: EngineCommand, guard: () -> Boolean): Job
+}

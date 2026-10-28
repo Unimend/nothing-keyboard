@@ -8,13 +8,13 @@ import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import timber.log.Timber
 
 /** Engine readiness, ordering and native translation are owned by the engine boundary. */
-class FcitxCommandDispatcher(connection: FcitxConnection, scope: CoroutineScope) : EngineCommandPort {
+class FcitxCommandDispatcher(connection: FcitxConnection, scope: CoroutineScope) : GuardedEngineCommandPort {
     private val connection = connection
     private val queue = SerialCommandQueue(scope) { Timber.e(it, "Engine command failed") }
 
     override fun submit(command: EngineCommand): Job = submit(command) { true }
 
-    fun submit(command: EngineCommand, guard: () -> Boolean): Job = queue.submit {
+    override fun submit(command: EngineCommand, guard: () -> Boolean): Job = queue.submit {
         connection.runOnReady {
             if (guard()) {
                 InputCoreDiagnostics.recordEngineCommand(command::class.simpleName ?: "EngineCommand")

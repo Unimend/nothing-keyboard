@@ -24,7 +24,7 @@ import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
@@ -108,7 +108,7 @@ class InputView(
 
     private val nothingCompactHeightScale = theme.inputSurfaceStyle.keyboard.heightScale
 
-    private val keyBorder by ThemeManager.prefs.keyBorder
+    private val keyBorder by InputThemeSettings.keyBorder
 
     private val customBackground = imageView {
         scaleType = ImageView.ScaleType.CENTER_CROP

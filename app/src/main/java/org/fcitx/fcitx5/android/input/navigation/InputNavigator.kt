@@ -45,7 +45,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
                 clipboardReturnTarget = currentReturnTarget()
                 windowManager.attachWindow(ClipboardWindow())
             }
-            InputNavigationCommand.ReturnFromClipboard -> navigate(clipboardReturnTarget)
+            InputNavigationCommand.Return -> navigate(returnTarget())
             InputNavigationCommand.ShowEditing -> {
                 editing.commands.execute(EditingCommand.FinishComposition)
                 windowManager.attachWindow(TextEditingWindow())
@@ -92,7 +92,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             is InputNavigationCommand.ShowKeyboard ->
                 layout?.let { "Keyboard($it)" } ?: "Keyboard"
             InputNavigationCommand.ShowClipboard -> "Clipboard"
-            InputNavigationCommand.ReturnFromClipboard -> "ClipboardReturn"
+            InputNavigationCommand.Return -> "Return"
             InputNavigationCommand.ShowEditing -> "Editing"
             is InputNavigationCommand.ShowPicker -> "Picker(${kind?.name ?: "remembered"})"
             InputNavigationCommand.ShowStatus -> "Status"
@@ -105,6 +105,11 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
         windowManager.currentSurface,
         modeStore.state.currentKeyboardLayout
     )
+
+    private fun returnTarget(): InputNavigationCommand = when (windowManager.currentSurface) {
+        InputSurface.Clipboard -> clipboardReturnTarget
+        else -> InputNavigationCommand.ShowKeyboard(modeStore.state.currentKeyboardLayout)
+    }
 }
 
 internal object ClipboardReturnPolicy {

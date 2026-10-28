@@ -26,6 +26,7 @@ import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import org.fcitx.fcitx5.android.input.engine.FcitxCommandDispatcher
+import org.fcitx.fcitx5.android.input.engine.GuardedEngineCommandPort
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
@@ -98,6 +99,11 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     val platformInputMethods: PlatformInputMethodPort get() = subtypeController
 
     private lateinit var engineDispatcher: FcitxCommandDispatcher
+    private val editorEngineCommands = object : GuardedEngineCommandPort {
+        override fun submit(command: EngineCommand) = engineDispatcher.submit(command)
+        override fun submit(command: EngineCommand, guard: () -> Boolean) =
+            engineDispatcher.submit(command, guard)
+    }
     private val editingAwareEngineCommands: EngineCommandPort by lazy {
         org.fcitx.fcitx5.android.input.editing.EditingAwareEngineCommandPort(
             engineDispatcher,
@@ -159,6 +165,12 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             override fun updateNavigationBar(isVirtualKeyboard: Boolean) {
                 window.window?.let { navbarMgr.evaluate(it, isVirtualKeyboard) }
             }
+
+            override fun focusEngine() {
+                engineCommands.submit(EngineCommand.Focus(true))
+            }
+
+            override fun forceShowInput() = forceShowSelf()
         }
     )
     private val inputDeviceMgr = InputDeviceManager(
@@ -196,7 +208,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         connection = { currentInputConnection },
         editorInfo = { currentInputEditorInfo },
         sendKey = { keyEvents.sendDownUp(it) },
-        submitEngineCommand = { command, guard -> submitEngineCommand(command, guard) },
+        engineCommands = editorEngineCommands,
         ignoreSystemCursor = { ignoreSystemCursor }
     )
 
@@ -351,9 +363,6 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private fun submitEngineCommand(command: EngineCommand): Job = engineCommands.submit(command)
 
-    private fun submitEngineCommand(command: EngineCommand, guard: () -> Boolean): Job =
-        engineDispatcher.submit(command, guard)
-
     override fun onCreate() {
         super.onCreate()
         window.window!!.apply {
@@ -387,7 +396,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private lateinit var lastKnownConfig: Configuration
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        submitEngineCommand(EngineCommand.Reset)
+        imeLifecycle.configurationChanged()
         /**
          * skip keyboard|keyboardHidden changes, because we have [inputDeviceMgr]
          * skip uiMode (system light/dark mode) changes, because [surfaceRebuilds]
@@ -452,8 +461,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         // request to show floating CandidatesView when pressing physical keyboard
         if (inputDeviceMgr.evaluateOnKeyDown(event)) {
-            submitEngineCommand(EngineCommand.Focus(true))
-            forceShowSelf()
+            devicePresentation.showForHardwareInput()
         }
         return keyEvents.forwardToEngine(event) || super.onKeyDown(keyCode, event)
     }

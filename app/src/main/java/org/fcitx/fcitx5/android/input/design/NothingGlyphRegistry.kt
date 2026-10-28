@@ -5,9 +5,14 @@ package org.fcitx.fcitx5.android.input.design
 
 import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.R
+import org.fcitx.fcitx5.android.data.theme.Theme
 
 /** Maps semantic/system keyboard icons to the Nothing pixel glyph set. */
 object NothingGlyphRegistry {
+    @DrawableRes
+    fun resolve(@DrawableRes source: Int, theme: Theme): Int =
+        if (theme.isNothingStyle) resolve(source) else source
+
     @DrawableRes
     fun resolve(@DrawableRes source: Int): Int = when (source) {
         R.drawable.ic_capslock_none -> R.drawable.ic_pixel_caps_none

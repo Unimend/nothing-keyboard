@@ -11,7 +11,7 @@ import android.view.Gravity
 import androidx.constraintlayout.widget.ConstraintLayout
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.keyboard.BackspaceKey
 import org.fcitx.fcitx5.android.input.keyboard.BaseKeyboard
 import org.fcitx.fcitx5.android.input.keyboard.ImageKeyView
@@ -87,9 +87,9 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
         }
     }
 
-    private val keyBorder by ThemeManager.prefs.keyBorder
-    private val keyVerticalMargin by ThemeManager.prefs.keyVerticalMargin
-    private val keyVerticalMarginLandscape by ThemeManager.prefs.keyVerticalMarginLandscape
+    private val keyBorder by InputThemeSettings.keyBorder
+    private val keyVerticalMargin by InputThemeSettings.keyVerticalMargin
+    private val keyVerticalMarginLandscape by InputThemeSettings.keyVerticalMarginLandscape
 
     val recyclerView = recyclerView {
         // disable item cross-fade animation

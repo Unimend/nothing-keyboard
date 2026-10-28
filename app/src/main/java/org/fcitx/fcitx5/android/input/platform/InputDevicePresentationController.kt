@@ -7,6 +7,8 @@ interface InputDevicePresentationHost {
     fun hideStatusIcon()
     fun showCurrentStatusIcon()
     fun updateNavigationBar(isVirtualKeyboard: Boolean)
+    fun focusEngine()
+    fun forceShowInput()
 }
 
 /** Applies every presentation side effect of a virtual/physical input-device transition. */
@@ -18,6 +20,11 @@ class InputDevicePresentationController(
         host.monitorCursorAnchor(!isVirtualKeyboard)
         if (isVirtualKeyboard) host.hideStatusIcon() else host.showCurrentStatusIcon()
         host.updateNavigationBar(isVirtualKeyboard)
+    }
+
+    fun showForHardwareInput() {
+        host.focusEngine()
+        host.forceShowInput()
     }
 
     private companion object {

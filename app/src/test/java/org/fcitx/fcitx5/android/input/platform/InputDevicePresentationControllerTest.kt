@@ -12,6 +12,8 @@ class InputDevicePresentationControllerTest {
         override fun hideStatusIcon() { calls += "status:hide" }
         override fun showCurrentStatusIcon() { calls += "status:show" }
         override fun updateNavigationBar(isVirtualKeyboard: Boolean) { calls += "navbar:$isVirtualKeyboard" }
+        override fun focusEngine() { calls += "engine:focus" }
+        override fun forceShowInput() { calls += "input:show" }
     }
 
     @Test
@@ -32,5 +34,12 @@ class InputDevicePresentationControllerTest {
             listOf("paging:1", "cursor:true", "status:show", "navbar:false"),
             host.calls
         )
+    }
+
+    @Test
+    fun `hardware request focuses engine before showing input`() {
+        val host = Host()
+        InputDevicePresentationController(host).showForHardwareInput()
+        assertEquals(listOf("engine:focus", "input:show"), host.calls)
     }
 }

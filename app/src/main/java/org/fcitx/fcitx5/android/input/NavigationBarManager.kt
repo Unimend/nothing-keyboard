@@ -12,13 +12,14 @@ import androidx.annotation.ColorInt
 import androidx.core.view.WindowCompat
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs.NavbarBackground
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 
 class NavigationBarManager {
 
-    private val keyBorder by ThemeManager.prefs.keyBorder
-    private val navbarBackground by ThemeManager.prefs.navbarBackground
+    private val keyBorder by InputThemeSettings.keyBorder
+    private val navbarBackground by InputThemeSettings.navbarBackground
 
     private var shouldUpdateNavbarForeground = false
     private var shouldUpdateNavbarBackground = false

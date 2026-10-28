@@ -38,6 +38,7 @@ import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 import splitties.views.setPaddingDp
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 
 class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radius: Float) : Ui {
 
@@ -63,7 +64,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     }
 
     val pin = imageView {
-        imageDrawable = drawable(R.drawable.ic_baseline_push_pin_24)!!.apply {
+        imageDrawable = drawable(NothingGlyphRegistry.resolve(R.drawable.ic_baseline_push_pin_24, theme))!!.apply {
             setTint(colors.alternateKeyContent)
             setAlpha(0.3f)
         }

@@ -13,7 +13,7 @@ import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.input.settings.InputSettings
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -40,9 +40,9 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
 
     private val hapticOnRepeat by InputSettings.keyboard.hapticOnRepeat
 
-    private val buttonRipple by ThemeManager.prefs.keyRippleEffect
-    private val buttonBorder by ThemeManager.prefs.keyBorder
-    private val buttonRadius by ThemeManager.prefs.textEditingButtonRadius
+    private val buttonRipple by InputThemeSettings.keyRippleEffect
+    private val buttonBorder by InputThemeSettings.keyBorder
+    private val buttonRadius by InputThemeSettings.textEditingButtonRadius
 
     private val session = EditingSession()
     private val commandExecutor get() = editing.commands

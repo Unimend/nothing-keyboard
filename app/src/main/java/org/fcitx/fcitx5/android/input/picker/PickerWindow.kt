@@ -6,7 +6,7 @@ package org.fcitx.fcitx5.android.input.picker
 
 import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.dependency.theme
@@ -58,7 +58,7 @@ class PickerWindow(
     private val navigator: InputNavigator by manager.must()
     private val interactionStore: PickerInteractionStore by manager.must()
 
-    private val keyBorder by ThemeManager.prefs.keyBorder
+    private val keyBorder by InputThemeSettings.keyBorder
 
     private lateinit var pickerLayout: PickerLayout
     private lateinit var pickerPagesAdapter: PickerPagesAdapter

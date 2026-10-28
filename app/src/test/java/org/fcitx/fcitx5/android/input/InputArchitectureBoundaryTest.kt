@@ -339,6 +339,33 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `persisted theme settings enter input renderers through one boundary`() {
+        val root = sourceRoot.resolve("org/fcitx/fcitx5/android/input")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(root).invariantSeparatorsPath
+            relative != "design/InputThemeSettings.kt" && "ThemeManager.prefs" in file.readText()
+        }
+        assertTrue("Theme settings bypassed InputThemeSettings: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `transient surfaces return through semantic navigation`() {
+        val clipboard = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/clipboard/ClipboardWindow.kt"
+        ).readText()
+        val toolbar = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt"
+        ).readText()
+        assertTrue("Clipboard paste must use semantic return", "InputNavigationCommand.Return" in clipboard)
+        assertTrue("Toolbar back must use semantic return", "InputNavigationCommand.Return" in toolbar)
+        assertFalse(
+            "Extended-surface toolbar must not hard-code keyboard destination",
+            Regex("setReturnButtonOnClickListener\\s*\\{[^}]*ShowKeyboard", RegexOption.DOT_MATCHES_ALL)
+                .containsMatchIn(toolbar)
+        )
+    }
+
+    @Test
     fun `Android editor compatibility decisions have one policy owner`() {
         val editor = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/editing/EditorController.kt"
@@ -397,6 +424,33 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `editor engine reconciliation uses an explicit guarded port`() {
+        val editor = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/editing/EditorController.kt"
+        ).readText()
+        assertTrue("Editor must depend on guarded engine contract", "GuardedEngineCommandPort" in editor)
+        assertFalse(
+            "Editor must not accept a raw engine command closure",
+            "(EngineCommand, () -> Boolean)" in editor
+        )
+    }
+
+    @Test
+    fun `service callbacks cannot recreate lifecycle and hardware presentation transactions`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        val configuration = service.substringAfter("override fun onConfigurationChanged")
+            .substringBefore("override fun onWindowShown")
+        val keyDown = service.substringAfter("override fun onKeyDown")
+            .substringBefore("override fun onKeyUp")
+        assertTrue("Configuration callback must use lifecycle owner", "imeLifecycle.configurationChanged()" in configuration)
+        assertFalse("Configuration callback bypassed lifecycle", "submitEngineCommand" in configuration)
+        assertTrue("Hardware reveal must use presentation owner", "devicePresentation.showForHardwareInput()" in keyDown)
+        assertFalse("Hardware callback rebuilt engine focus", "EngineCommand.Focus" in keyDown)
+    }
+
+    @Test
     fun `surfaces cannot access concrete editor implementations`() {
         val forbidden = Regex("""\b(EditorController|AndroidEditingCommandExecutor|DestructiveEditingController)\b""")
         val violations = inputSources().filter {
@@ -449,6 +503,17 @@ class InputArchitectureBoundaryTest {
                     .containsMatchIn(file.readText())
         }
         assertTrue("Direct typeface access: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `input image views cannot bypass functional glyph resolution`() {
+        val directDrawable = Regex(
+            """(?:imageDrawable\s*=\s*drawable\(\s*|imageResource\s*=\s*|setImageResource\(\s*)R\.drawable\.ic_"""
+        )
+        val violations = inputSources().filter { file ->
+            file.name != "NothingGlyphRegistry.kt" && directDrawable.containsMatchIn(file.readText())
+        }
+        assertTrue("Direct functional drawable assignment: ${violations.joinToString()}", violations.isEmpty())
     }
 
     @Test

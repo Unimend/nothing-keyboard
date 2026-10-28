@@ -9,6 +9,7 @@ import android.text.TextUtils
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -39,7 +40,7 @@ class ClipboardSuggestionUi(override val ctx: Context, private val theme: Theme)
     private val colors = theme.toInputColorScheme()
 
     private val icon = imageView {
-        imageDrawable = drawable(R.drawable.ic_clipboard)!!.apply {
+        imageDrawable = drawable(NothingGlyphRegistry.resolve(R.drawable.ic_clipboard, theme))!!.apply {
             setTint(colors.alternateKeyContent)
         }
     }

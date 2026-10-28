@@ -202,6 +202,21 @@ surface and returns to the same keyboard layout, picker, or editing surface. The
 icon resolves through `NothingGlyphRegistry`, like every other semantic function glyph. Regression
 tests cover composition-only clear/undo and clipboard return routing.
 
+The follow-up reverse audit traced behavior from UI entry points back toward Android and Fcitx and
+closed additional routes that merely wrapped old behavior in new files:
+
+- Clipboard paste and the shared extended-surface back button now emit the same semantic `Return`
+  navigation command. Only `InputNavigator` may resolve the destination; UI cannot hard-code the
+  main keyboard.
+- Persisted theme preferences now enter input renderers only through `InputThemeSettings`. Direct
+  access to `ThemeManager.prefs` is rejected by an architecture test.
+- Configuration resets and hardware-triggered window reveal are complete lifecycle/presentation
+  transactions. Service callbacks cannot reconstruct their engine side effects inline.
+- `EditorController` depends on `GuardedEngineCommandPort`; the former raw engine-command closure
+  has been removed.
+- Direct functional `ImageView` drawable assignments now resolve through `NothingGlyphRegistry`.
+  A source boundary test prevents new raw assignments from bypassing the registry.
+
 ## Gesture cancellation closure
 
 Android ACTION_CANCEL previously reused Up, allowing an interrupted gesture to commit a deletion

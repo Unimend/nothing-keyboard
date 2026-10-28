@@ -91,4 +91,10 @@ class InputLifecycleControllerTest {
             calls
         )
     }
+
+    @Test
+    fun `configuration change resets engine through lifecycle owner`() {
+        controller.configurationChanged()
+        assertEquals(listOf("engine:${EngineCommand.Reset}"), calls)
+    }
 }

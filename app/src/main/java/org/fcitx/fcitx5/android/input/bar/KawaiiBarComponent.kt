@@ -30,7 +30,7 @@ import org.fcitx.fcitx5.android.input.clipboard.ClipboardObservation
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardUpdateListener
 import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.ClickToAttachWindow
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.ClickToDetachWindow
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.Hidden
@@ -383,7 +383,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             } else null
             if (!theme.isNothingStyle) {
                 backgroundColor =
-                    if (ThemeManager.prefs.keyBorder.getValue()) Color.TRANSPARENT
+                    if (InputThemeSettings.keyBorder.getValue()) Color.TRANSPARENT
                     else theme.toInputColorScheme().barSurface
             }
             add(idleUi.root, lParams(matchParent, matchParent))
@@ -463,7 +463,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                 titleUi.setTitle(window.title)
                 window.onCreateBarExtension()?.let { titleUi.addExtension(it, window.showTitle) }
                 titleUi.setReturnButtonOnClickListener {
-                    navigator.navigate(InputNavigationCommand.ShowKeyboard())
+                    navigator.navigate(InputNavigationCommand.Return)
                 }
                 barStateMachine.push(ExtendedWindowAttached)
             }

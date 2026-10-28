@@ -7,6 +7,7 @@ import android.view.inputmethod.EditorInfo
 import org.fcitx.fcitx5.android.input.cursor.CursorRange
 import org.fcitx.fcitx5.android.input.design.renderEngineText
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
+import org.fcitx.fcitx5.android.input.engine.GuardedEngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
 import org.fcitx.fcitx5.android.input.session.EngineText
@@ -24,10 +25,10 @@ class EditorController(
     private val connection: () -> InputConnection?,
     private val editorInfo: () -> EditorInfo,
     private val sendKey: (Int) -> Unit,
-    private val submitEngineCommand: (EngineCommand, () -> Boolean) -> Unit,
+    private val engineCommands: GuardedEngineCommandPort,
     private val ignoreSystemCursor: () -> Boolean
 ) : InputLifecycleEditor {
-    private fun submitEngineCommand(command: EngineCommand) = submitEngineCommand(command) { true }
+    private fun submitEngineCommand(command: EngineCommand) = engineCommands.submit(command)
 
     private val selection = CursorTracker()
     /** Returns false for engine effects owned by another subsystem. */
@@ -267,7 +268,7 @@ class EditorController(
             if (position != composingText.cursor) {
                 // cursor in InvokeActionEvent counts by "UTF-8 characters"
                 val codePointPosition = composingText.plainText.codePointCount(0, position)
-                submitEngineCommand(
+                engineCommands.submit(
                     EngineCommand.MoveCursor(codePointPosition),
                     { updateIndex == cursorUpdateIndex }
                 )

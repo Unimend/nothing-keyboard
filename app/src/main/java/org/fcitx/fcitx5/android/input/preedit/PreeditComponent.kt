@@ -7,7 +7,7 @@ package org.fcitx.fcitx5.android.input.preedit
 import android.view.View
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
@@ -26,7 +26,7 @@ class PreeditComponent : UniqueComponent<PreeditComponent>(), Dependent,
     private val theme by manager.theme()
 
     val ui by lazy {
-        val keyBorder = ThemeManager.prefs.keyBorder.getValue()
+        val keyBorder = InputThemeSettings.keyBorder.getValue()
         val colors = theme.toInputColorScheme()
         val bkgColor =
             if (!keyBorder && theme is Theme.Builtin) colors.barSurface else colors.background

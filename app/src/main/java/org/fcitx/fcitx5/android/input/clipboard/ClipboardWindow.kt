@@ -30,7 +30,7 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
 import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
@@ -86,7 +86,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     private val clipboardReturnAfterPaste by prefs.clipboardReturnAfterPaste
     private val clipboardMaskSensitive by prefs.clipboardMaskSensitive
 
-    private val clipboardEntryRadius by ThemeManager.prefs.clipboardEntryRadius
+    private val clipboardEntryRadius by InputThemeSettings.clipboardEntryRadius
 
     private val clipboardPages by lazy { history.pages() }
     private var adapterSubmitJob: Job? = null
@@ -127,7 +127,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             override fun onPaste(entry: ClipboardItem) {
                 editing.commands.execute(EditingCommand.CommitText(entry.text))
                 if (clipboardReturnAfterPaste) {
-                    navigator.navigate(InputNavigationCommand.ReturnFromClipboard)
+                    navigator.navigate(InputNavigationCommand.Return)
                 }
             }
         }

@@ -56,6 +56,8 @@ class ImeInputLifecycleCoordinator(
 
     fun finishInput() = lifecycle.finishInput()
 
+    fun configurationChanged() = lifecycle.configurationChanged()
+
     fun unbind(uid: Int?) {
         host.resetHardwareKeys()
         lifecycle.unbindInput()

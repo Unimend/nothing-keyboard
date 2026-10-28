@@ -65,5 +65,9 @@ class InputLifecycleController(
         engineCommands.submit(EngineCommand.Focus(false))
     }
 
+    fun configurationChanged() {
+        engineCommands.submit(EngineCommand.Reset)
+    }
+
     fun unbindInput() = editor.unbindInput()
 }

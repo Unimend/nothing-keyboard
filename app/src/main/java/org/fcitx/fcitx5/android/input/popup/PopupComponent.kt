@@ -12,7 +12,7 @@ import android.widget.FrameLayout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.data.theme.ThemeManager
+import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
@@ -48,7 +48,7 @@ class PopupComponent :
     private val showingContainerUi = HashMap<Int, PopupContainerUi>()
 
     private val keyBottomMargin by lazy {
-        context.dp(ThemeManager.prefs.keyVerticalMargin.getValue())
+        context.dp(InputThemeSettings.keyVerticalMargin.getValue())
     }
     private val popupWidth by lazy {
         context.dp(style.previewWidthDp)
@@ -60,7 +60,7 @@ class PopupComponent :
         context.dp(style.keySizeDp)
     }
     private val popupRadius by lazy {
-        context.dp(ThemeManager.prefs.keyRadius.getValue()).toFloat()
+        context.dp(InputThemeSettings.keyRadius.getValue()).toFloat()
     }
     private val hideThreshold = 100L
 
