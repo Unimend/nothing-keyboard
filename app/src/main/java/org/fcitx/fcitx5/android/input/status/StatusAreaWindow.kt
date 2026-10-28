@@ -13,7 +13,6 @@ import androidx.core.text.color
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.Action
 import org.fcitx.fcitx5.android.core.SubtypeManager
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -32,6 +31,7 @@ import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.Reload
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeList
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.session.EngineStatusAction
 import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.DeviceUtil
@@ -82,7 +82,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
         )
     }
 
-    private fun activateAction(action: Action) {
+    private fun activateAction(action: EngineStatusAction) {
         service.submitEngineCommand(EngineCommand.ActivateStatusAction(action.id))
     }
 
@@ -93,8 +93,8 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
             override fun onItemClick(view: View, entry: StatusAreaEntry) {
                 when (entry) {
                     is StatusAreaEntry.Fcitx -> {
-                        val actions = entry.action.menu
-                        if (actions.isNullOrEmpty()) {
+                        val actions = entry.action.children
+                        if (actions.isEmpty()) {
                             activateAction(entry.action)
                             return
                         }
@@ -109,7 +109,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
                             }
                         var groupId = 0 // Menu.NONE; ungrouped
                         actions.forEach {
-                            if (it.isSeparator) {
+                            if (it.separator) {
                                 if (hasDivider) {
                                     groupId++
                                 } else {
@@ -183,7 +183,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
         }
     }
 
-    override fun onStatusAreaUpdate(actions: Array<Action>) {
+    override fun onStatusAreaUpdate(actions: List<EngineStatusAction>) {
         adapter.entries = arrayOf(
             *staticEntries,
             *Array(actions.size) { StatusAreaEntry.fromAction(actions[it]) }
@@ -218,11 +218,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
     override fun onCreateBarExtension() = barExtension
 
     override fun onAttached() {
-        onStatusAreaUpdate(
-            LegacyEngineStateAdapter.statusActions(
-                service.inputSession.current.engine.statusActions
-            )
-        )
+        onStatusAreaUpdate(service.inputSession.current.engine.statusActions)
     }
 
     override fun onDetached() {

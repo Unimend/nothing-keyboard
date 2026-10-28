@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.BooleanKey.ExpandedCandidatesEmpty
@@ -29,6 +28,7 @@ import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
+import org.fcitx.fcitx5.android.input.session.EngineCandidateList
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
 
@@ -164,16 +164,15 @@ class HorizontalCandidateComponent :
         }
     }
 
-    override fun onCandidateUpdate(data: FcitxEvent.CandidateListEvent.Data) {
+    override fun onCandidateUpdate(data: EngineCandidateList) {
         // A new composition starts a new search, so its candidate rail must start at the primary
         // candidate. Subsequent user drags remain untouched until the candidate data changes.
         val previousCandidates = adapter.candidates
         candidateGeneration++
         loadMoreInFlight = false
         reachedCandidateEnd = false
-        val engineCandidates = inputView.service.inputSession.current.engine.candidates
-        val candidates = engineCandidates.items
-        val total = engineCandidates.total
+        val candidates = data.items
+        val total = data.total
         layoutMinWidth = if (fillStyle == NeverFillWidth) 0
             else view.width / maxSpanCountPref.getValue()
         adapter.updateCandidates(candidates, total)

@@ -13,7 +13,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.children
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
-import org.fcitx.fcitx5.android.core.InputMethodEntry
+import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.data.InputFeedbacks
@@ -511,7 +511,7 @@ abstract class BaseKeyboard(
         // do nothing by default
     }
 
-    open fun onInputMethodUpdate(ime: InputMethodEntry) {
+    open fun onInputMethodUpdate(ime: EngineInputMethod) {
         // do nothing by default
     }
 

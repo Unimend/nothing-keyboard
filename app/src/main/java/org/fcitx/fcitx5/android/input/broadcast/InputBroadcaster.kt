@@ -5,12 +5,12 @@
 package org.fcitx.fcitx5.android.input.broadcast
 
 import android.view.inputmethod.EditorInfo
-import org.fcitx.fcitx5.android.core.Action
 import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.core.FcitxEvent.CandidateListEvent
-import org.fcitx.fcitx5.android.core.FcitxEvent.InputPanelEvent
-import org.fcitx.fcitx5.android.core.FormattedText
-import org.fcitx.fcitx5.android.core.InputMethodEntry
+import org.fcitx.fcitx5.android.input.session.EngineCandidateList
+import org.fcitx.fcitx5.android.input.session.EngineInputMethod
+import org.fcitx.fcitx5.android.input.session.EngineInputPanel
+import org.fcitx.fcitx5.android.input.session.EngineStatusAction
+import org.fcitx.fcitx5.android.input.session.EngineText
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.ScopeEvent
 import org.mechdancer.dependency.UniqueComponent
@@ -36,11 +36,11 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
         }
     }
 
-    override fun onClientPreeditUpdate(data: FormattedText) {
+    override fun onClientPreeditUpdate(data: EngineText) {
         receivers.forEach { it.onClientPreeditUpdate(data) }
     }
 
-    override fun onInputPanelUpdate(data: InputPanelEvent.Data) {
+    override fun onInputPanelUpdate(data: EngineInputPanel) {
         receivers.forEach { it.onInputPanelUpdate(data) }
     }
 
@@ -48,15 +48,15 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
         receivers.forEach { it.onStartInput(info, capFlags) }
     }
 
-    override fun onImeUpdate(ime: InputMethodEntry) {
+    override fun onImeUpdate(ime: EngineInputMethod) {
         receivers.forEach { it.onImeUpdate(ime) }
     }
 
-    override fun onCandidateUpdate(data: CandidateListEvent.Data) {
+    override fun onCandidateUpdate(data: EngineCandidateList) {
         receivers.forEach { it.onCandidateUpdate(data) }
     }
 
-    override fun onStatusAreaUpdate(actions: Array<Action>) {
+    override fun onStatusAreaUpdate(actions: List<EngineStatusAction>) {
         receivers.forEach { it.onStatusAreaUpdate(actions) }
     }
 

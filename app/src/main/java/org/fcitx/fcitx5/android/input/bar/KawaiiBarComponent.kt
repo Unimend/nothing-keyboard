@@ -29,7 +29,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlag
 import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.core.FcitxEvent.CandidateListEvent
+import org.fcitx.fcitx5.android.input.session.EngineCandidateList
 import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
 import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -461,8 +461,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         barStateMachine.push(PreeditUpdated, PreeditEmpty to empty)
     }
 
-    override fun onCandidateUpdate(data: CandidateListEvent.Data) {
-        barStateMachine.push(CandidatesUpdated, CandidateEmpty to data.candidates.isEmpty())
+    override fun onCandidateUpdate(data: EngineCandidateList) {
+        barStateMachine.push(CandidatesUpdated, CandidateEmpty to data.items.isEmpty())
     }
 
     override fun onWindowAttached(window: InputWindow) {

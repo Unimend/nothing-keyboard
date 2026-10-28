@@ -6,7 +6,7 @@ package org.fcitx.fcitx5.android.input.status
 
 import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.Action
+import org.fcitx.fcitx5.android.input.session.EngineStatusAction
 
 sealed class StatusAreaEntry(
     val label: String,
@@ -24,7 +24,7 @@ sealed class StatusAreaEntry(
         }
     }
 
-    class Fcitx(val action: Action, label: String, icon: Int, active: Boolean) :
+    class Fcitx(val action: EngineStatusAction, label: String, icon: Int, active: Boolean) :
         StatusAreaEntry(label, icon, active)
 
     companion object {
@@ -55,8 +55,8 @@ sealed class StatusAreaEntry(
             }
         }
 
-        fun fromAction(it: Action): Fcitx {
-            val active = it.icon.endsWith("-active") || it.isChecked
+        fun fromAction(it: EngineStatusAction): Fcitx {
+            val active = it.icon.endsWith("-active") || it.checked
             return Fcitx(it, it.shortText, drawableFromIconName(it.icon), active)
         }
     }

@@ -6,7 +6,6 @@ package org.fcitx.fcitx5.android.input.broadcast
 
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.core.Action
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
@@ -27,7 +26,7 @@ class PunctuationComponent :
 
     fun transform(p: String) = mapping.getOrDefault(p, p)
 
-    fun updatePunctuationMapping(actions: Array<Action>) {
+    fun updatePunctuationMapping() {
         val engine = service.inputSession.current.engine
         enabled = engine.statusActions.any {
             // TODO: A better way to check if punctuation mapping is enabled

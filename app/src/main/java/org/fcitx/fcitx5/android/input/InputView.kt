@@ -42,7 +42,6 @@ import org.fcitx.fcitx5.android.input.picker.symbolPicker
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.preedit.PreeditComponent
 import org.fcitx.fcitx5.android.input.session.EngineState
-import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleDispatcher
 import org.fcitx.fcitx5.android.utils.unset
@@ -219,9 +218,7 @@ class InputView(
         setupScope()
 
         // restore punctuation mapping in case of InputView recreation
-        punctuation.updatePunctuationMapping(
-            LegacyEngineStateAdapter.statusActions(service.inputSession.current.engine.statusActions)
-        )
+        punctuation.updatePunctuationMapping()
 
         // make sure KeyboardWindow's view has been created before it receives any broadcast
         windowManager.addEssentialWindow(keyboardWindow, createView = true)
@@ -232,7 +229,7 @@ class InputView(
         navigator.navigate(InputNavigationCommand.ShowKeyboard())
 
         service.inputSession.current.engine.inputMethod?.let {
-            broadcaster.onImeUpdate(LegacyEngineStateAdapter.inputMethod(it))
+            broadcaster.onImeUpdate(it)
         }
 
         customBackground.imageDrawable = theme.backgroundDrawable(keyBorder)
@@ -360,15 +357,13 @@ class InputView(
         val inputMethodChanged = previous == null || previous.inputMethod != state.inputMethod
         val statusChanged = previous == null || previous.statusActions != state.statusActions
         if (candidatesChanged) {
-            broadcaster.onCandidateUpdate(LegacyEngineStateAdapter.candidates(state.candidates))
+            broadcaster.onCandidateUpdate(state.candidates)
         }
         if (clientPreeditChanged) {
-            val preedit = LegacyEngineStateAdapter.text(state.clientPreedit)
-            broadcaster.onClientPreeditUpdate(preedit)
+            broadcaster.onClientPreeditUpdate(state.clientPreedit)
         }
         if (panelChanged) {
-            val panel = LegacyEngineStateAdapter.inputPanel(state.inputPanel)
-            broadcaster.onInputPanelUpdate(panel)
+            broadcaster.onInputPanelUpdate(state.inputPanel)
         }
         if (clientPreeditChanged || panelChanged) {
             preeditEmptyState.updatePreeditEmptyState(
@@ -378,13 +373,12 @@ class InputView(
         }
         if (inputMethodChanged) {
             state.inputMethod?.let {
-                broadcaster.onImeUpdate(LegacyEngineStateAdapter.inputMethod(it))
+                broadcaster.onImeUpdate(it)
             }
         }
         if (statusChanged) {
-            val actions = LegacyEngineStateAdapter.statusActions(state.statusActions)
-            punctuation.updatePunctuationMapping(actions)
-            broadcaster.onStatusAreaUpdate(actions)
+            punctuation.updatePunctuationMapping()
+            broadcaster.onStatusAreaUpdate(state.statusActions)
         }
         previousEngineState = state
     }

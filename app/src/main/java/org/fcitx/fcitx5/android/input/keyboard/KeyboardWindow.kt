@@ -13,7 +13,7 @@ import androidx.core.content.ContextCompat
 import androidx.transition.Slide
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.core.InputMethodEntry
+import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
@@ -26,7 +26,6 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
-import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.input.wm.EssentialWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
@@ -118,7 +117,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
             it.onAttach()
             it.onReturnDrawableUpdate(returnKeyDrawable.resourceId)
             service.inputSession.current.engine.inputMethod?.let { inputMethod ->
-                it.onInputMethodUpdate(LegacyEngineStateAdapter.inputMethod(inputMethod))
+                it.onInputMethodUpdate(inputMethod)
             }
         }
     }
@@ -154,7 +153,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
         switchLayout(targetLayout, remember = false)
     }
 
-    override fun onImeUpdate(ime: InputMethodEntry) {
+    override fun onImeUpdate(ime: EngineInputMethod) {
         currentKeyboard?.onInputMethodUpdate(ime)
     }
 

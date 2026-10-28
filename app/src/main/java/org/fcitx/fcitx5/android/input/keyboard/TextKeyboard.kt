@@ -12,7 +12,7 @@ import android.view.animation.DecelerateInterpolator
 import androidx.annotation.Keep
 import androidx.core.view.allViews
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.InputMethodEntry
+import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.core.KeyState
 import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -169,10 +169,10 @@ class TextKeyboard(
         updatePunctuationKeys()
     }
 
-    override fun onInputMethodUpdate(ime: InputMethodEntry) {
+    override fun onInputMethodUpdate(ime: EngineInputMethod) {
         val label = buildString {
-            append(ime.displayName)
-            ime.subMode.run { label.ifEmpty { name.ifEmpty { null } } }?.let { append(" ($it)") }
+            append(ime.nativeName.ifEmpty { ime.name })
+            ime.subModeLabel.ifEmpty { ime.subModeName.ifEmpty { null } }?.let { append(" ($it)") }
         }
         space.mainText.text = label
         space.mainText.applyNothingTextRole(theme, NothingTextRole.ControlLabel)

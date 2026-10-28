@@ -6,26 +6,26 @@ package org.fcitx.fcitx5.android.input.broadcast
 
 import android.view.inputmethod.EditorInfo
 import androidx.annotation.DrawableRes
-import org.fcitx.fcitx5.android.core.Action
 import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.core.FcitxEvent.CandidateListEvent
-import org.fcitx.fcitx5.android.core.FcitxEvent.InputPanelEvent
-import org.fcitx.fcitx5.android.core.FormattedText
-import org.fcitx.fcitx5.android.core.InputMethodEntry
+import org.fcitx.fcitx5.android.input.session.EngineCandidateList
+import org.fcitx.fcitx5.android.input.session.EngineInputMethod
+import org.fcitx.fcitx5.android.input.session.EngineInputPanel
+import org.fcitx.fcitx5.android.input.session.EngineStatusAction
+import org.fcitx.fcitx5.android.input.session.EngineText
 
 interface InputBroadcastReceiver {
 
     fun onStartInput(info: EditorInfo, capFlags: CapabilityFlags) {}
 
-    fun onClientPreeditUpdate(data: FormattedText) {}
+    fun onClientPreeditUpdate(data: EngineText) {}
 
-    fun onInputPanelUpdate(data: InputPanelEvent.Data) {}
+    fun onInputPanelUpdate(data: EngineInputPanel) {}
 
-    fun onImeUpdate(ime: InputMethodEntry) {}
+    fun onImeUpdate(ime: EngineInputMethod) {}
 
-    fun onCandidateUpdate(data: CandidateListEvent.Data) {}
+    fun onCandidateUpdate(data: EngineCandidateList) {}
 
-    fun onStatusAreaUpdate(actions: Array<Action>) {}
+    fun onStatusAreaUpdate(actions: List<EngineStatusAction>) {}
 
     fun onSelectionUpdate(start: Int, end: Int) {}
 

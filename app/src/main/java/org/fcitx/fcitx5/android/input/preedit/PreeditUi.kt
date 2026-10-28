@@ -6,19 +6,28 @@ package org.fcitx.fcitx5.android.input.preedit
 
 import android.content.Context
 import android.graphics.Paint
+import android.graphics.Typeface.BOLD
+import android.graphics.Typeface.ITALIC
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
 import android.text.Spanned
 import android.text.SpannedString
 import android.text.style.DynamicDrawableSpan
+import android.text.style.BackgroundColorSpan
+import android.text.style.StrikethroughSpan
+import android.text.style.StyleSpan
+import android.text.style.UnderlineSpan
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.ColorInt
 import androidx.core.text.buildSpannedString
-import org.fcitx.fcitx5.android.core.FcitxEvent
+import org.fcitx.fcitx5.android.core.TextFormatFlag
+import org.fcitx.fcitx5.android.core.hasFlag
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextRole
 import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.session.EngineInputPanel
+import org.fcitx.fcitx5.android.input.session.EngineText
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -70,24 +79,38 @@ open class PreeditUi(
         view.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
-    fun update(inputPanel: FcitxEvent.InputPanelEvent.Data) {
+    private fun EngineText.toSpannedString(highlightColor: Int) = buildSpannedString {
+        segments.forEach { segment ->
+            val start = length
+            append(segment.text)
+            val end = length
+            val flags = segment.formatFlags
+            if (flags.hasFlag(TextFormatFlag.Underline)) setSpan(UnderlineSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (flags.hasFlag(TextFormatFlag.HighLight)) setSpan(BackgroundColorSpan(highlightColor), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (flags.hasFlag(TextFormatFlag.Bold)) setSpan(StyleSpan(BOLD), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (flags.hasFlag(TextFormatFlag.Strike)) setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (flags.hasFlag(TextFormatFlag.Italic)) setSpan(StyleSpan(ITALIC), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+        }
+    }
+
+    fun update(inputPanel: EngineInputPanel) {
         val activeBkg = theme.genericActiveBackgroundColor
         val upString: SpannedString
         val upCursor: Int
-        if (inputPanel.auxUp.isEmpty()) {
+        if (inputPanel.auxiliaryUp.isEmpty) {
             upString = inputPanel.preedit.toSpannedString(activeBkg)
             upCursor = inputPanel.preedit.cursor
         } else {
             upString = buildSpannedString {
-                append(inputPanel.auxUp.toSpannedString(activeBkg))
+                append(inputPanel.auxiliaryUp.toSpannedString(activeBkg))
                 append(inputPanel.preedit.toSpannedString(activeBkg))
             }
             upCursor = inputPanel.preedit.cursor.let {
                 if (it < 0) it
-                else inputPanel.auxUp.length + it
+                else inputPanel.auxiliaryUp.plainText.length + it
             }
         }
-        val downString = inputPanel.auxDown.toSpannedString(activeBkg)
+        val downString = inputPanel.auxiliaryDown.toSpannedString(activeBkg)
         val hasUp = upString.isNotEmpty()
         val hasDown = downString.isNotEmpty()
         visible = hasUp || hasDown

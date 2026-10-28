@@ -23,7 +23,7 @@ import org.fcitx.fcitx5.android.input.candidates.floating.PagedCandidatesUi
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.preedit.PreeditUi
 import org.fcitx.fcitx5.android.input.session.EngineState
-import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
+import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.below
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -55,7 +55,7 @@ class CandidatesView(
     private val itemPaddingVertical by candidatesPrefs.itemPaddingVertical
     private val itemPaddingHorizontal by candidatesPrefs.itemPaddingHorizontal
 
-    private var inputPanel = LegacyEngineStateAdapter.inputPanel(EngineState().inputPanel)
+    private var inputPanel = EngineInputPanel()
     private var paged = EngineState().pagedCandidates
 
     /**
@@ -114,7 +114,7 @@ class CandidatesView(
         val panelChanged = previous == null || previous.inputPanel != state.inputPanel
         val pagedChanged = previous == null || previous.pagedCandidates != state.pagedCandidates
         if (panelChanged) {
-            inputPanel = LegacyEngineStateAdapter.inputPanel(state.inputPanel)
+            inputPanel = state.inputPanel
         }
         if (pagedChanged) {
             paged = state.pagedCandidates
@@ -126,10 +126,10 @@ class CandidatesView(
     }
 
     private fun evaluateVisibility(): Boolean {
-        return inputPanel.preedit.isNotEmpty() ||
+        return !inputPanel.preedit.isEmpty ||
                 paged.items.isNotEmpty() ||
-                inputPanel.auxUp.isNotEmpty() ||
-                inputPanel.auxDown.isNotEmpty()
+                !inputPanel.auxiliaryUp.isEmpty ||
+                !inputPanel.auxiliaryDown.isEmpty
     }
 
     private fun updateUi() {
