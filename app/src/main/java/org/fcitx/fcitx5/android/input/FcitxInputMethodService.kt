@@ -59,6 +59,7 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
+import org.fcitx.fcitx5.android.input.engine.InputContextLifecycleController
 import org.fcitx.fcitx5.android.input.engine.InputEngineEffectHost
 import org.fcitx.fcitx5.android.input.engine.InputEngineEffectRouter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
@@ -235,6 +236,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
                 }
             }
         )
+    }
+
+    private val inputContextLifecycle by lazy {
+        InputContextLifecycleController(engineCommands, subtypeController::onBindInput)
     }
 
     private val prefs = AppPrefs.getInstance()
@@ -422,8 +427,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         val uid = currentInputBinding.uid
         val pkgName = pkgNameCache.forUid(uid)
         Timber.d("onBindInput: uid=$uid pkg=$pkgName")
-        submitEngineCommand(EngineCommand.ActivateContext(uid, pkgName))
-        subtypeController.onBindInput()
+        inputContextLifecycle.bind(uid, pkgName)
     }
 
     override fun onCurrentInputMethodSubtypeChanged(newSubtype: InputMethodSubtype) {
@@ -516,9 +520,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         keyEvents.reset()
         inputLifecycle.unbindInput()
         // currentInputBinding can be null on some devices under some special Multi-screen mode
-        val uid = currentInputBinding?.uid ?: return
+        val uid = currentInputBinding?.uid
         Timber.d("onUnbindInput: uid=$uid")
-        submitEngineCommand(EngineCommand.DeactivateContext(uid))
+        inputContextLifecycle.unbind(uid)
     }
 
     override fun onDestroy() {

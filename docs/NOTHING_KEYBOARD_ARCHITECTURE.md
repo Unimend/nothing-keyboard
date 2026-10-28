@@ -238,3 +238,7 @@ monitoring, status-icon visibility and navigation-bar styling must all enter thr
 Project-owned engine effects enter `InputEngineEffectRouter`. Editor effects get first refusal;
 forwarded keys, input-method changes and switch notifications then route to exactly one Android
 host action. The Service supplies those actions but does not reconstruct dispatch priority.
+
+Android binding creates an engine context transaction through `InputContextLifecycleController`:
+activate the exact UID/package pair, then synchronize the platform subtype. Unbind deactivates only
+when Android still exposes a binding UID; the Service cannot synthesize a replacement identity.

@@ -425,6 +425,17 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `service delegates engine context binding lifecycle`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("Bind callback must enter context controller", "inputContextLifecycle.bind(" in service)
+        assertTrue("Unbind callback must enter context controller", "inputContextLifecycle.unbind(" in service)
+        assertFalse("Service must not activate engine context directly", "submitEngineCommand(EngineCommand.ActivateContext" in service)
+        assertFalse("Service must not deactivate engine context directly", "submitEngineCommand(EngineCommand.DeactivateContext" in service)
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",
