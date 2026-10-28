@@ -452,6 +452,17 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `service delegates configuration and inline suggestion policies`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("Configuration diff must use its policy", "ImeConfigurationPolicy.shouldDelegateToSystem" in service)
+        assertTrue("Inline requests must use one controller", "inlineSuggestionController.createRequest()" in service)
+        assertTrue("Inline responses must use one controller", "inlineSuggestionController.handleResponse(response)" in service)
+        assertFalse("Legacy duplicated inline gate must stay deleted", "!inlineSuggestions || !inputDeviceMgr.isVirtualKeyboard" in service)
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",

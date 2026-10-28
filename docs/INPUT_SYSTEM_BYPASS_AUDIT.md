@@ -28,6 +28,8 @@ unrepresentable, and a test must prevent it from returning.
 | Engine effect routing | `InputEngineEffectRouter` | Service choosing between editor, forwarded-key and platform effects | Priority/routing tests and Service boundary test |
 | Engine context binding | `InputContextLifecycleController` | Service activating/deactivating contexts or reordering subtype synchronization | Bind/unbind sequence tests and Service boundary test |
 | Input-view presentation lifecycle | `InputViewPresentationController` | Service partially starting/cleaning cursor monitoring, candidate anchor, status icon or dialogs | Start/fallback/finish sequence tests and Service boundary test |
+| Configuration rebuild policy | `ImeConfigurationPolicy` | Service reconstructing which Android changes require a system rebuild | Pure bit-mask tests and Service boundary test |
+| Inline autofill gating | `InlineSuggestionController` + policy | Request and response callbacks applying different enable/device conditions | Truth-table test and Service boundary test |
 
 ## Removed legacy escape hatches
 
@@ -74,6 +76,9 @@ unrepresentable, and a test must prevent it from returning.
 - Partial input-view teardown spread across `onFinishInputView`. Candidate geometry invalidation,
   device-view finish, core lifecycle finish, cursor-monitor shutdown, status icon removal and dialog
   dismissal are now one ordered `InputViewPresentationController.finish` transaction.
+- Configuration rebuild and inline-autofill gates formerly expressed directly in Service callbacks.
+  Their policies now have single owners; Service retains only the Android overrides and concrete
+  request/view adapters.
 
 ## Deliberate platform boundaries (not legacy UI)
 
@@ -88,6 +93,28 @@ unrepresentable, and a test must prevent it from returning.
 - `AutoScaleTextView` may override `setTypeface` internally so it can invalidate measurements, but
   surfaces may not select its typeface.
 - Android-owned dialogs and the developer diagnostics inspector retain native typography.
+
+## Final Service callback audit
+
+`FcitxInputMethodService` is now the Android composition root, not a feature owner. Its remaining
+callbacks were reviewed individually; file length is not a reason to extract an adapter.
+
+| Callback group | Why it remains in Service | Delegated owner |
+|---|---|---|
+| `onCreate` / `onDestroy` | Android owns service and daemon lifetime | engine bridge, surface rebuild signals, diagnostics |
+| configuration changes | only Service may call the framework superclass | `ImeConfigurationPolicy`, engine reset command |
+| window/insets/fullscreen | protected Android IME APIs require the Service instance | `AndroidImeWindowLayout` |
+| key down/up | Android delivers hardware events here | `InputDeviceManager`, `AndroidKeyEventController` |
+| view click/tool type | framework callbacks contain Android device information | `InputDeviceManager` |
+| bind/subtype callbacks | Android exposes binding UID and subtype here | `InputContextLifecycleController`, `AndroidSubtypeController` |
+| start/selection/finish | Android lifecycle entry points | `InputLifecycleController`, `InputViewPresentationController` |
+| cursor anchor | Android supplies `CursorAnchorInfo` here | `AndroidCandidateAnchorController` |
+| inline suggestions | Android requires Service overrides | `InlineSuggestionController`, request factory, input surface |
+| view construction | framework requires the Service context and `setInputView` | `InputSurfaceRebuildController`, `InputDeviceManager` |
+
+The anonymous host adapters in the Service are intentional dependency wiring. They may access
+Android platform objects but cannot select policy, retain duplicate mutable state, or reconstruct
+command order. Future Service extraction is justified only when one of those conditions appears.
 
 ## Remaining migration work, ordered upstream to downstream
 

@@ -247,3 +247,12 @@ Input-view start and finish presentation enter `InputViewPresentationController`
 cursor monitoring and fallback anchoring are paired, while finish cleanup has a fixed order around
 the core lifecycle transition. This prevents a hidden candidate/status/dialog surface surviving
 after the editor lifecycle has ended.
+
+Configuration and inline-autofill callbacks are thin adapters. `ImeConfigurationPolicy` decides
+whether Android may rebuild IME state, while `InlineSuggestionController` applies the same enabled
+and virtual-keyboard gate to both request creation and response presentation.
+
+The Service decomposition stops at the Android composition-root boundary. Framework callbacks,
+protected superclass calls, View construction and concrete platform-object providers remain there.
+They are dependency wiring, not unfinished systems; new classes must not be created merely to make
+the Service shorter.

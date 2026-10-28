@@ -13,10 +13,8 @@ import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
 import android.view.KeyEvent
 import android.view.View
-import android.view.ViewGroup
 import android.view.Window
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
@@ -25,7 +23,6 @@ import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
-import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import org.fcitx.fcitx5.android.input.engine.FcitxCommandDispatcher
@@ -46,11 +43,13 @@ import org.fcitx.fcitx5.android.input.engine.AndroidKeyEventController
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionRequestFactory
+import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionController
 import org.fcitx.fcitx5.android.input.wm.AndroidImeWindowLayout
 import org.fcitx.fcitx5.android.input.wm.AndroidCandidateAnchorController
 import org.fcitx.fcitx5.android.input.wm.AndroidInputSurfaceRebuildSignals
 import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildController
 import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildHost
+import org.fcitx.fcitx5.android.input.wm.ImeConfigurationPolicy
 import org.fcitx.fcitx5.android.input.platform.ImeDialogController
 import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationController
 import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationHost
@@ -71,6 +70,7 @@ import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.input.session.InputSessionReader
 import org.fcitx.fcitx5.android.input.session.EditorCapability
 import org.fcitx.fcitx5.android.input.session.EditorSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.engine.AndroidSubtypeController
 import org.fcitx.fcitx5.android.input.engine.PlatformInputMethodPort
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
@@ -83,8 +83,6 @@ import org.fcitx.fcitx5.android.utils.isTypeNull
 import org.fcitx.fcitx5.android.utils.monitorCursorAnchor
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
 import org.fcitx.fcitx5.android.utils.styledFloat
-import splitties.dimensions.dp
-import splitties.resources.styledColor
 import timber.log.Timber
 
 class FcitxInputMethodService : LifecycleInputMethodService() {
@@ -170,7 +168,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     )
     private val inputViewPresentation = InputViewPresentationController(
         object : InputViewPresentationHost {
-            override fun startVirtualInput(session: org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot) {
+            override fun startVirtualInput(session: EditorSessionSnapshot) {
                 inputView?.startInput(session)
             }
 
@@ -273,6 +271,14 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private val prefs = AppPrefs.getInstance()
     private val inlineSuggestions by prefs.keyboard.inlineSuggestions
     private val ignoreSystemCursor by prefs.advanced.ignoreSystemCursor
+    private val inlineSuggestionController by lazy {
+        InlineSuggestionController(
+            enabled = { inlineSuggestions },
+            isVirtualKeyboard = { inputDeviceMgr.isVirtualKeyboard },
+            createRequest = { InlineSuggestionRequestFactory.create(this, ThemeManager.activeTheme) },
+            showResponse = { inputView?.handleInlineSuggestions(it) == true }
+        )
+    }
 
     private val recreateInputViewPrefs: Array<ManagedPreference<*>> = arrayOf(
         prefs.keyboard.expandKeypressArea,
@@ -381,7 +387,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
          * we have to calculate the mask ourselves because nobody knows how `handledConfigChanges` works
          * https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-15.0.0_r36/core/java/android/inputmethodservice/InputMethodService.java#1876
          */
-        if (diff and f != diff) {
+        if (ImeConfigurationPolicy.shouldDelegateToSystem(diff, f)) {
             super.onConfigurationChanged(newConfig)
         }
         lastKnownConfig = newConfig
@@ -510,16 +516,12 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    override fun onCreateInlineSuggestionsRequest(uiExtras: Bundle): InlineSuggestionsRequest? {
-        if (!inlineSuggestions || !inputDeviceMgr.isVirtualKeyboard) return null
-        return InlineSuggestionRequestFactory.create(this, ThemeManager.activeTheme)
-    }
+    override fun onCreateInlineSuggestionsRequest(uiExtras: Bundle): InlineSuggestionsRequest? =
+        inlineSuggestionController.createRequest()
 
     @RequiresApi(Build.VERSION_CODES.R)
-    override fun onInlineSuggestionsResponse(response: InlineSuggestionsResponse): Boolean {
-        if (!inlineSuggestions || !inputDeviceMgr.isVirtualKeyboard) return false
-        return inputView?.handleInlineSuggestions(response) == true
-    }
+    override fun onInlineSuggestionsResponse(response: InlineSuggestionsResponse): Boolean =
+        inlineSuggestionController.handleResponse(response)
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
