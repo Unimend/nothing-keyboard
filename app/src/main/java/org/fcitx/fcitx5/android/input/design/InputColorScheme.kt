@@ -8,6 +8,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 
 /** Semantic colors consumed by input surfaces, independent of the persisted theme schema. */
 data class InputColorScheme(
+    @ColorInt val background: Int,
     @ColorInt val surface: Int,
     @ColorInt val barSurface: Int,
     @ColorInt val keyContainer: Int,
@@ -32,6 +33,7 @@ data class InputColorScheme(
 
 /** The only adapter from the legacy/persisted [Theme] color schema into input visual roles. */
 fun Theme.toInputColorScheme(): InputColorScheme = InputColorScheme(
+    background = backgroundColor,
     surface = if (isNothingStyle) NothingDesignTokens.Color.Surface else keyboardColor,
     barSurface = if (isNothingStyle) NothingDesignTokens.Color.Surface else barColor,
     keyContainer = keyBackgroundColor,

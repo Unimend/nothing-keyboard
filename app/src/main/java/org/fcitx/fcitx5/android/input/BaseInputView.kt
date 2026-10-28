@@ -28,6 +28,7 @@ import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.input.session.InputSessionReader
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.utils.item
 import org.fcitx.fcitx5.android.utils.navbarFrameHeight
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
@@ -75,6 +76,7 @@ abstract class BaseInputView(
     private var candidateActionMenu: PopupMenu? = null
 
     val themedContext = context.withTheme(R.style.Theme_InputViewTheme)
+    private val colors = theme.toInputColorScheme()
 
     fun showCandidateActionMenu(idx: Int, text: String, view: View) {
         candidateActionMenu?.dismiss()
@@ -89,7 +91,7 @@ abstract class BaseInputView(
                         color(
                             context.styledColorOrDefault(
                                 android.R.attr.colorAccent,
-                                theme.genericActiveForegroundColor
+                                colors.activeContent
                             )
                         ) {
                             append(text)

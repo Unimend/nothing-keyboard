@@ -37,6 +37,7 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.SurfaceAttachment
 import org.fcitx.fcitx5.android.utils.AppUtil
@@ -179,7 +180,10 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
         promptMenu = PopupMenu(context, ui.deleteAllButton).apply {
             menu.add(buildSpannedString {
                 bold {
-                    color(context.styledColorOrDefault(android.R.attr.colorAccent, theme.genericActiveForegroundColor)) {
+                    color(context.styledColorOrDefault(
+                        android.R.attr.colorAccent,
+                        theme.toInputColorScheme().activeContent
+                    )) {
                         append(context.getString(if (skipPinned) R.string.delete_all_except_pinned else R.string.delete_all_pinned_items))
                     }
                 }
@@ -201,9 +205,9 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
         if (pendingCount == 0) return
         val str = context.resources.getString(R.string.num_items_deleted, pendingCount)
         snackbarInstance = Snackbar.make(snackbarCtx, ui.root, str, Snackbar.LENGTH_LONG)
-            .setBackgroundTint(theme.popupBackgroundColor)
-            .setTextColor(theme.popupTextColor)
-            .setActionTextColor(theme.genericActiveBackgroundColor)
+            .setBackgroundTint(theme.toInputColorScheme().popupContainer)
+            .setTextColor(theme.toInputColorScheme().popupContent)
+            .setActionTextColor(theme.toInputColorScheme().activeContainer)
             .setAction(R.string.undo) {
                 inputView.surfaceScope.launch {
                     interaction.undoPendingDeletes()

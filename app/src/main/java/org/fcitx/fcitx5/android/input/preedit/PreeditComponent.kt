@@ -10,6 +10,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.theme
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
 import org.mechdancer.dependency.manager.ManagedHandler
@@ -26,8 +27,9 @@ class PreeditComponent : UniqueComponent<PreeditComponent>(), Dependent,
 
     val ui by lazy {
         val keyBorder = ThemeManager.prefs.keyBorder.getValue()
+        val colors = theme.toInputColorScheme()
         val bkgColor =
-            if (!keyBorder && theme is Theme.Builtin) theme.barColor else theme.backgroundColor
+            if (!keyBorder && theme is Theme.Builtin) colors.barSurface else colors.background
         PreeditUi(context, theme, setupTextView = {
             backgroundColor = bkgColor
             horizontalPadding = dp(8)

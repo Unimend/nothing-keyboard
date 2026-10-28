@@ -23,6 +23,7 @@ import org.fcitx.fcitx5.android.input.candidates.floating.PagedCandidatesUi
 import org.fcitx.fcitx5.android.input.candidates.interaction.selectCandidate
 import org.fcitx.fcitx5.android.input.candidates.interaction.offsetCandidatePage
 import org.fcitx.fcitx5.android.input.preedit.PreeditUi
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import splitties.dimensions.dp
@@ -225,7 +226,7 @@ class CandidatesView(
         minWidth = dp(windowMinWidth)
         padding = dp(windowPadding)
         background = GradientDrawable().apply {
-            setColor(theme.backgroundColor)
+            setColor(theme.toInputColorScheme().background)
             shape = GradientDrawable.RECTANGLE
             cornerRadius = dp(windowRadius).toFloat()
         }

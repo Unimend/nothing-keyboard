@@ -65,6 +65,60 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 17. Popups | PopupAction / PopupResult + PopupComponent | Geometry ownership and configuration changes |
 | 18. Settings, persistence and diagnostics | AppPrefs/data layer + InputCoreDiagnostics/tests | Settings/data ownership is not yet fully audited |
 
+### Current architecture tree and completion state
+
+Legend: `✅` means the responsibility has one owner and ordinary production paths use the new
+contract; `🟡` means the boundary exists but migration, platform cases or visual coverage remains;
+`⬜` means the responsibility has not entered a dedicated refactor phase. Completion here describes
+architecture ownership, not a claim that every third-party editor and Android version is tested.
+
+```text
+Nothing Keyboard
+├── Android / Fcitx boundary
+│   ├── 🟡 Android lifecycle and device presentation
+│   ├── ✅ Fcitx engine command/effect bridge
+│   ├── ✅ Serialized engine command queue
+│   └── 🟡 Editor capability and platform compatibility policy
+│
+├── Input core
+│   ├── ✅ Input session snapshot and scoped sinks
+│   ├── ✅ Editor state, composition and cursor controller
+│   ├── ✅ Semantic software/hardware key commands
+│   ├── ✅ Input mode store
+│   └── ✅ Candidate model, paging, selection and interaction
+│
+├── Editing and interaction
+│   ├── ✅ Shared editing command port
+│   ├── ✅ Delete/range-delete/clear/undo transaction system
+│   ├── 🟡 Clipboard history, mutations and platform collection
+│   ├── ✅ Gesture recognition and shared semantic bindings
+│   └── ✅ Navigation commands and input-window ownership
+│
+├── Visual system
+│   ├── ✅ Typography roles and mixed Doto/system-font rendering
+│   ├── ✅ Functional glyph registry
+│   ├── ✅ Semantic surface geometry and design tokens
+│   ├── 🟡 Semantic color roles (main surfaces complete; platform edges under audit)
+│   ├── 🟡 Motion roles and feedback (timing centralized; choreography remains)
+│   └── 🟡 Popups (actions/results complete; remaining geometry/configuration audit)
+│
+├── Surfaces
+│   ├── ✅ Main keyboard and candidate rail
+│   ├── ✅ Expanded/floating candidates
+│   ├── ✅ Editing panel
+│   ├── ✅ Clipboard and picker/Emoji surfaces
+│   └── ✅ Preedit, status and toolbar surfaces
+│
+└── Application support
+    ├── 🟡 Settings and preference ownership
+    ├── 🟡 Persistence/data retention policy
+    └── ✅ Input-core diagnostics and architecture regression tests
+```
+
+The next completion targets are semantic color platform edges, popup geometry, and then motion
+choreography. Android lifecycle and settings remain separate later phases; they are not mixed into
+the visual upgrade merely to increase the number of green items.
+
 ### Visual-system upgrade
 
 The visual upgrade starts from semantic resolution, not from changing individual pixels. A surface
