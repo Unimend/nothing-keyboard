@@ -14,17 +14,20 @@ class DestructiveEditingControllerTest {
         var start = 0
         var end = 3
         var sentBackspace = 0
+        var simulateBackspace = true
         override val editingSelection = CursorRange(0, 3)
         override val editingComposition = CursorRange()
         override val hasActiveComposition: Boolean
             get() = editingComposition.isNotEmpty()
-        override val shouldSimulateBackspaceKey = true
+        override val shouldSimulateBackspaceKey: Boolean
+            get() = simulateBackspace
         override val editingConnection = Proxy.newProxyInstance(
             InputConnection::class.java.classLoader,
             arrayOf(InputConnection::class.java)
         ) { _, method, args ->
             when (method.name) {
                 "getSelectedText" -> text.substring(start, end)
+                "getTextBeforeCursor" -> text.substring(0, start)
                 "getExtractedText" -> ExtractedText().apply { this.text = this@Editor.text }
                 "performContextMenuAction" -> {
                     if (args!![0] == android.R.id.selectAll) {
@@ -43,6 +46,17 @@ class DestructiveEditingControllerTest {
                     true
                 }
                 "setSelection" -> { start = args!![0] as Int; end = args[1] as Int; true }
+                "deleteSurroundingTextInCodePoints", "deleteSurroundingText" -> {
+                    val before = args!![0] as Int
+                    val after = args[1] as Int
+                    val deleteStart = text.offsetByCodePoints(start, -before.coerceAtMost(text.codePointCount(0, start)))
+                    val availableAfter = text.codePointCount(end, text.length)
+                    val deleteEnd = text.offsetByCodePoints(end, after.coerceAtMost(availableAfter))
+                    text = text.removeRange(deleteStart, deleteEnd)
+                    start = deleteStart
+                    end = start
+                    true
+                }
                 "beginBatchEdit", "endBatchEdit" -> true
                 else -> error("Unexpected editor call: ${method.name}")
             }
@@ -148,6 +162,66 @@ class DestructiveEditingControllerTest {
         controller.undo()
 
         assertEquals("abc中文", editor.text)
+        assertEquals(editor.text.length, editor.start)
+        assertEquals(editor.start, editor.end)
+    }
+
+    @Test
+    fun `composition in the middle is excluded and cursor returns to the committed boundary`() {
+        val editor = Editor().apply {
+            text = "前ni后"
+            start = 3
+            end = 3
+            editingSelection.update(3, 3)
+            editingComposition.update(1, 3)
+        }
+        val controller = DestructiveEditingController(editor)
+
+        controller.clearAll()
+        controller.undo()
+
+        assertEquals("前后", editor.text)
+        assertEquals(1, editor.start)
+        assertEquals(editor.start, editor.end)
+    }
+
+    @Test
+    fun `ordinary delete after range delete replaces history with the latest mutation`() {
+        val editor = Editor().apply {
+            text = "abcXYZ"
+            start = 3
+            end = 6
+            editingSelection.update(start, end)
+            simulateBackspace = false
+        }
+        val controller = DestructiveEditingController(editor)
+
+        controller.deleteSelection()
+        controller.deleteBackward()
+        assertEquals("ab", editor.text)
+
+        controller.undo()
+        assertEquals("abc", editor.text)
+        controller.undo()
+        assertEquals("abc", editor.text)
+    }
+
+    @Test
+    fun `supplementary unicode backspace and undo preserve one code point`() {
+        val editor = Editor().apply {
+            text = "甲😀"
+            start = text.length
+            end = start
+            editingSelection.update(start, end)
+            simulateBackspace = false
+        }
+        val controller = DestructiveEditingController(editor)
+
+        controller.deleteBackward()
+        assertEquals("甲", editor.text)
+        controller.undo()
+
+        assertEquals("甲😀", editor.text)
         assertEquals(editor.text.length, editor.start)
         assertEquals(editor.start, editor.end)
     }
