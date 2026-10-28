@@ -20,7 +20,8 @@ import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.floating.PagedCandidatesUi
-import org.fcitx.fcitx5.android.input.engine.EngineCommand
+import org.fcitx.fcitx5.android.input.candidates.interaction.selectCandidate
+import org.fcitx.fcitx5.android.input.candidates.interaction.offsetCandidatePage
 import org.fcitx.fcitx5.android.input.preedit.PreeditUi
 import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
@@ -100,11 +101,11 @@ class CandidatesView(
     private val candidatesUi = PagedCandidatesUi(
         ctx, theme, setupTextView,
         onCandidateClick = { index ->
-            service.submitEngineCommand(EngineCommand.SelectCandidate(index))
+            service.selectCandidate(index)
         },
         onCandidateAction = { index, text, view -> showCandidateActionMenu(index, text, view) },
-        onPrevPage = { service.submitEngineCommand(EngineCommand.OffsetCandidatePage(-1)) },
-        onNextPage = { service.submitEngineCommand(EngineCommand.OffsetCandidatePage(1)) }
+        onPrevPage = { service.offsetCandidatePage(-1) },
+        onNextPage = { service.offsetCandidatePage(1) }
     )
 
     private var previousEngineState: EngineState? = null

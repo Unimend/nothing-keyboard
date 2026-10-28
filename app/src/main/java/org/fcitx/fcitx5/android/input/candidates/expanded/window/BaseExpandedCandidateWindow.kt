@@ -29,10 +29,10 @@ import org.fcitx.fcitx5.android.input.candidates.expanded.CandidatesPagingSource
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateLayout
 import org.fcitx.fcitx5.android.input.candidates.expanded.PagingCandidateViewAdapter
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
+import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
-import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
@@ -59,6 +59,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val bar: KawaiiBarComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
+    private val candidateInteraction: CandidateInteractionController by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
     private val navigator: InputNavigator by manager.must()
 
@@ -108,7 +109,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     val tabsAdapter by lazy {
         object : CandidateTabActionsAdapter(theme, false) {
             override fun onTriggerTabAction(id: Int) {
-                service.submitEngineCommand(EngineCommand.TriggerCandidateTabAction(id))
+                candidateInteraction.triggerTabAction(id)
             }
         }
     }
@@ -116,7 +117,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     val pinnedTabsAdapter by lazy {
         object : CandidateTabActionsAdapter(theme, true) {
             override fun onTriggerTabAction(id: Int) {
-                service.submitEngineCommand(EngineCommand.TriggerCandidateTabAction(id))
+                candidateInteraction.triggerTabAction(id)
             }
         }
     }
@@ -164,7 +165,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         }
         updateTabs(service.inputSession.current.engine.inputPanel.tabs)
         offsetJob = service.lifecycleScope.launch {
-            horizontalCandidate.expandedCandidateOffset.collect {
+            candidateInteraction.expandedOffset.collect {
                 if (it <= 0) {
                     navigator.navigate(InputNavigationCommand.ShowKeyboard())
                 } else {
@@ -184,10 +185,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         holder.itemView.setOnClickListener {
             // Snapshot the immutable engine index at touch completion. Never infer it from the
             // RecyclerView position: paging may refresh between layout and click dispatch.
-            val candidateIndex = holder.idx
-            if (candidateIndex >= 0) {
-                service.submitEngineCommand(EngineCommand.SelectCandidate(candidateIndex))
-            }
+            candidateInteraction.select(holder.idx)
         }
         holder.itemView.setOnLongClickListener {
             inputView.showCandidateActionMenu(holder.idx, holder.candidate.text, holder.ui.root)
@@ -203,7 +201,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     override fun onDetached() {
         bar.expandButtonStateMachine.push(
             ExpandedCandidatesDetached,
-            ExpandedCandidatesEmpty to (horizontalCandidate.adapter.total == adapter.offset)
+            ExpandedCandidatesEmpty to candidateInteraction.state.reachedEnd
         )
         candidatesSubmitJob?.cancel()
         offsetJob?.cancel()

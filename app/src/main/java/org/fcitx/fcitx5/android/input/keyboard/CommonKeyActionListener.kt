@@ -20,6 +20,7 @@ import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
 import org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
+import org.fcitx.fcitx5.android.input.candidates.interaction.selectCandidate
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Reset
@@ -77,7 +78,7 @@ class CommonKeyActionListener :
             // Chinese: select 1st candidate, except prediction candidates
             if (hasPreedit()) {
                 // preedit not empty, maybe there are candidates to select ...
-                service.submitEngineCommand(EngineCommand.SelectCandidate(0))
+                service.selectCandidate(0)
             }
         } else {
             // Other languages: commit preedit as-is

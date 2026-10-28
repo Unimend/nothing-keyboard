@@ -9,10 +9,7 @@ import android.content.res.Configuration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -23,11 +20,11 @@ import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AutoFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
+import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
-import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.session.EngineCandidateList
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
@@ -39,6 +36,7 @@ class HorizontalCandidateComponent :
     private val theme by manager.theme()
     private val inputView by manager.inputView()
     private val bar: KawaiiBarComponent by manager.must()
+    private val candidateInteraction: CandidateInteractionController by manager.must()
 
     private val fillStyle by AppPrefs.getInstance().keyboard.horizontalCandidateStyle
     private val maxSpanCountPref by lazy {
@@ -52,50 +50,27 @@ class HorizontalCandidateComponent :
 
     private var layoutMinWidth = 0
 
-    private var candidateGeneration = 0
-    private var loadMoreInFlight = false
-    private var reachedCandidateEnd = false
-
     private fun loadMoreCandidates() {
-        if (loadMoreInFlight || reachedCandidateEnd) return
-        val offset = adapter.itemCount
-        val total = adapter.total
-        if (total >= 0 && offset >= total) {
-            reachedCandidateEnd = true
-            return
-        }
-        val generation = candidateGeneration
-        loadMoreInFlight = true
+        val request = candidateInteraction.beginLoadMore() ?: return
+        val pageSize = 32
         inputView.service.lifecycleScope.launch {
-            val next = inputView.service.engineQueries.candidates(offset, 32)
+            val next = inputView.service.engineQueries.candidates(request.offset, pageSize)
             view.post {
-                if (generation != candidateGeneration) return@post
-                loadMoreInFlight = false
-                if (next.isEmpty()) {
-                    reachedCandidateEnd = true
-                    return@post
+                if (candidateInteraction.completeLoadMore(request, next.size, pageSize)) {
+                    adapter.appendCandidates(next, candidateInteraction.state.total)
+                    refreshExpanded()
                 }
-                adapter.appendCandidates(next, total)
-                reachedCandidateEnd = next.size < 32 ||
-                    (total >= 0 && adapter.itemCount >= total)
             }
         }
     }
 
     // Since expanded candidate window is created once the expand button was clicked,
     // we need to replay the last offset
-    private val _expandedCandidateOffset = MutableSharedFlow<Int>(
-        replay = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-
-    val expandedCandidateOffset = _expandedCandidateOffset.asSharedFlow()
-
-    private fun refreshExpanded(childCount: Int) {
-        _expandedCandidateOffset.tryEmit(childCount)
+    private fun refreshExpanded() {
+        candidateInteraction.publishExpandedOffset()
         bar.expandButtonStateMachine.push(
             ExpandedCandidatesUpdated,
-            ExpandedCandidatesEmpty to (adapter.total == childCount)
+            ExpandedCandidatesEmpty to candidateInteraction.state.reachedEnd
         )
     }
 
@@ -105,12 +80,7 @@ class HorizontalCandidateComponent :
                 super.onBindViewHolder(holder, position)
                 holder.itemView.minimumWidth = layoutMinWidth
                 holder.itemView.setOnClickListener {
-                    val candidateIndex = holder.idx
-                    if (candidateIndex >= 0) {
-                        inputView.service.submitEngineCommand(
-                            EngineCommand.SelectCandidate(candidateIndex)
-                        )
-                    }
+                    candidateInteraction.select(holder.idx)
                 }
                 holder.itemView.setOnLongClickListener {
                     inputView.showCandidateActionMenu(holder.idx, holder.candidate.text, holder.ui.root)
@@ -130,7 +100,7 @@ class HorizontalCandidateComponent :
         object : LinearLayoutManager(context, HORIZONTAL, false) {
             override fun onLayoutCompleted(state: RecyclerView.State) {
                 super.onLayoutCompleted(state)
-                refreshExpanded(childCount)
+                refreshExpanded()
             }
         }
     }
@@ -168,20 +138,18 @@ class HorizontalCandidateComponent :
         // A new composition starts a new search, so its candidate rail must start at the primary
         // candidate. Subsequent user drags remain untouched until the candidate data changes.
         val previousCandidates = adapter.candidates
-        candidateGeneration++
-        loadMoreInFlight = false
-        reachedCandidateEnd = false
         val candidates = data.items
         val total = data.total
         layoutMinWidth = if (fillStyle == NeverFillWidth) 0
             else view.width / maxSpanCountPref.getValue()
         adapter.updateCandidates(candidates, total)
+        candidateInteraction.replaceCandidates(candidates.size, total)
         if (previousCandidates.toList() != candidates) {
             view.scrollToPosition(0)
         }
         // An empty adapter may not trigger LayoutManager.onLayoutCompleted().
         if (candidates.isEmpty()) {
-            refreshExpanded(0)
+            refreshExpanded()
         }
     }
 }

@@ -20,12 +20,14 @@ class CandidatesPagingSource(val queries: InputEngineQueries, val total: Int, va
         val pageSize = params.loadSize
         Timber.d("getCandidates(offset=$startIndex, limit=$pageSize)")
         val candidates = queries.candidates(startIndex, pageSize)
-        val prevKey = if (startIndex >= pageSize) startIndex - pageSize else null
-        val nextKey = if (total > 0) {
-            if (startIndex + pageSize + 1 >= total) null else startIndex + pageSize
-        } else {
-            if (candidates.size < pageSize) null else startIndex + pageSize
-        }
+        // Expanded candidates begin after the horizontal rail. Never prepend into that rail.
+        val prevKey = null
+        val nextKey = nextCandidatePageKey(
+            startIndex = startIndex,
+            loadedCount = candidates.size,
+            requestedCount = pageSize,
+            total = total
+        )
         // Keep the engine index attached to the word. The adapter's position can move while
         // Paging refreshes or prepends data, so deriving the selection index from that position
         // can commit a neighbouring candidate instead of the one the user actually touched.
@@ -39,4 +41,15 @@ class CandidatesPagingSource(val queries: InputEngineQueries, val total: Int, va
     // always reload from beginning
     override fun getRefreshKey(state: PagingState<Int, CandidateEntry>) = null
 
+}
+
+internal fun nextCandidatePageKey(
+    startIndex: Int,
+    loadedCount: Int,
+    requestedCount: Int,
+    total: Int
+): Int? {
+    if (loadedCount <= 0 || loadedCount < requestedCount) return null
+    val next = startIndex + loadedCount
+    return if (total >= 0 && next >= total) null else next
 }
