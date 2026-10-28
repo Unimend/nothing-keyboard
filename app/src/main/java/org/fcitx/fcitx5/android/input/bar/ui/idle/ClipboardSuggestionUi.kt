@@ -10,6 +10,7 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.rippleDrawable
 import splitties.dimensions.dp
@@ -35,9 +36,11 @@ import splitties.views.imageDrawable
 
 class ClipboardSuggestionUi(override val ctx: Context, private val theme: Theme) : Ui {
 
+    private val colors = theme.toInputColorScheme()
+
     private val icon = imageView {
         imageDrawable = drawable(R.drawable.ic_clipboard)!!.apply {
-            setTint(theme.altKeyTextColor)
+            setTint(colors.alternateKeyContent)
         }
     }
 
@@ -45,7 +48,7 @@ class ClipboardSuggestionUi(override val ctx: Context, private val theme: Theme)
         isSingleLine = true
         maxWidth = dp(120)
         ellipsize = TextUtils.TruncateAt.END
-        setTextColor(theme.altKeyTextColor)
+        setTextColor(colors.alternateKeyContent)
     }
 
     private val layout = constraintLayout {
@@ -64,7 +67,7 @@ class ClipboardSuggestionUi(override val ctx: Context, private val theme: Theme)
 
     val suggestionView = CustomGestureView(ctx).apply {
         add(layout, lParams(wrapContent, matchParent))
-        background = rippleDrawable(theme.keyPressHighlightColor)
+        background = rippleDrawable(colors.pressed)
     }
 
     fun setContent(value: CharSequence) {

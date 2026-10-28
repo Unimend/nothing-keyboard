@@ -13,6 +13,7 @@ import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.core.add
@@ -32,10 +33,11 @@ class PopupMenuUi(
 ) : PopupContainerUi(ctx, theme, outerBounds, triggerBounds, onDismissSelf) {
 
     private val keySize = ctx.dp(48)
+    private val colors = theme.toInputColorScheme()
 
     private val inactiveBackground = InsetDrawable(
         ShapeDrawable(OvalShape()).apply {
-            paint.color = theme.accentKeyBackgroundColor
+            paint.color = colors.accentContainer
         },
         (keySize - ctx.dp(33)) / 2
     )
@@ -43,8 +45,8 @@ class PopupMenuUi(
     private val activeBackground = InsetDrawable(
         ShapeDrawable(OvalShape()).apply {
             paint.color = ColorUtils.compositeColors(
-                theme.keyPressHighlightColor,
-                theme.accentKeyBackgroundColor
+                colors.pressed,
+                colors.accentContainer
             )
         },
         (keySize - ctx.dp(34)) / 2
@@ -66,7 +68,7 @@ class PopupMenuUi(
             background = inactiveBackground
             scaleType = ImageView.ScaleType.CENTER_INSIDE
             imageDrawable = drawable(it.icon)!!.apply {
-                setTint(theme.accentKeyTextColor)
+                setTint(colors.accentContent)
             }
         }
     }

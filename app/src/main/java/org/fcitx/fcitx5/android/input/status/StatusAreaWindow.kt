@@ -19,6 +19,7 @@ import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
@@ -173,7 +174,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     val view by lazy {
         context.recyclerView {
             if (!keyBorder) {
-                backgroundColor = theme.barColor
+                backgroundColor = theme.toInputColorScheme().barSurface
             }
             layoutManager = gridLayoutManager(4)
             adapter = this@StatusAreaWindow.adapter

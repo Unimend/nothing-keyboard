@@ -12,6 +12,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
@@ -60,10 +61,12 @@ class PopupKeyboardUi(
 
     class PopupKeyUi(override val ctx: Context, val theme: Theme, val text: String) : Ui {
 
+        private val colors = theme.toInputColorScheme()
+
         val textView = view(::AutoScaleTextView) {
             text = this@PopupKeyUi.text
             scaleMode = AutoScaleTextView.Mode.Proportional
-            setTextColor(theme.keyTextColor)
+            setTextColor(colors.keyContent)
             applyNothingTextStyle(theme, NothingTextStyle.PopupKey)
         }
 
@@ -74,14 +77,16 @@ class PopupKeyboardUi(
         }
     }
 
+    private val colors = theme.toInputColorScheme()
+
     private val inactiveBackground = GradientDrawable().apply {
         cornerRadius = radius
-        setColor(theme.popupBackgroundColor)
+        setColor(this@PopupKeyboardUi.colors.popupContainer)
     }
 
     private val focusBackground = GradientDrawable().apply {
         cornerRadius = radius
-        setColor(theme.genericActiveBackgroundColor)
+        setColor(this@PopupKeyboardUi.colors.activeContainer)
     }
 
     private val rowCount: Int
@@ -187,14 +192,14 @@ class PopupKeyboardUi(
     private fun markFocus(index: Int) {
         keyUis.getOrNull(index)?.apply {
             root.background = focusBackground
-            textView.setTextColor(theme.genericActiveForegroundColor)
+            textView.setTextColor(colors.activeContent)
         }
     }
 
     private fun markInactive(index: Int) {
         keyUis.getOrNull(index)?.apply {
             root.background = null
-            textView.setTextColor(theme.popupTextColor)
+            textView.setTextColor(colors.popupContent)
         }
     }
 

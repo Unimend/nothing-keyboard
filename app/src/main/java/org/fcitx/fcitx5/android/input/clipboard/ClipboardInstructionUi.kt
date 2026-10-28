@@ -9,6 +9,7 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.constraintlayout.below
@@ -31,17 +32,18 @@ sealed class ClipboardInstructionUi(override val ctx: Context, protected val the
     class Enable(ctx: Context, theme: Theme) : ClipboardInstructionUi(ctx, theme) {
 
         private val androidStyles = AndroidStyles(ctx)
+        private val colors = theme.toInputColorScheme()
 
         private val instructionText = textView {
             setText(R.string.instruction_enable_clipboard_listening)
             setPaddingDp(12, 8, 12, 8)
-            setTextColor(theme.keyTextColor)
+            setTextColor(colors.keyContent)
             applyNothingTextStyle(theme, NothingTextStyle.Body, sizeSp = null)
         }
 
         val enableButton = androidStyles.button.borderless {
             setText(R.string.clipboard_enable)
-            setTextColor(theme.accentKeyBackgroundColor)
+            setTextColor(colors.accentContainer)
             applyNothingTextStyle(theme, NothingTextStyle.ControlLabel, sizeSp = null)
         }
 
@@ -60,15 +62,17 @@ sealed class ClipboardInstructionUi(override val ctx: Context, protected val the
 
     class Empty(ctx: Context, theme: Theme) : ClipboardInstructionUi(ctx, theme) {
 
+        private val colors = theme.toInputColorScheme()
+
         private val icon = imageView {
             imageDrawable = drawable(R.drawable.ic_baseline_content_paste_24)!!.apply {
-                setTint(theme.altKeyTextColor)
+                setTint(colors.alternateKeyContent)
             }
         }
 
         private val instructionText = textView {
             setText(R.string.instruction_copy)
-            setTextColor(theme.keyTextColor)
+            setTextColor(colors.keyContent)
             applyNothingTextStyle(theme, NothingTextStyle.Body, sizeSp = null)
         }
 

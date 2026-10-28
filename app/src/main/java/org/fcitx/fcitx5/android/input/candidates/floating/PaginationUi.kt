@@ -12,6 +12,7 @@ import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.session.EnginePagedCandidates
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.utils.styledFloat
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -27,8 +28,10 @@ import splitties.views.imageDrawable
 
 class PaginationUi(override val ctx: Context, val theme: Theme) : Ui {
 
+    private val colors = theme.toInputColorScheme()
+
     private fun createIcon(@DrawableRes icon: Int) = imageView {
-        imageTintList = ColorStateList.valueOf(theme.keyTextColor)
+        imageTintList = ColorStateList.valueOf(colors.keyContent)
         imageDrawable = drawable(icon)
         scaleType = ImageView.ScaleType.CENTER_CROP
         isClickable = true

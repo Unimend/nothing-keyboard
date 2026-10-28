@@ -30,6 +30,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.session.InputPresentationState
@@ -66,7 +67,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             val intrinsicSize = max(1, context.dp(1))
             intrinsicWidth = intrinsicSize
             intrinsicHeight = intrinsicSize
-            paint.color = theme.dividerColor
+            paint.color = theme.toInputColorScheme().divider
         }
     }
 
