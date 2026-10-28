@@ -12,7 +12,7 @@ import org.fcitx.fcitx5.android.core.InputMethodEntry
 /** Converts engine-owned objects at the boundary; downstream state never depends on Fcitx types. */
 object FcitxEngineStateAdapter {
     fun map(event: FcitxEvent<*>): EngineStateEvent? = when (event) {
-        is FcitxEvent.ReadyEvent -> EngineStateEvent.Ready
+        is FcitxEvent.ReadyEvent -> EngineStateEvent.Operational
         is FcitxEvent.ClientPreeditEvent ->
             EngineStateEvent.ClientPreeditChanged(event.data.toEngineText())
         is FcitxEvent.InputPanelEvent -> EngineStateEvent.InputPanelChanged(

@@ -41,6 +41,13 @@ class EngineStateReducerTest {
     }
 
     @Test
+    fun observedEngineActivityMarksStateOperational() {
+        val state = EngineStateReducer.reduce(EngineState(), EngineStateEvent.Operational)
+
+        assertTrue(state.ready)
+    }
+
+    @Test
     fun statusAreaUpdatesActionsAndInputMethodAtomically() {
         val inputMethod = EngineInputMethod(
             "pinyin", "Pinyin", "拼音", "拼", "zh_CN", "", "pinyin", true, "", "", ""

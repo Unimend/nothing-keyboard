@@ -92,6 +92,9 @@ class InputCoreDiagnosticsActivity : AppCompatActivity() {
             appendLine("  [$index] ${item.label} | ${item.text} | ${item.comment}")
         }
         appendLine("PAGED       ${engine.pagedCandidates.items.size}")
+        engine.pagedCandidates.items.take(8).forEachIndexed { index, item ->
+            appendLine("  P[$index] ${item.label} | ${item.text} | ${item.comment}")
+        }
         appendLine("STATUS      ${engine.statusActions.size}")
     }
 

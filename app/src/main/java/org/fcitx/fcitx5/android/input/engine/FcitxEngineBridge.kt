@@ -11,6 +11,7 @@ import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
+import org.fcitx.fcitx5.android.input.session.EngineStateEvent
 import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
@@ -33,6 +34,9 @@ class FcitxEngineBridge(
         collectionJob = scope.launch(start = CoroutineStart.UNDISPATCHED) {
             connection.runImmediately { eventFlow }.collect { event ->
                 InputCoreDiagnostics.recordEngineEvent(event::class.simpleName ?: "FcitxEvent")
+                if (!session.current.engine.ready) {
+                    session.dispatch(InputSessionEvent.EngineChanged(EngineStateEvent.Operational))
+                }
                 publishState(event)
                 if (event is FcitxEvent.ReadyEvent) publishCachedState()
                 effectSink(event)
@@ -42,7 +46,9 @@ class FcitxEngineBridge(
         // cache snapshot and live events for an engine that was already ready.
         val alreadyReady = connection.runImmediately { isReady }
         publishCachedState()
-        if (alreadyReady) publishState(FcitxEvent.ReadyEvent())
+        if (alreadyReady) {
+            session.dispatch(InputSessionEvent.EngineChanged(EngineStateEvent.Operational))
+        }
     }
 
     private fun publishState(event: FcitxEvent<*>) {

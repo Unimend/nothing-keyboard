@@ -88,7 +88,8 @@ data class EngineState(
 )
 
 sealed interface EngineStateEvent {
-    data object Ready : EngineStateEvent
+    /** The bridge observed a live event, stronger evidence than a missed one-shot Ready event. */
+    data object Operational : EngineStateEvent
     data class ClientPreeditChanged(val value: EngineText) : EngineStateEvent
     data class InputPanelChanged(val value: EngineInputPanel) : EngineStateEvent
     data class CandidatesChanged(val value: EngineCandidateList) : EngineStateEvent
@@ -103,7 +104,7 @@ sealed interface EngineStateEvent {
 
 object EngineStateReducer {
     fun reduce(state: EngineState, event: EngineStateEvent): EngineState = when (event) {
-        EngineStateEvent.Ready -> state.copy(ready = true)
+        EngineStateEvent.Operational -> state.copy(ready = true)
         is EngineStateEvent.ClientPreeditChanged -> state.copy(clientPreedit = event.value)
         is EngineStateEvent.InputPanelChanged -> state.copy(inputPanel = event.value)
         is EngineStateEvent.CandidatesChanged -> state.copy(candidates = event.value)
