@@ -6,8 +6,14 @@ package org.fcitx.fcitx5.android.input.editing
 data class DeletedTextEdit(
     val start: Int,
     val deletedText: String,
-    val cursorAfterRestore: Int
+    val cursorAfterRestore: Int,
+    val restoration: Restoration = Restoration.Insert
 )
+
+enum class Restoration {
+    Insert,
+    ReplaceDocument
+}
 
 /** One-level undo history owned by our destructive gestures, independent of app/system Undo. */
 class DestructiveEditHistory {

@@ -125,6 +125,14 @@ Down-swipe undo uses `DestructiveEditHistory`, which restores only the last rang
 clear-all performed by this keyboard. It must not invoke application/system Undo because that can
 reopen a committed CJK phrase as raw composing pinyin.
 
+Destructive edits follow the same transaction rule as UI Maker's Action/History boundary: one
+continuous gesture produces one semantic edit and one history entry. The history entry describes
+how to restore the document; a renderer or Android callback must not reconstruct that policy.
+Range deletion restores by insertion at the deleted range. Clear-all restores by replacing the
+document, so a delayed editor/composition callback cannot turn undo into a second copy of the
+document. Client preedit is engine-owned transient state and is excluded from committed clear-all
+history.
+
 `DestructiveEditingController` owns capture, deletion, clear-all, Unicode-aware backspace history,
 and restoration. `EditorController` supplies cursor, composition and engine-reset bridges through
 `DestructiveEditingHost`. The service supplies platform connection providers at construction time;
@@ -186,6 +194,14 @@ the former parallel input broadcast API has been removed and is forbidden by an 
 - Pixel glyph selection is centralized in `NothingGlyphRegistry`.
 - Candidate text never shrinks to fit; candidate containers grow and scroll instead.
 - New behavior requires a pure policy/model test before device-only verification.
+
+Editing changes require sequence tests, not only isolated-command tests. At minimum cover:
+
+- committed Latin/CJK text + active preedit + clear-all + undo;
+- a delayed preedit/editor callback between clear-all and undo;
+- selection delete + ordinary delete + undo, repeated more than once;
+- supplementary Unicode characters, cursor-in-middle and selection-collapse behavior;
+- the same semantic control from keyboard, editing panel and picker/emoji surfaces.
 
 ## Migration order
 

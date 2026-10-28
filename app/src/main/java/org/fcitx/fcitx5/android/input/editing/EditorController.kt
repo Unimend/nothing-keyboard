@@ -93,6 +93,8 @@ class EditorController(
                 get() = connection()
             override val editingSelection: CursorRange
                 get() = selection.latest
+            override val editingComposition: CursorRange
+                get() = CursorRange(composing.start, composing.end)
             override val hasActiveComposition: Boolean
                 get() = composing.isNotEmpty()
             override val shouldSimulateBackspaceKey: Boolean

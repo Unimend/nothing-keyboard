@@ -13,6 +13,7 @@ import org.fcitx.fcitx5.android.utils.withBatchEdit
 interface DestructiveEditingHost {
     val editingConnection: InputConnection?
     val editingSelection: CursorRange
+    val editingComposition: CursorRange
     val hasActiveComposition: Boolean
     val shouldSimulateBackspaceKey: Boolean
 
@@ -77,12 +78,40 @@ class DestructiveEditingController(
 
     fun clearAll() {
         val connection = host.editingConnection ?: return
-        val before = connection.getExtractedText(ExtractedTextRequest(), 0)
+        val editorText = connection.getExtractedText(ExtractedTextRequest(), 0)
             ?.text
             ?.toString()
             .orEmpty()
         val selection = host.editingSelection
-        history.record(DeletedTextEdit(0, before, selection.end))
+        val composition = host.editingComposition
+        // Android exposes client preedit as part of the editor text. It belongs to the engine,
+        // not to committed document history, so a clear -> undo transaction must not restore it
+        // as ordinary text.
+        val hasValidComposition = host.hasActiveComposition &&
+            composition.start >= 0 && composition.end >= composition.start &&
+            composition.end <= editorText.length
+        val committedText = if (hasValidComposition) {
+            editorText.removeRange(composition.start, composition.end)
+        } else {
+            editorText
+        }
+        val restoreCursor = if (hasValidComposition) {
+            when {
+                selection.end <= composition.start -> selection.end
+                selection.end <= composition.end -> composition.start
+                else -> selection.end - (composition.end - composition.start)
+            }
+        } else {
+            selection.end
+        }.coerceIn(0, committedText.length)
+        history.record(
+            DeletedTextEdit(
+                start = 0,
+                deletedText = committedText,
+                cursorAfterRestore = restoreCursor,
+                restoration = Restoration.ReplaceDocument
+            )
+        )
         host.resetEditingComposition()
         host.predictEditingSelection(0)
         connection.withBatchEdit {
@@ -99,7 +128,11 @@ class DestructiveEditingController(
         val edit = history.consume() ?: return
         host.resetEditingComposition()
         connection.withBatchEdit {
-            setSelection(edit.start, edit.start)
+            if (edit.restoration == Restoration.ReplaceDocument) {
+                performContextMenuAction(android.R.id.selectAll)
+            } else {
+                setSelection(edit.start, edit.start)
+            }
             commitText(edit.deletedText, 1)
             setSelection(edit.cursorAfterRestore, edit.cursorAfterRestore)
         }
