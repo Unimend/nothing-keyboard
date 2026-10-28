@@ -19,22 +19,9 @@
 
     <queries>
         <intent>
-            <action android:name="${applicationId}.plugin.MANIFEST" />
-        </intent>
-        <intent>
             <action android:name="android.view.InputMethod" />
         </intent>
     </queries>
-
-    <permission
-        android:name="${applicationId}.permission.IPC"
-        android:protectionLevel="signature" />
-
-    <permission
-        android:name="${applicationId}.permission.PLUGIN"
-        android:protectionLevel="signature" />
-
-    <uses-permission android:name="${applicationId}.permission.PLUGIN" />
 
     <application
         android:name=".FcitxApplication"
@@ -130,16 +117,6 @@
             <meta-data
                 android:name="android.view.im"
                 android:resource="@xml/input_method" />
-        </service>
-
-        <service
-            android:name=".FcitxRemoteService"
-            android:exported="true"
-            android:permission="${applicationId}.permission.IPC"
-            tools:ignore="SystemPermissionTypo">
-            <intent-filter>
-                <action android:name="${applicationId}.IPC" />
-            </intent-filter>
         </service>
 
         <provider
