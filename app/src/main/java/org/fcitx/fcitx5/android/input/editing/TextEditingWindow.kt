@@ -96,13 +96,12 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
                 hapticOnRepeat,
                 BackspaceGestureController.Actions(
                     moveSelection = {
-                        commandExecutor.execute(EditingCommand.ExtendSelection(it))
+                        commandExecutor.execute(EditingCommand.DeletionGestureMove(it))
                     },
                     deleteSelection = {
-                        if (it != 0) {
-                            commandExecutor.execute(session.deleteSelection())
-                            updateSelection(session.hasSelection, session.userSelection)
-                        }
+                        commandExecutor.execute(EditingCommand.DeletionGestureRelease(it))
+                        session.finishDeletionGesture()
+                        updateSelection(session.hasSelection, session.userSelection)
                     },
                     clearAll = {
                         commandExecutor.execute(session.clearAll())
@@ -110,7 +109,8 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
                     },
                     undo = { commandExecutor.execute(EditingCommand.Undo) },
                     cancel = {
-                        commandExecutor.execute(session.cancelSelection())
+                        commandExecutor.execute(EditingCommand.DeletionGestureCancel)
+                        session.finishDeletionGesture()
                         updateSelection(session.hasSelection, session.userSelection)
                     }
                 )

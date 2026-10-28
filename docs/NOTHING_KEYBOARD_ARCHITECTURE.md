@@ -117,6 +117,10 @@ Every visual backspace key is bound through `BackspaceGestureController`. Main k
 editing panel, and picker/emoji pages provide only semantic callbacks. The controller owns gesture
 thresholds, policy dispatch, feedback, and parent-interception locking for ViewPager surfaces.
 
+`DeletionGestureSession` owns the logical range-selection/reset decision inside the editing system.
+All surfaces submit move/release/cancel commands; candidate renderer state must never decide whether
+a destructive action is allowed. Input-session changes reset this transient state, not undo history.
+
 Down-swipe undo uses `DestructiveEditHistory`, which restores only the last range deletion or
 clear-all performed by this keyboard. It must not invoke application/system Undo because that can
 reopen a committed CJK phrase as raw composing pinyin.

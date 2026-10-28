@@ -15,7 +15,7 @@ class EditingSessionTest {
         val session = EditingSession()
         session.toggleSelection()
         session.updateSelection(1, 5)
-        assertEquals(EditingCommand.CancelSelection, session.cancelSelection())
+        session.finishDeletionGesture()
         assertFalse(session.selectionActive)
         assertFalse(session.hasSelection)
     }
@@ -73,7 +73,7 @@ class EditingSessionTest {
         session.updateSelection(1, 5)
         session.toggleSelection()
 
-        assertEquals(EditingCommand.DeleteSelection, session.deleteSelection())
+        session.finishDeletionGesture()
         assertFalse(session.hasSelection)
         assertFalse(session.userSelection)
         assertFalse(session.selectionActive)

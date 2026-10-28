@@ -9,14 +9,16 @@ sealed interface EditingCommand {
     data object ApplicationUndo : EditingCommand
     data object ApplicationRedo : EditingCommand
     data class MoveCursor(val keyCode: Int, val extendSelection: Boolean) : EditingCommand
-    data class ExtendSelection(val steps: Int) : EditingCommand
+    data class DeletionGestureMove(val steps: Int) : EditingCommand
+    data class DeletionGestureRelease(val totalSteps: Int) : EditingCommand
+    data object DeletionGestureCancel : EditingCommand
+    data object ResetDeletionGesture : EditingCommand
     data object CancelSelection : EditingCommand
     data object SelectAll : EditingCommand
     data object Cut : EditingCommand
     data object Copy : EditingCommand
     data object Paste : EditingCommand
     data object Backspace : EditingCommand
-    data object DeleteSelection : EditingCommand
     data object ClearAll : EditingCommand
     data object Undo : EditingCommand
 }

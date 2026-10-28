@@ -132,7 +132,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     )
 
     val editingCommands: org.fcitx.fcitx5.android.input.editing.EditingCommandPort by lazy {
-        org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor(editor) { code, shift, ctrl ->
+        org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor(
+            editor, inputSession, { submitEngineCommand(EngineCommand.Reset) }
+        ) { code, shift, ctrl ->
             keyEvents.sendCombination(code, shift = shift, ctrl = ctrl)
         }
     }
@@ -364,6 +366,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
+        editingCommands.execute(org.fcitx.fcitx5.android.input.editing.EditingCommand.ResetDeletionGesture)
         // update selection as soon as possible
         // sometimes when restarting input, onUpdateSelection happens before onStartInput, and
         // initialSel{Start,End} is outdated. but it's the client app's responsibility to send

@@ -11,6 +11,21 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `key routing cannot inspect candidate renderer or own deletion gesture state`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/keyboard/CommonKeyActionListener.kt"
+        ).readText()
+        assertFalse("HorizontalCandidateComponent" in source)
+        assertFalse("BackspaceSwipeState" in source)
+        assertTrue("EditingCommand.DeletionGestureMove" in source)
+        val editing = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/editing/TextEditingWindow.kt"
+        ).readText()
+        assertTrue("EditingCommand.DeletionGestureMove" in editing)
+        assertTrue("EditingCommand.DeletionGestureRelease" in editing)
+    }
+
+    @Test
     fun `every gesture view cancels delayed actions on detach and hide`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/keyboard/CustomGestureView.kt"

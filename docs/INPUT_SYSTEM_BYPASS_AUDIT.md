@@ -249,3 +249,19 @@ Device: after entering `abc`, injected DOWN on the Editing backspace followed im
 the keyboard. More than the repeat delay elapsed during the UI dump; text remained `abc`. Reopening
 reported READY=true, Keyboard and collapsed selection 3..3. This verifies hidden-window cancellation;
 full multi-pointer and hardware-device interruption tests remain separate.
+
+## Deletion gesture state moved out of keyboard routing
+
+Found and removed a remaining renderer dependency: `CommonKeyActionListener` inspected
+`HorizontalCandidateComponent.adapter.total` and owned a separate swipe state machine.
+`DeletionGestureSession` now owns selection-vs-composition-reset decisions from `EngineState`.
+Every surface submits the same move/release/cancel commands to the editing executor; the editing
+panel no longer has a parallel release path. Unused direct ExtendSelection/DeleteSelection commands
+and panel helper methods were removed. Other editing commands and input-session start reset transient
+gesture state, without affecting cross-editor undo history.
+
+Tests cover both horizontal directions, composing text, unknown candidate totals with loaded entries,
+cancellation, zero displacement and state reset. Device verification checked actual intermediate
+deletion on Editing and Emoji, then restoration to `abc` at 3..3 and `abc😀` at 5..5. In Pinyin,
+`abc😀ni` followed by horizontal deletion became `abc😀`, with empty preedit and cursor 5..5;
+committed text was not selected or deleted. Main-keyboard delete/undo also restored `abc`.

@@ -38,18 +38,14 @@ class EditingSession {
     fun copy(): EditingCommand = leaveSelectionMode(EditingCommand.Copy)
     fun paste(): EditingCommand = leaveSelectionMode(EditingCommand.Paste)
     fun backspace(): EditingCommand = leaveSelectionMode(EditingCommand.Backspace)
-    fun deleteSelection(): EditingCommand {
-        hasSelection = false
-        return leaveSelectionMode(EditingCommand.DeleteSelection)
-    }
     fun clearAll(): EditingCommand {
         hasSelection = false
         return leaveSelectionMode(EditingCommand.ClearAll)
     }
 
-    fun cancelSelection(): EditingCommand {
+    fun finishDeletionGesture() {
         hasSelection = false
-        return leaveSelectionMode(EditingCommand.CancelSelection)
+        userSelection = false
     }
 
     private fun leaveSelectionMode(command: EditingCommand): EditingCommand {

@@ -9,9 +9,7 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.input.engine.EngineKey
-import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
-import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
@@ -21,9 +19,6 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.candidates.interaction.selectCandidate
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
-import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Reset
-import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Selection
-import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Stopped
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
@@ -48,20 +43,14 @@ import org.mechdancer.dependency.manager.must
 class CommonKeyActionListener :
     UniqueComponent<CommonKeyActionListener>(), Dependent, ManagedHandler by managedHandler() {
 
-    enum class BackspaceSwipeState {
-        Stopped, Selection, Reset
-    }
-
     private val context by manager.context()
     private val service by manager.inputMethodService()
-    private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
 
     private val kbdPrefs = AppPrefs.getInstance().keyboard
 
     private val spaceKeyLongPressBehavior by kbdPrefs.spaceKeyLongPressBehavior
     private val langSwitchKeyBehavior by kbdPrefs.langSwitchKeyBehavior
 
-    private var backspaceSwipeState = Stopped
     private val editingCommands get() = service.editingCommands
     private val navigator: InputNavigator by manager.must()
 
@@ -147,41 +136,14 @@ class CommonKeyActionListener :
                     }
                 }
                 is ShowInputMethodPickerAction -> showInputMethodPicker()
-                is MoveSelectionAction -> {
-                    when (backspaceSwipeState) {
-                        Stopped -> {
-                            backspaceSwipeState = if (
-                                !hasPreedit() &&
-                                horizontalCandidate.adapter.total <= 0 // total is -1 on initialization
-                            ) {
-                                editingCommands.execute(EditingCommand.ExtendSelection(action.steps))
-                                Selection
-                            } else {
-                                Reset
-                            }
-                        }
-                        Selection -> {
-                            editingCommands.execute(EditingCommand.ExtendSelection(action.steps))
-                        }
-                        Reset -> {}
-                    }
-                }
-                is DeleteSelectionAction -> {
-                    when (backspaceSwipeState) {
-                        Stopped -> {}
-                        Selection -> editingCommands.execute(EditingCommand.DeleteSelection)
-                        Reset -> if (action.totalCnt != 0) {
-                            service.engineCommands.submit(EngineCommand.Reset)
-                        }
-                    }
-                    backspaceSwipeState = Stopped
-                }
+                is MoveSelectionAction ->
+                    editingCommands.execute(EditingCommand.DeletionGestureMove(action.steps))
+                is DeleteSelectionAction ->
+                    editingCommands.execute(EditingCommand.DeletionGestureRelease(action.totalCnt))
                 ClearAllTextAction -> editingCommands.execute(EditingCommand.ClearAll)
                 UndoAction -> editingCommands.execute(EditingCommand.Undo)
-                KeyAction.CancelSelectionAction -> {
-                    backspaceSwipeState = Stopped
-                    editingCommands.execute(EditingCommand.CancelSelection)
-                }
+                KeyAction.CancelSelectionAction ->
+                    editingCommands.execute(EditingCommand.DeletionGestureCancel)
                 ShowTextEditingAction -> navigator.navigate(InputNavigationCommand.ShowEditing)
                 is PickerSwitchAction ->
                     navigator.navigate(InputNavigationCommand.ShowPicker(action.kind))
