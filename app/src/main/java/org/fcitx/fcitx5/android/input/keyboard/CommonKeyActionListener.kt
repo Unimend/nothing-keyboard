@@ -182,7 +182,7 @@ class CommonKeyActionListener :
                 UndoAction -> editingCommands.execute(EditingCommand.Undo)
                 ShowTextEditingAction -> navigator.navigate(InputNavigationCommand.ShowEditing)
                 is PickerSwitchAction ->
-                    navigator.navigate(InputNavigationCommand.ShowPicker(action.key))
+                    navigator.navigate(InputNavigationCommand.ShowPicker(action.kind))
                 is SpaceLongPressAction -> {
                     when (spaceKeyLongPressBehavior) {
                         SpaceLongPressBehavior.None -> {}

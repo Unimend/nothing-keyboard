@@ -23,6 +23,9 @@ import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
+import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
+import org.fcitx.fcitx5.android.input.mode.InputMode
+import org.fcitx.fcitx5.android.input.mode.PickerKind
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
@@ -69,20 +72,28 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
 
     private lateinit var keyboardView: FrameLayout
 
-    private val keyboards: HashMap<String, BaseKeyboard> by lazy {
+    private val keyboards: Map<KeyboardLayout, BaseKeyboard> by lazy {
         hashMapOf(
-            TextKeyboard.Name to TextKeyboard(context, theme),
-            NumberKeyboard.Name to NumberKeyboard(context, theme)
+            KeyboardLayout.Text to TextKeyboard(context, theme),
+            KeyboardLayout.Number to NumberKeyboard(context, theme)
         )
     }
-    private var currentKeyboardName = ""
+    private var currentLayout = KeyboardLayout.Text
     private var lastSymbolType: String by AppPrefs.getInstance().internal.lastSymbolLayout
 
-    private val currentKeyboard: BaseKeyboard? get() = keyboards[currentKeyboardName]
+    private val currentKeyboard: BaseKeyboard get() = keyboards.getValue(currentLayout)
 
     private val keyActionListener = KeyActionListener { it, source ->
         if (it is KeyAction.LayoutSwitchAction) {
-            navigator.navigate(InputNavigationCommand.ShowKeyboard(it.act))
+            when (val target = it.target) {
+                null -> switchLayout(null)
+                is InputMode.Keyboard ->
+                    navigator.navigate(InputNavigationCommand.ShowKeyboard(target.layout))
+                is InputMode.Picker -> {
+                    lastSymbolType = target.kind.name
+                    navigator.navigate(InputNavigationCommand.ShowPicker(target.kind))
+                }
+            }
         } else {
             commonKeyActionListener.listener.onKeyAction(it, source)
         }
@@ -95,12 +106,12 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     // This will be called EXACTLY ONCE
     override fun onCreateView(): View {
         keyboardView = context.frameLayout(R.id.keyboard_view)
-        attachLayout(TextKeyboard.Name)
+        attachLayout(KeyboardLayout.Text)
         return keyboardView
     }
 
     private fun detachCurrentLayout() {
-        currentKeyboard?.also {
+        currentKeyboard.also {
             it.onDetach()
             keyboardView.removeView(it)
             it.keyActionListener = null
@@ -108,9 +119,9 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
         }
     }
 
-    private fun attachLayout(target: String) {
-        currentKeyboardName = target
-        currentKeyboard?.let {
+    private fun attachLayout(target: KeyboardLayout) {
+        currentLayout = target
+        currentKeyboard.let {
             it.keyActionListener = keyActionListener
             it.popupActionListener = popupActionListener
             keyboardView.apply { add(it, lParams(matchParent, matchParent)) }
@@ -122,24 +133,25 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
         }
     }
 
-    fun switchLayout(to: String, remember: Boolean = true) {
-        val target = to.ifEmpty { lastSymbolType }
+    fun switchLayout(to: KeyboardLayout?, remember: Boolean = true) {
         ContextCompat.getMainExecutor(service).execute {
-            if (keyboards.containsKey(target)) {
-                if (remember && target != TextKeyboard.Name) {
-                    lastSymbolType = target
+            val target = to ?: KeyboardLayout.fromStorage(lastSymbolType)
+            if (target != null) {
+                if (remember && target != KeyboardLayout.Text) {
+                    lastSymbolType = target.name
                 }
-                if (target == currentKeyboardName) return@execute
+                if (target == currentLayout) return@execute
                 detachCurrentLayout()
                 attachLayout(target)
                 if (windowManager.isAttached(this)) {
                     notifyBarLayoutChanged()
                 }
             } else {
+                val picker = PickerKind.fromStorage(lastSymbolType) ?: PickerKind.Symbol
                 if (remember) {
-                    lastSymbolType = PickerWindow.Key.Symbol.name
+                    lastSymbolType = picker.name
                 }
-                navigator.navigate(InputNavigationCommand.ShowPicker(PickerWindow.Key.Symbol))
+                navigator.navigate(InputNavigationCommand.ShowPicker(picker))
             }
         }
     }
@@ -147,26 +159,26 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
         if (change != EditorSessionChange.Started) return
         val targetLayout = when (session.editor.inputKind) {
-            EditorInputKind.Number, EditorInputKind.Phone -> NumberKeyboard.Name
-            else -> TextKeyboard.Name
+            EditorInputKind.Number, EditorInputKind.Phone -> KeyboardLayout.Number
+            else -> KeyboardLayout.Text
         }
         switchLayout(targetLayout, remember = false)
     }
 
     override fun onImeUpdate(ime: EngineInputMethod) {
-        currentKeyboard?.onInputMethodUpdate(ime)
+        currentKeyboard.onInputMethodUpdate(ime)
     }
 
     override fun onPunctuationUpdate(mapping: Map<String, String>) {
-        currentKeyboard?.onPunctuationUpdate(mapping)
+        currentKeyboard.onPunctuationUpdate(mapping)
     }
 
     override fun onReturnKeyDrawableUpdate(resourceId: Int) {
-        currentKeyboard?.onReturnDrawableUpdate(resourceId)
+        currentKeyboard.onReturnDrawableUpdate(resourceId)
     }
 
     override fun onAttached() {
-        currentKeyboard?.let {
+        currentKeyboard.let {
             it.keyActionListener = keyActionListener
             it.popupActionListener = popupActionListener
             it.onAttach()
@@ -175,7 +187,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     }
 
     override fun onDetached() {
-        currentKeyboard?.let {
+        currentKeyboard.let {
             it.onDetach()
             it.keyActionListener = null
             it.popupActionListener = null
@@ -187,6 +199,6 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     // 1) the keyboard window was newly attached
     // 2) currently keyboard window is attached and switchLayout was used
     private fun notifyBarLayoutChanged() {
-        bar.onKeyboardLayoutSwitched(currentKeyboardName == NumberKeyboard.Name)
+        bar.onKeyboardLayoutSwitched(currentLayout == KeyboardLayout.Number)
     }
 }

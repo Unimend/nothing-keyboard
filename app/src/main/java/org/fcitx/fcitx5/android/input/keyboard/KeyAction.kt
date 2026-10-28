@@ -7,7 +7,8 @@ package org.fcitx.fcitx5.android.input.keyboard
 import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.core.ScancodeMapping
-import org.fcitx.fcitx5.android.input.picker.PickerWindow
+import org.fcitx.fcitx5.android.input.mode.InputMode
+import org.fcitx.fcitx5.android.input.mode.PickerKind
 
 sealed class KeyAction {
 
@@ -31,7 +32,11 @@ sealed class KeyAction {
 
     data object ShowInputMethodPickerAction : KeyAction()
 
-    data class LayoutSwitchAction(val act: String = "") : KeyAction()
+    data class LayoutSwitchAction(val target: InputMode? = null) : KeyAction()
+
+    data class CandidatePageAction(val direction: Direction) : KeyAction() {
+        enum class Direction { Previous, Next }
+    }
 
     data class MoveSelectionAction(val steps: Int) : KeyAction()
 
@@ -43,7 +48,7 @@ sealed class KeyAction {
 
     data object ShowTextEditingAction : KeyAction()
 
-    data class PickerSwitchAction(val key: PickerWindow.Key? = null) : KeyAction()
+    data class PickerSwitchAction(val kind: PickerKind? = null) : KeyAction()
 
     data object SpaceLongPressAction : KeyAction()
 }

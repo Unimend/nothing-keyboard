@@ -14,6 +14,8 @@ import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
 import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
+import org.fcitx.fcitx5.android.input.mode.PickerKind
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
@@ -41,9 +43,9 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
                 windowManager.attachWindow(TextEditingWindow())
             }
             is InputNavigationCommand.ShowPicker -> {
-                val key = command.key ?: rememberedPicker()
-                command.key?.let { lastPickerType = it.name }
-                windowManager.attachWindow(key)
+                val kind = command.kind ?: rememberedPicker()
+                command.kind?.let { lastPickerType = it.name }
+                windowManager.attachWindow(PickerWindow.Key.fromKind(kind))
             }
             InputNavigationCommand.ShowStatus ->
                 windowManager.attachWindow(StatusAreaWindow())
@@ -61,7 +63,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
         }
     }
 
-    private fun showKeyboard(layout: String?) {
+    private fun showKeyboard(layout: KeyboardLayout?) {
         if (layout == null) {
             windowManager.attachWindow(KeyboardWindow)
             return
@@ -76,9 +78,8 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
         }
     }
 
-    private fun rememberedPicker(): PickerWindow.Key =
-        runCatching { PickerWindow.Key.valueOf(lastPickerType) }
-            .getOrDefault(PickerWindow.Key.Emoji)
+    private fun rememberedPicker(): PickerKind =
+        PickerKind.fromStorage(lastPickerType) ?: PickerKind.Emoji
 
     private val InputNavigationCommand.diagnosticName: String
         get() = when (this) {
@@ -86,7 +87,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
                 layout?.let { "Keyboard($it)" } ?: "Keyboard"
             InputNavigationCommand.ShowClipboard -> "Clipboard"
             InputNavigationCommand.ShowEditing -> "Editing"
-            is InputNavigationCommand.ShowPicker -> "Picker(${key?.name ?: "remembered"})"
+            is InputNavigationCommand.ShowPicker -> "Picker(${kind?.name ?: "remembered"})"
             InputNavigationCommand.ShowStatus -> "Status"
             InputNavigationCommand.ShowEditorInfo -> "EditorInfo"
             is InputNavigationCommand.ShowExpandedCandidates ->

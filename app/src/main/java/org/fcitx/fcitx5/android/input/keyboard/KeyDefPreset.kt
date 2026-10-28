@@ -14,7 +14,9 @@ import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
-import org.fcitx.fcitx5.android.input.picker.PickerWindow
+import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
+import org.fcitx.fcitx5.android.input.mode.PickerKind
+import org.fcitx.fcitx5.android.input.mode.InputMode
 
 val NumLockState = KeyStates(KeyState.NumLock, KeyState.Virtual)
 
@@ -109,7 +111,7 @@ class CapsKey : KeyDef(
 
 class LayoutSwitchKey(
     displayText: String,
-    val to: String = "",
+    val to: InputMode? = null,
     percentWidth: Float = 0.15f,
     variant: Variant = Variant.Alternative
 ) : KeyDef(
@@ -245,7 +247,7 @@ class ReturnKey(percentWidth: Float = 0.15f) : KeyDef(
 class ImageLayoutSwitchKey(
     @DrawableRes
     icon: Int,
-    to: String,
+    to: KeyboardLayout,
     percentWidth: Float = 0.1f,
     variant: Variant = Variant.AltForeground,
     viewId: Int = -1
@@ -257,14 +259,31 @@ class ImageLayoutSwitchKey(
         viewId = viewId
     ),
     setOf(
-        Behavior.Press(KeyAction.LayoutSwitchAction(to))
+        Behavior.Press(KeyAction.LayoutSwitchAction(InputMode.Keyboard(to)))
     )
+)
+
+class ImageActionKey(
+    @DrawableRes
+    icon: Int,
+    action: KeyAction,
+    percentWidth: Float = 0.1f,
+    variant: Variant = Variant.AltForeground,
+    viewId: Int = -1
+) : KeyDef(
+    Appearance.Image(
+        src = icon,
+        percentWidth = percentWidth,
+        variant = variant,
+        viewId = viewId
+    ),
+    setOf(Behavior.Press(action))
 )
 
 class ImagePickerSwitchKey(
     @DrawableRes
     icon: Int,
-    to: PickerWindow.Key,
+    to: PickerKind,
     percentWidth: Float = 0.1f,
     variant: Variant = Variant.AltForeground,
     viewId: Int = -1
@@ -282,7 +301,7 @@ class ImagePickerSwitchKey(
 
 class TextPickerSwitchKey(
     text: String,
-    to: PickerWindow.Key,
+    to: PickerKind,
     percentWidth: Float = 0.1f,
     variant: Variant = Variant.AltForeground,
     viewId: Int = -1

@@ -16,6 +16,8 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
+import org.fcitx.fcitx5.android.input.mode.PickerKind
+import org.fcitx.fcitx5.android.input.mode.InputMode
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
@@ -36,10 +38,14 @@ class PickerWindow(
 
     override val surface = InputSurface.Picker(key.name)
 
-    enum class Key : EssentialWindow.Key {
-        Symbol,
-        Emoji,
-        Emoticon
+    enum class Key(val kind: PickerKind) : EssentialWindow.Key {
+        Symbol(PickerKind.Symbol),
+        Emoji(PickerKind.Emoji),
+        Emoticon(PickerKind.Emoticon);
+
+        companion object {
+            fun fromKind(kind: PickerKind): Key = entries.first { it.kind == kind }
+        }
     }
 
     private val theme by manager.theme()
@@ -61,7 +67,13 @@ class PickerWindow(
     private val keyActionListener = KeyActionListener { it, source ->
         when (it) {
             is KeyAction.LayoutSwitchAction -> {
-                navigator.navigate(InputNavigationCommand.ShowKeyboard(it.act))
+                when (val target = it.target) {
+                    is InputMode.Keyboard ->
+                        navigator.navigate(InputNavigationCommand.ShowKeyboard(target.layout))
+                    is InputMode.Picker ->
+                        navigator.navigate(InputNavigationCommand.ShowPicker(target.kind))
+                    null -> navigator.navigate(InputNavigationCommand.ShowKeyboard())
+                }
             }
 
             is KeyAction.FcitxKeyAction -> {

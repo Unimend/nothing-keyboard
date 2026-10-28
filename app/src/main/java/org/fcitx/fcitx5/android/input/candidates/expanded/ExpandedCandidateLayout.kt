@@ -15,7 +15,8 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.keyboard.BackspaceKey
 import org.fcitx.fcitx5.android.input.keyboard.BaseKeyboard
 import org.fcitx.fcitx5.android.input.keyboard.ImageKeyView
-import org.fcitx.fcitx5.android.input.keyboard.ImageLayoutSwitchKey
+import org.fcitx.fcitx5.android.input.keyboard.ImageActionKey
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
 import org.fcitx.fcitx5.android.input.keyboard.ReturnKey
 import org.fcitx.fcitx5.android.utils.setVerticalScrollbarThumbColor
@@ -42,26 +43,27 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
 
     class Keyboard(context: Context, theme: Theme) : BaseKeyboard(context, theme, Layout) {
         companion object {
-            const val UpBtnLabel = "U"
-            const val DownBtnLabel = "D"
-
             const val UpBtnId = 0xff55
             const val DownBtnId = 0xff56
 
             val Layout: List<List<KeyDef>> = listOf(
                 listOf(
-                    ImageLayoutSwitchKey(
+                    ImageActionKey(
                         R.drawable.ic_baseline_arrow_upward_24,
-                        to = UpBtnLabel,
+                        action = KeyAction.CandidatePageAction(
+                            KeyAction.CandidatePageAction.Direction.Previous
+                        ),
                         percentWidth = 1f,
                         variant = KeyDef.Appearance.Variant.Alternative,
                         viewId = UpBtnId
                     )
                 ),
                 listOf(
-                    ImageLayoutSwitchKey(
+                    ImageActionKey(
                         R.drawable.ic_baseline_arrow_downward_24,
-                        to = DownBtnLabel,
+                        action = KeyAction.CandidatePageAction(
+                            KeyAction.CandidatePageAction.Direction.Next
+                        ),
                         percentWidth = 1f,
                         variant = KeyDef.Appearance.Variant.Alternative,
                         viewId = DownBtnId

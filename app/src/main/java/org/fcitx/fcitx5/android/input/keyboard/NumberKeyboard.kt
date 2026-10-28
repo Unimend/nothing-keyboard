@@ -8,7 +8,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.picker.PickerWindow
+import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
+import org.fcitx.fcitx5.android.input.mode.PickerKind
+import org.fcitx.fcitx5.android.input.mode.InputMode
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import splitties.views.imageResource
 
@@ -44,9 +46,14 @@ class NumberKeyboard(
                 BackspaceKey()
             ),
             listOf(
-                LayoutSwitchKey("ABC", TextKeyboard.Name),
+                LayoutSwitchKey("ABC", InputMode.Keyboard(KeyboardLayout.Text)),
                 NumPadKey(",", 0xffac, 23f, 0.1f, KeyDef.Appearance.Variant.Alternative),
-                LayoutSwitchKey("!?#", PickerWindow.Key.Symbol.name, 0.13333f, KeyDef.Appearance.Variant.AltForeground),
+                LayoutSwitchKey(
+                    "!?#",
+                    InputMode.Picker(PickerKind.Symbol),
+                    0.13333f,
+                    KeyDef.Appearance.Variant.AltForeground
+                ),
                 NumPadKey("0", 0xffb0, 30f, 0.23334f),
                 NumPadKey("=", 0xffbd, 23f, 0.13333f, KeyDef.Appearance.Variant.AltForeground),
                 NumPadKey(".", 0xffae, 23f, 0.1f, KeyDef.Appearance.Variant.Alternative),
