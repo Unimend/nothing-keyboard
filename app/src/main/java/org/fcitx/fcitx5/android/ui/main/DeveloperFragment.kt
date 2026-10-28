@@ -17,7 +17,7 @@ import kotlinx.coroutines.withContext
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.data.DataManager
 import org.fcitx.fcitx5.android.daemon.FcitxDaemon
-import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
+import org.fcitx.fcitx5.android.data.clipboard.ClipboardSystem
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.ui.common.PaddingPreferenceFragment
 import org.fcitx.fcitx5.android.ui.main.modified.MySwitchPreference
@@ -127,7 +127,7 @@ class DeveloperFragment : PaddingPreferenceFragment() {
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         lifecycleScope.launch {
                             withContext(Dispatchers.IO) {
-                                ClipboardManager.nukeTable()
+                                ClipboardSystem.nukeTable()
                             }
                             context.toast(R.string.done)
                         }

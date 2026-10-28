@@ -15,7 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
+import org.fcitx.fcitx5.android.data.clipboard.ClipboardSystem
 import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
 import org.fcitx.fcitx5.android.databinding.ActivityClipboardEditBinding
 import org.fcitx.fcitx5.android.utils.clipboardManager
@@ -47,7 +47,7 @@ class ClipboardEditActivity : Activity() {
     private fun finishEditing(copy: Boolean = false) {
         val str = editText.str
         scope.launch {
-            ClipboardManager.updateText(entryId, str)
+            ClipboardSystem.updateText(entryId, str)
             if (copy) {
                 clipboardManager.setPrimaryClip(ClipData.newPlainText("", str))
             }
@@ -69,9 +69,9 @@ class ClipboardEditActivity : Activity() {
         scope.launch {
             intent.run {
                 if (getBooleanExtra(LAST_ENTRY, false)) {
-                    ClipboardManager.lastEntry
+                    ClipboardSystem.lastEntry
                 } else {
-                    ClipboardManager.get(getIntExtra(ENTRY_ID, -1))
+                    ClipboardSystem.get(getIntExtra(ENTRY_ID, -1))
                 }
             }?.let { setEntry(it) }
         }

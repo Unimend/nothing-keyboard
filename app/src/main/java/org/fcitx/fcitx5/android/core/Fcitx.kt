@@ -16,7 +16,7 @@ import kotlinx.coroutines.withContext
 import org.fcitx.fcitx5.android.FcitxApplication
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.data.DataManager
-import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
+import org.fcitx.fcitx5.android.data.clipboard.ClipboardSystem
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.utils.ImmutableGraph
 import org.fcitx.fcitx5.android.utils.Locales
@@ -483,7 +483,7 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
         }
 
     @Keep
-    private val onClipboardUpdate = ClipboardManager.OnClipboardUpdateListener {
+    private val onClipboardUpdate = ClipboardSystem.UpdateListener {
         lifecycle.launchWhenReady { setClipboard(it.text, it.sensitive) }
     }
 
@@ -539,7 +539,7 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
         }
         registerFcitxEventHandler(::handleFcitxEvent)
         lifecycleRegistry.postEvent(FcitxLifecycle.Event.ON_START)
-        ClipboardManager.addOnUpdateListener(onClipboardUpdate)
+        ClipboardSystem.addUpdateListener(onClipboardUpdate)
         DataManager.addOnNextSyncedCallback {
             FcitxPluginServices.connectAll()
         }
@@ -554,7 +554,7 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
         }
         lifecycleRegistry.postEvent(FcitxLifecycle.Event.ON_STOP)
         Timber.i("Fcitx stop()")
-        ClipboardManager.removeOnUpdateListener(onClipboardUpdate)
+        ClipboardSystem.removeUpdateListener(onClipboardUpdate)
         FcitxPluginServices.disconnectAll()
         dispatcher.stop().let {
             if (it.isNotEmpty())

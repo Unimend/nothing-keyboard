@@ -22,7 +22,7 @@ import org.fcitx.fcitx5.android.core.data.DataManager
 import org.fcitx.fcitx5.android.core.reloadPinyinDict
 import org.fcitx.fcitx5.android.core.reloadQuickPhrase
 import org.fcitx.fcitx5.android.daemon.FcitxDaemon
-import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
+import org.fcitx.fcitx5.android.data.clipboard.ClipboardSystem
 import org.fcitx.fcitx5.android.utils.Const
 import org.fcitx.fcitx5.android.utils.desc
 import org.fcitx.fcitx5.android.utils.descEquals
@@ -51,7 +51,7 @@ class FcitxRemoteService : Service() {
     }
 
     private suspend fun updateClipboardManager() = clipboardTransformerLock.withLock {
-        ClipboardManager.transformer =
+        ClipboardSystem.transformer =
             if (clipboardTransformers.isEmpty()) null else ::transformClipboard
         Timber.d("All clipboard transformers: ${clipboardTransformers.joinToString { it.desc }}")
     }

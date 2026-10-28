@@ -55,7 +55,7 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 7. Input modes | InputModeStore | Cross-session remembered-mode matrix |
 | 8. Candidate data and selection | Candidate models/reducers/interaction controller | Large-list and mixed-font profiling |
 | 9. Destructive editing | EditingCommandPort + DestructiveEditingController | Custom editors rejecting edits |
-| 10. Clipboard | ClipboardInteractionController + history/mutation ports + ClipboardItem | Platform collection, retention and settings audit |
+| 10. Clipboard | ClipboardSystem + platform source + repository + interaction ports | Device matrix for sensitive and vendor ClipData |
 | 11. Navigation and windows | InputNavigator + InputWindowManager | Disposal now explicit; stress rebuilds |
 | 12. Gestures | KeyboardGesturePolicy + shared bindings | Cancel verified on device; multi-touch matrix remains |
 | 13. Typography | NothingTypography + shared measurer/renderer | Font scale and fallback matrix |
@@ -138,11 +138,13 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
 │   │   ├── DestructiveEditHistory：键盘自己的撤回历史
 │   │   └── 恢复后强制折叠光标，不恢复旧选区
 │   │
-│   ├── 10. 🟡 剪贴板系统
-│   │   ├── ClipboardInteractionController
-│   │   ├── ClipboardHistory / ClipboardMutations 独立端口
-│   │   ├── 列表、固定、删除、批量删除与撤回
-│   │   └── 待完成：平台采集、保留策略和设置归属审计
+│   ├── 10. ✅ 剪贴板系统
+│   │   ├── ClipboardInteractionController：界面交互与撤回策略
+│   │   ├── ClipboardHistory / ClipboardMutations：输入界面独立端口
+│   │   ├── PlatformClipboardSource：Android 监听与重复事件过滤
+│   │   ├── ClipboardRepository：Room 查询、事务与保留策略执行
+│   │   ├── ClipboardSystem：设置监听、采集编排和事件发布
+│   │   └── 平台、设置、存储三类依赖由架构测试禁止交叉泄漏
 │   │
 │   ├── 11. ✅ 界面导航与窗口系统
 │   │   ├── InputNavigator：用户导航命令唯一入口
@@ -202,7 +204,7 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
         └── 待完成：设置职责、持久化边界和诊断入口整体审计
 ```
 
-当前共计：`11 个已完成`、`7 个进行中`、`0 个未开始`。下一批优先完成 15 号视觉
+当前共计：`12 个已完成`、`6 个进行中`、`0 个未开始`。下一批优先完成 15 号视觉
 系统的剩余边界，然后处理 17 号弹窗几何与 16 号动画编排；Android 生命周期和设置
 系统保持为独立后续阶段，不为了增加绿色数量而混入当前视觉改造。
 

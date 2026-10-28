@@ -185,6 +185,27 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `clipboard platform preferences and persistence have separate owners`() {
+        val root = sourceRoot.resolve("org/fcitx/fcitx5/android/data/clipboard")
+        val files = root.walkTopDown().maxDepth(1)
+            .filter { it.isFile && it.extension == "kt" }.toList()
+        val platformUsers = files.filter { "android.content.ClipboardManager" in it.readText() }
+        val preferenceUsers = files.filter { "AppPrefs" in it.readText() }
+        val databaseUsers = files.filter {
+            val source = it.readText()
+            "ClipboardDao" in source || "ClipboardDatabase" in source
+        }
+        assertTrue("Android clipboard boundary: $platformUsers",
+            platformUsers.map(File::getName) == listOf("PlatformClipboardSource.kt"))
+        assertTrue("Clipboard preference boundary: $preferenceUsers",
+            preferenceUsers.map(File::getName) == listOf("ClipboardSystem.kt"))
+        assertTrue("Clipboard database boundary: $databaseUsers",
+            databaseUsers.map(File::getName).toSet() ==
+                setOf("ClipboardRepository.kt", "ClipboardSystem.kt"))
+        assertFalse(root.resolve("ClipboardManager.kt").exists())
+    }
+
+    @Test
     fun `editor operations use the exception-safe batch boundary`() {
         val violations = inputSources().filter {
             Regex("""\b(beginBatchEdit|endBatchEdit)\s*\(""").containsMatchIn(it.readText())
