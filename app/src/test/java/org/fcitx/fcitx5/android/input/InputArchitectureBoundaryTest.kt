@@ -11,6 +11,60 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `removed legacy entry points cannot remain under a new wrapper`() {
+        // These declarations existed before the clean input-core migration. They were not merely
+        // deprecated or hidden: their implementations and call sites were deleted. Keep the names
+        // forbidden so a future surface cannot quietly recreate the old parallel path.
+        val removedTypes = setOf(
+            "BackspaceSwipeState",
+            "DeletedTextEdit",
+            "ExtendSelection",
+            "FcitxKeyAction",
+            "InputBroadcaster",
+            "InputBroadcastReceiver",
+            "NumberRowState",
+            "PreeditEmptyStateComponent",
+            "PunctuationComponent",
+            "ReturnKeyDrawableComponent",
+            "ClipboardStateMachine"
+        )
+        val removedFunctions = setOf(
+            "applySelectionOffset",
+            "drawableFromEditorInfo",
+            "evalIdleUiState",
+            "forwardKeyEvent",
+            "handleFcitxEvent",
+            "inflateInlineContentView",
+            "onClientPreeditUpdate",
+            "onPreeditEmptyStateUpdate",
+            "onScopeSetupFinished",
+            "onSelectionUpdate",
+            "onStartHandleFcitxEvent",
+            "onStatusAreaUpdate",
+            "postFcitxJob",
+            "sendCombinationKeyEvents",
+            "sendDownKeyEvent",
+            "sendUpKeyEvent",
+            "setupFcitxEventHandler",
+            "superEvaluateInputViewShown",
+            "updateDecorLocation",
+            "updateDrawableOnEditorInfo",
+            "updateDrawableOnPreedit",
+            "updatePreeditEmptyState",
+            "updatePunctuationMapping"
+        )
+        val forbidden = (removedTypes + removedFunctions)
+            .associateWith { Regex("""\b${Regex.escape(it)}\b""") }
+        val violations = inputSources().flatMap { file ->
+            val source = file.readText()
+            forbidden.filterValues { it.containsMatchIn(source) }.keys.map { name ->
+                "${file.relativeTo(sourceRoot).invariantSeparatorsPath}:$name"
+            }
+        }
+        assertTrue("Removed legacy vocabulary returned: $violations", violations.isEmpty())
+    }
+
+    @Test
     fun `candidate surfaces cannot manipulate toolbar private state or other adapters`() {
         val paths = listOf("candidates/horizontal/HorizontalCandidateComponent.kt",
             "candidates/expanded/window/BaseExpandedCandidateWindow.kt")

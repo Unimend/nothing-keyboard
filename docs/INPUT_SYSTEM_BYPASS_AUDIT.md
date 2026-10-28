@@ -4,6 +4,30 @@ This audit distinguishes a centralized implementation from an enforced boundary.
 not complete merely because the new controller exists: the old call path must be removed or made
 unrepresentable, and a test must prevent it from returning.
 
+## Deletion versus boundary enforcement
+
+The migration does not retain old input implementations behind a feature flag or compatibility
+wrapper. The required order is:
+
+1. introduce the project-owned model, port or controller;
+2. migrate every caller;
+3. delete the old declaration and implementation;
+4. forbid the deleted vocabulary and dependency direction in architecture tests.
+
+A declaration-level comparison against `archive-pre-core-refactor-2026-10-27` found the removed
+legacy entry points and verified that production input sources contain no remaining reference to
+them. `InputArchitectureBoundaryTest.removed legacy entry points cannot remain under a new wrapper`
+keeps that exact negative list executable. This is deliberately a negative list rather than a rule
+that every pre-refactor identifier must disappear: Android lifecycle overrides, Views, Drawables and
+plain display models remain valid when they contain no policy or cross-system access.
+
+The files unchanged from the archive were also reviewed by dependency shape. They are limited to
+framework/view primitives, drawing and measurement helpers, enum preference values and plain models.
+Their remaining imports are presentation theme data, feedback data, preference enum interfaces or
+the project-owned `InputSurface`; none imports Fcitx protocol APIs, editor mutation APIs, navigation
+commands or mutable session stores. Unchanged source therefore does not receive an automatic
+exception—future cross-system imports are still governed by the boundary tests below.
+
 ## Boundary inventory
 
 | System | Single source of truth | Forbidden surface behavior | Current enforcement |
