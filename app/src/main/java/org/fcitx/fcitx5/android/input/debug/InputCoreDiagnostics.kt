@@ -10,7 +10,9 @@ import org.fcitx.fcitx5.android.input.session.InputSessionSnapshot
 data class InputCoreDiagnosticsSnapshot(
     val session: InputSessionSnapshot = InputSessionSnapshot(),
     val engineEventCount: Long = 0,
-    val lastEngineEvent: String = "waiting"
+    val lastEngineEvent: String = "waiting",
+    val engineEffectCount: Long = 0,
+    val lastEngineEffect: String = "waiting"
 )
 
 object InputCoreDiagnostics {
@@ -25,6 +27,13 @@ object InputCoreDiagnostics {
         mutableState.value = mutableState.value.copy(
             engineEventCount = mutableState.value.engineEventCount + 1,
             lastEngineEvent = name
+        )
+    }
+
+    fun recordEngineEffect(name: String) {
+        mutableState.value = mutableState.value.copy(
+            engineEffectCount = mutableState.value.engineEffectCount + 1,
+            lastEngineEffect = name
         )
     }
 }

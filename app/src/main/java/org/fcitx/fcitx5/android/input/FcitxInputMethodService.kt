@@ -51,8 +51,6 @@ import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.core.FcitxAPI
-import org.fcitx.fcitx5.android.core.FcitxEvent
-import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.core.FormattedText
 import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.core.KeySym
@@ -72,8 +70,12 @@ import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
+import org.fcitx.fcitx5.android.input.engine.EngineEffect
+import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
+import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
+import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
@@ -251,7 +253,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         lifecycleScope.launch {
             jobs.consumeEach { it.join() }
         }
-        engineBridge = FcitxEngineBridge(fcitx, inputSession, ::handleFcitxEvent)
+        engineBridge = FcitxEngineBridge(fcitx, inputSession, ::handleEngineEffect)
         engineBridge.startIn(lifecycleScope)
         lifecycleScope.launch {
             inputSession.state.collect(InputCoreDiagnostics::publishSession)
@@ -279,103 +281,42 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         lastKnownConfig = resources.configuration
     }
 
-    private fun handleFcitxEvent(event: FcitxEvent<*>) {
-        when (event) {
-            is FcitxEvent.CommitStringEvent -> {
-                commitText(event.data.text, event.data.cursor)
+    private fun handleEngineEffect(effect: EngineEffect) {
+        when (effect) {
+            is EngineEffect.CommitText -> commitText(effect.text, effect.cursor)
+            is EngineEffect.VirtualKey -> when (effect.key) {
+                EngineVirtualKey.Backspace -> deleteBackward()
+                EngineVirtualKey.Return -> handleReturnKey()
+                EngineVirtualKey.ArrowLeft -> handleArrowKey(KeyEvent.KEYCODE_DPAD_LEFT)
+                EngineVirtualKey.ArrowRight -> handleArrowKey(KeyEvent.KEYCODE_DPAD_RIGHT)
+                EngineVirtualKey.Unicode -> commitText(Character.toString(effect.unicode))
+                EngineVirtualKey.Unhandled ->
+                    Timber.w("Unhandled virtual engine key: ${effect.rawSymbol}")
             }
-            is FcitxEvent.KeyEvent -> event.data.let event@{
-                if (it.states.virtual) {
-                    // KeyEvent from virtual keyboard
-                    when (it.sym.sym) {
-                        FcitxKeyMapping.FcitxKey_BackSpace -> deleteBackward()
-                        FcitxKeyMapping.FcitxKey_Return -> handleReturnKey()
-                        FcitxKeyMapping.FcitxKey_Left -> handleArrowKey(KeyEvent.KEYCODE_DPAD_LEFT)
-                        FcitxKeyMapping.FcitxKey_Right -> handleArrowKey(KeyEvent.KEYCODE_DPAD_RIGHT)
-                        else -> if (it.unicode > 0) {
-                            commitText(Character.toString(it.unicode))
-                        } else {
-                            Timber.w("Unhandled Virtual KeyEvent: $it")
-                        }
-                    }
-                } else {
-                    // KeyEvent from physical keyboard (or input method engine forwardKey)
-                    // use cached event if available
-                    cachedKeyEvents.remove(it.timestamp)?.let { keyEvent ->
-                        /**
-                         * intercept the KeyEvent which would cause the default [android.text.method.QwertyKeyListener]
-                         * to show a Gingerbread-style CharacterPickerDialog
-                         */
-                        if (keyEvent.unicodeChar == KeyCharacterMap.PICKER_DIALOG_INPUT.code) {
-                            currentInputConnection?.sendKeyEvent(
-                                KeyEvent(
-                                    keyEvent.downTime, keyEvent.eventTime,
-                                    keyEvent.action, keyEvent.keyCode,
-                                    keyEvent.repeatCount, keyEvent.metaState, -1,
-                                    keyEvent.scanCode, keyEvent.flags, keyEvent.source
-                                )
-                            )
-                            return@event
-                        }
-                        currentInputConnection?.sendKeyEvent(keyEvent)
-                        if (KeyEvent.isModifierKey(keyEvent.keyCode)) {
-                            when (keyEvent.action) {
-                                KeyEvent.ACTION_DOWN -> {
-                                    // save current metaState when modifier key down
-                                    lastMetaState = keyEvent.metaState
-                                }
-                                KeyEvent.ACTION_UP -> {
-                                    // only clear metaState that would be missing when this modifier key up
-                                    currentInputConnection?.clearMetaKeyStates(lastMetaState xor keyEvent.metaState)
-                                    lastMetaState = keyEvent.metaState
-                                }
-                            }
-                        }
-                        return@event
-                    }
-                    // simulate key event
-                    val keyCode = it.sym.keyCode
-                    if (keyCode != KeyEvent.KEYCODE_UNKNOWN) {
-                        // recognized keyCode
-                        val eventTime = SystemClock.uptimeMillis()
-                        if (it.up) {
-                            sendUpKeyEvent(eventTime, keyCode, it.states.metaState)
-                        } else {
-                            sendDownKeyEvent(eventTime, keyCode, it.states.metaState)
-                        }
-                    } else {
-                        // no matching keyCode, commit character once on key down
-                        if (!it.up && it.unicode > 0) {
-                            commitText(Character.toString(it.unicode))
-                        } else {
-                            Timber.w("Unhandled Fcitx KeyEvent: $it")
-                        }
-                    }
-                }
-            }
-            is FcitxEvent.ClientPreeditEvent -> {
-                updateComposingText(event.data)
-            }
-            is FcitxEvent.DeleteSurroundingEvent -> {
-                val (before, after) = event.data
-                handleDeleteSurrounding(before, after)
-            }
-            is FcitxEvent.IMChangeEvent -> {
+            is EngineEffect.ForwardKey -> handleForwardedEngineKey(effect)
+            is EngineEffect.UpdateClientPreedit ->
+                updateComposingText(LegacyEngineStateAdapter.text(effect.text))
+            is EngineEffect.DeleteSurrounding ->
+                handleDeleteSurrounding(effect.before, effect.after)
+            is EngineEffect.InputMethodChanged -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val im = event.data.uniqueName
+                    val im = effect.inputMethod.uniqueName
                     val subtype = SubtypeManager.subtypeOf(im) ?: return
                     skipNextSubtypeChange = im
                     // [^1]: notify system that input method subtype has changed
                     switchInputMethod(InputMethodUtil.componentName, subtype)
                 }
                 if (inputDeviceMgr.evaluateOnInputMethodActivate()) {
-                    showStatusIcon(StatusIconMapping.fromEntry(event.data))
+                    showStatusIcon(
+                        StatusIconMapping.fromEntry(
+                            LegacyEngineStateAdapter.inputMethod(effect.inputMethod)
+                        )
+                    )
                 }
             }
-            is FcitxEvent.SwitchInputMethodEvent -> {
-                val (reason) = event.data
-                if (reason != FcitxEvent.SwitchInputMethodEvent.Reason.CapabilityChanged &&
-                    reason != FcitxEvent.SwitchInputMethodEvent.Reason.Other
+            is EngineEffect.InputMethodSwitched -> {
+                if (effect.reason != EngineSwitchReason.CapabilityChanged &&
+                    effect.reason != EngineSwitchReason.Other
                 ) {
                     if (inputDeviceMgr.evaluateOnInputMethodSwitch()) {
                         // show inputView for [CandidatesView] when input method switched by user
@@ -383,7 +324,46 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
                     }
                 }
             }
-            else -> {}
+        }
+    }
+
+    private fun handleForwardedEngineKey(effect: EngineEffect.ForwardKey) {
+        cachedKeyEvents.remove(effect.timestamp)?.let { keyEvent ->
+            if (keyEvent.unicodeChar == KeyCharacterMap.PICKER_DIALOG_INPUT.code) {
+                currentInputConnection?.sendKeyEvent(
+                    KeyEvent(
+                        keyEvent.downTime, keyEvent.eventTime, keyEvent.action, keyEvent.keyCode,
+                        keyEvent.repeatCount, keyEvent.metaState, -1, keyEvent.scanCode,
+                        keyEvent.flags, keyEvent.source
+                    )
+                )
+                return
+            }
+            currentInputConnection?.sendKeyEvent(keyEvent)
+            if (KeyEvent.isModifierKey(keyEvent.keyCode)) {
+                when (keyEvent.action) {
+                    KeyEvent.ACTION_DOWN -> lastMetaState = keyEvent.metaState
+                    KeyEvent.ACTION_UP -> {
+                        currentInputConnection?.clearMetaKeyStates(
+                            lastMetaState xor keyEvent.metaState
+                        )
+                        lastMetaState = keyEvent.metaState
+                    }
+                }
+            }
+            return
+        }
+        if (effect.androidKeyCode != KeyEvent.KEYCODE_UNKNOWN) {
+            val eventTime = SystemClock.uptimeMillis()
+            if (effect.keyUp) {
+                sendUpKeyEvent(eventTime, effect.androidKeyCode, effect.androidMetaState)
+            } else {
+                sendDownKeyEvent(eventTime, effect.androidKeyCode, effect.androidMetaState)
+            }
+        } else if (!effect.keyUp && effect.unicode > 0) {
+            commitText(Character.toString(effect.unicode))
+        } else {
+            Timber.w("Unhandled forwarded engine key: $effect")
         }
     }
 

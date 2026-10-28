@@ -74,6 +74,8 @@ class InputCoreDiagnosticsActivity : AppCompatActivity() {
         appendLine("SOURCE      FcitxEngineBridge (single)")
         appendLine("EVENTS      ${value.engineEventCount}")
         appendLine("LAST EVENT  ${value.lastEngineEvent}")
+        appendLine("EFFECTS     ${value.engineEffectCount}")
+        appendLine("LAST EFFECT ${value.lastEngineEffect}")
         appendLine("REVISION    ${session.revision}")
         appendLine("LIFECYCLE   ${session.lifecycle}")
         appendLine("READY       ${engine.ready}")

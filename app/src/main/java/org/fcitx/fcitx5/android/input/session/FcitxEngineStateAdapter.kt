@@ -52,6 +52,8 @@ object FcitxEngineStateAdapter {
         else -> null
     }
 
+    fun text(value: FormattedText) = value.toEngineText()
+
     private fun FormattedText.toEngineText() = EngineText(
         segments = strings.indices.map { EngineTextSegment(strings[it], flags[it]) },
         cursor = cursor
@@ -59,6 +61,8 @@ object FcitxEngineStateAdapter {
 
     private fun CandidateWord.toEngineCandidate() =
         EngineCandidate(label, text, comment, spaceBetweenComment)
+
+    fun inputMethod(value: InputMethodEntry) = value.toEngineInputMethod()
 
     private fun InputMethodEntry.toEngineInputMethod() = EngineInputMethod(
         uniqueName, name, nativeName, label, languageCode, icon, addon, isConfigurable,

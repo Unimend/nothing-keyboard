@@ -25,7 +25,7 @@ import org.fcitx.fcitx5.android.input.session.InputSessionStore
 class FcitxEngineBridge(
     private val connection: FcitxConnection,
     private val session: InputSessionStore,
-    private val effectSink: (FcitxEvent<*>) -> Unit
+    private val effectSink: (EngineEffect) -> Unit
 ) {
     private var collectionJob: Job? = null
 
@@ -39,7 +39,10 @@ class FcitxEngineBridge(
                 }
                 publishState(event)
                 if (event is FcitxEvent.ReadyEvent) publishCachedState()
-                effectSink(event)
+                FcitxEngineEffectAdapter.map(event)?.let { effect ->
+                    InputCoreDiagnostics.recordEngineEffect(effect::class.simpleName ?: "EngineEffect")
+                    effectSink(effect)
+                }
             }
         }
         // UNDISPATCHED enters SharedFlow collection before returning, closing the gap between the
