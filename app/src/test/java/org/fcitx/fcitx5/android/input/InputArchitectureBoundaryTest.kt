@@ -11,6 +11,22 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `inline suggestions use one cancellable request with structured children`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt"
+        ).readText()
+        val request = source.substringAfter("fun handleInlineSuggestions(")
+            .substringBefore("private fun cancelInlineSuggestions")
+        assertTrue("inlineSuggestionsJob = service.lifecycleScope.launch" in request)
+        assertTrue("ensureActive()" in request)
+        assertFalse("service.lifecycleScope.async" in source)
+        assertTrue("cancelInlineSuggestions()" in source.substringAfter("fun onInputScopeDestroyed()")
+            .substringBefore("fun onEditorSessionUpdate"))
+        assertTrue("cancelInlineSuggestions()" in source.substringAfter("fun onEditorSessionUpdate")
+            .substringBefore("fun onInputPresentationUpdate"))
+    }
+
+    @Test
     fun `clipboard persistence types stay inside storage adapters`() {
         val allowed = setOf("StoredClipboardHistory.kt", "StoredClipboardMutations.kt")
         val violations = inputSources().filter {

@@ -182,3 +182,11 @@ side and are not claimed fully refactored by this runtime-boundary milestone.
 Verification: 139 unit/boundary tests passed, debug build succeeded, and the latest APK was installed.
 The diagnostic host entered Clipboard and hid the input view without a crash-buffer entry. Destructive
 clipboard cases were verified using fake storage only; no real history entries were removed.
+
+## Inline suggestion request lifetime
+
+Pinned and scrollable Android autofill suggestions now inflate as children of one cancellable job
+and are delivered together. New responses, editor-session starts and InputView destruction cancel
+the prior request and clear its presentation. A source guard prevents service-scoped child tasks
+from escaping that owner. Build and boundary tests pass; real autofill-provider response ordering
+has not been exercised on the diagnostic input field.

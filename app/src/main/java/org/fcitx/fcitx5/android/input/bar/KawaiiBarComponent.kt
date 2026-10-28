@@ -24,6 +24,8 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
@@ -103,6 +105,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val preferredVoiceInput by prefs.keyboard.preferredVoiceInput
 
     private var clipboardTimeoutJob: Job? = null
+    private var inlineSuggestionsJob: Job? = null
     private var inputScopeReady = false
     private val clipboardHistory: ClipboardHistory by manager.must()
     private var clipboardObservation: ClipboardObservation? = null
@@ -408,6 +411,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun onInputScopeDestroyed() {
         if (!inputScopeReady) return
         inputScopeReady = false
+        cancelInlineSuggestions()
         clipboardTimeoutJob?.cancel()
         clipboardTimeoutJob = null
         clipboardObservation?.close()
@@ -418,6 +422,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
         if (change != EditorSessionChange.Started) return
+        cancelInlineSuggestions()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             idleUi.privateMode(session.editor.privateMode)
         }
@@ -471,6 +476,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     @RequiresApi(Build.VERSION_CODES.R)
     fun handleInlineSuggestions(response: InlineSuggestionsResponse): Boolean {
+        if (!inputScopeReady) return false
+        cancelInlineSuggestions()
         val suggestions = response.inlineSuggestions
         if (suggestions.isEmpty()) {
             updateToolbar(ToolbarEvent.InlineSuggestionChanged(false))
@@ -491,21 +498,28 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                 scrollable.add(it)
             }
         }
-        service.lifecycleScope.launch {
-            idleUi.inlineSuggestionsBar.setPinnedView(
-                pinned?.let { inflateInlineContentView(it) }
-            )
+        inlineSuggestionsJob = service.lifecycleScope.launch {
+            val content = coroutineScope {
+                val pinnedView = async { pinned?.let { inflateInlineContentView(it) } }
+                val views = scrollable.map { s -> async { inflateInlineContentView(s) } }
+                pinnedView.await() to views.awaitAll()
+            }
+            ensureActive()
+            if (!inputScopeReady) return@launch
+            idleUi.inlineSuggestionsBar.setPinnedView(content.first)
+            idleUi.inlineSuggestionsBar.setScrollableViews(content.second)
+            updateToolbar(ToolbarEvent.InlineSuggestionChanged(true))
         }
-        service.lifecycleScope.launch {
-            val views = scrollable.map { s ->
-                service.lifecycleScope.async {
-                    inflateInlineContentView(s)
-                }
-            }.awaitAll()
-            idleUi.inlineSuggestionsBar.setScrollableViews(views)
-        }
-        updateToolbar(ToolbarEvent.InlineSuggestionChanged(true))
         return true
+    }
+
+    private fun cancelInlineSuggestions() {
+        inlineSuggestionsJob?.cancel()
+        inlineSuggestionsJob = null
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            idleUi.inlineSuggestionsBar.clear()
+        }
+        updateToolbar(ToolbarEvent.InlineSuggestionChanged(false))
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
