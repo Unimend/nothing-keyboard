@@ -16,6 +16,7 @@ import androidx.annotation.StringRes
 import androidx.core.view.MenuProvider
 import androidx.lifecycle.Lifecycle
 import androidx.preference.PreferenceCategory
+import org.fcitx.fcitx5.android.BuildConfig
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.ui.common.PaddingPreferenceFragment
 import org.fcitx.fcitx5.android.ui.main.settings.SettingsRoute
@@ -119,6 +120,13 @@ class MainFragment : PaddingPreferenceFragment() {
                     R.drawable.ic_baseline_more_horiz_24,
                     SettingsRoute.Advanced
                 )
+            }
+            if (BuildConfig.DEBUG) {
+                addCategory(getString(R.string.developer)) {
+                    addPreference(R.string.input_core_diagnostics) {
+                        startActivity(Intent(context, InputCoreDiagnosticsActivity::class.java))
+                    }
+                }
             }
         }
     }
