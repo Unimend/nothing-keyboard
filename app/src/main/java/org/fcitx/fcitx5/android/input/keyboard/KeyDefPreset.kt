@@ -59,38 +59,6 @@ class AlphabetKey(
     )
 )
 
-class AlphabetDigitKey(
-    val character: String,
-    altText: String,
-    val digit: Int,
-    popup: Array<Popup>? = null
-) : KeyDef(
-    Appearance.AltText(
-        displayText = character,
-        altText = altText,
-        textSize = 23f
-    ),
-    setOf(
-        Behavior.Press(KeyAction.TextKeyAction(character)),
-        Behavior.Swipe(KeyAction.SymAction(EngineKey.KeypadDigit(digit), VirtualNumLockModifiers))
-    ),
-    popup ?: arrayOf(
-        Popup.AltPreview(character, altText),
-        Popup.Keyboard.Preset(character)
-    )
-) {
-    constructor(
-        char: String,
-        digit: Int,
-        popup: Array<Popup>? = null
-    ) : this(
-        char,
-        digit.toString(),
-        digit,
-        popup
-    )
-}
-
 class CapsKey : KeyDef(
     Appearance.Image(
         src = R.drawable.ic_capslock_none,
@@ -137,18 +105,6 @@ class BackspaceKey(
     setOf(
         Behavior.Press(KeyAction.SymAction(EngineKey.Backspace)),
         Behavior.Repeat(KeyAction.SymAction(EngineKey.Backspace))
-    )
-)
-
-class QuickPhraseKey : KeyDef(
-    Appearance.Image(
-        src = R.drawable.ic_baseline_format_quote_24,
-        variant = Variant.Alternative,
-        viewId = R.id.button_quickphrase
-    ),
-    setOf(
-        Behavior.Press(KeyAction.QuickPhraseAction),
-        Behavior.LongPress(KeyAction.UnicodeAction)
     )
 )
 

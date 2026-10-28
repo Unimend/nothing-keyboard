@@ -95,20 +95,6 @@ class InputWindowManager(private val surfaceSink: SurfaceStateSink) : UniqueView
     }
 
     /**
-     * Remove an essential window
-     */
-    fun removeEssentialWindow(windowKey: EssentialWindow.Key) {
-        val (window, _) = essentialWindows[windowKey]
-            ?: throw IllegalStateException("$windowKey is not a known essential window key")
-        if (currentWindow === window)
-            throw IllegalStateException("$windowKey cannot be removed when it's active")
-        // remove from scope
-        scope -= window
-        // remove from map
-        essentialWindows.remove(windowKey)
-    }
-
-    /**
      * Attach a new window, removing the old one
      * This function initialize the view for windows and save it for essential windows.
      * [attachWindow] includes the operation done by [addEssentialWindow].

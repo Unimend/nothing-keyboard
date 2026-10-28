@@ -11,18 +11,6 @@ data class CandidateWord @JvmOverloads constructor(
     val comment: String,
     val spaceBetweenComment: Boolean = true
 ) {
-    fun textWithComment(): String {
-        return buildString {
-            append(text)
-            if (comment.isNotBlank()) {
-                if (spaceBetweenComment) {
-                    append(" ")
-                }
-                append(comment)
-            }
-        }
-    }
-
     companion object {
         val Empty = CandidateWord("", "", "", false)
     }
