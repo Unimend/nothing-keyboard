@@ -53,14 +53,11 @@ interface ClipboardDao {
     @Query("UPDATE ${ClipboardEntry.TABLE_NAME} SET deleted=1 WHERE id in (:ids)")
     suspend fun markAsDeleted(vararg ids: Int)
 
-    @Query("UPDATE ${ClipboardEntry.TABLE_NAME} SET DELETED=1 WHERE timestamp<:timestamp AND pinned=0 AND deleted=0")
-    suspend fun markUnpinnedAsDeletedEarlierThan(timestamp: Long)
+    @Query("DELETE FROM ${ClipboardEntry.TABLE_NAME} WHERE id in (:ids) AND pinned=0 AND deleted=0")
+    suspend fun deleteExpiredUnpinned(ids: IntArray)
 
     @Query("UPDATE ${ClipboardEntry.TABLE_NAME} SET deleted=0 WHERE id in (:ids) AND deleted=1")
     suspend fun undoDelete(vararg ids: Int)
-
-    @Query("DELETE FROM ${ClipboardEntry.TABLE_NAME} WHERE deleted=1")
-    suspend fun realDelete()
 
     @Query("DELETE FROM ${ClipboardEntry.TABLE_NAME} WHERE deleted=1 AND id in (:ids)")
     suspend fun finalizeDeleted(ids: IntArray)

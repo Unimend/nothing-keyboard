@@ -26,6 +26,7 @@ import org.fcitx.fcitx5.android.utils.WeakHashSet
 import org.fcitx.fcitx5.android.utils.appContext
 import org.fcitx.fcitx5.android.utils.clipboardManager
 import timber.log.Timber
+import java.util.Collections
 
 object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
     CoroutineScope by CoroutineScope(SupervisorJob() + Dispatchers.Default) {
@@ -40,16 +41,17 @@ object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
 
     private val mutex = Mutex()
 
-    var itemCount: Int = 0
+    @Volatile var itemCount: Int = 0
         private set
 
     private suspend fun updateItemCount() {
         itemCount = clbDao.itemCount()
     }
 
-    private val onUpdateListeners = WeakHashSet<OnClipboardUpdateListener>()
+    private val onUpdateListeners =
+        Collections.synchronizedSet(WeakHashSet<OnClipboardUpdateListener>())
 
-    var transformer: ((String) -> String)? = null
+    @Volatile var transformer: ((String) -> String)? = null
 
     fun addOnUpdateListener(listener: OnClipboardUpdateListener) {
         onUpdateListeners.add(listener)
@@ -74,14 +76,21 @@ object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
 
     @Keep
     private val limitListener = ManagedPreference.OnChangeListener<Int> { _, _ ->
-        launch { removeOutdated() }
+        launch {
+            clbDb.withTransaction {
+                removeOutdated()
+                updateItemCount()
+            }
+        }
     }
 
-    var lastEntry: ClipboardEntry? = null
+    @Volatile var lastEntry: ClipboardEntry? = null
 
     private fun updateLastEntry(entry: ClipboardEntry) {
         lastEntry = entry
-        onUpdateListeners.forEach { it.onUpdate(entry) }
+        // Registration occurs on the UI thread; clipboard collection publishes from a worker.
+        val listeners = synchronized(onUpdateListeners) { onUpdateListeners.toList() }
+        listeners.forEach { it.onUpdate(entry) }
     }
 
     fun init(context: Context) {
@@ -109,18 +118,18 @@ object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
     suspend fun unpin(id: Int) = clbDao.updatePinStatus(id, false)
 
     suspend fun updateText(id: Int, text: String) {
+        clbDao.updateText(id, text)
         lastEntry?.let {
             if (id == it.id) updateLastEntry(it.copy(text = text))
         }
-        clbDao.updateText(id, text)
     }
 
-    suspend fun delete(id: Int) {
+    suspend fun delete(id: Int) = clbDb.withTransaction {
         clbDao.markAsDeleted(id)
         updateItemCount()
     }
 
-    suspend fun deleteAll(skipPinned: Boolean = true): IntArray {
+    suspend fun deleteAll(skipPinned: Boolean = true): IntArray = clbDb.withTransaction {
         val ids = if (skipPinned) {
             clbDao.findUnpinnedIds()
         } else {
@@ -128,16 +137,12 @@ object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
         }
         clbDao.markAsDeleted(*ids)
         updateItemCount()
-        return ids
+        ids
     }
 
-    suspend fun undoDelete(vararg ids: Int) {
+    suspend fun undoDelete(vararg ids: Int) = clbDb.withTransaction {
         clbDao.undoDelete(*ids)
         updateItemCount()
-    }
-
-    suspend fun realDelete() {
-        clbDao.realDelete()
     }
 
     suspend fun finalizeDeleted(ids: IntArray) {
@@ -198,16 +203,11 @@ object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
     }
 
     private suspend fun removeOutdated() {
-        val limit = limitPref.getValue()
-        val unpinned = clbDao.getAllUnpinned()
-        if (unpinned.size > limit) {
-            // the last one we will keep
-            val last = unpinned
-                .sortedBy { it.id }
-                .getOrNull(unpinned.size - limit)
-            // delete all unpinned before that, or delete all when limit <= 0
-            clbDao.markUnpinnedAsDeletedEarlierThan(last?.timestamp ?: System.currentTimeMillis())
-        }
+        val expired = ClipboardRetentionPolicy.expiredIds(
+            clbDao.getAllUnpinned().map { ClipboardRecency(it.id, it.timestamp) },
+            limitPref.getValue()
+        )
+        if (expired.isNotEmpty()) clbDao.deleteExpiredUnpinned(expired.toIntArray())
     }
 
 }

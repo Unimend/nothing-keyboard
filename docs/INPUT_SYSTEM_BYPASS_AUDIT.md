@@ -211,3 +211,17 @@ source boundaries pass; provider-backed autofill still needs a real compatible p
 
 Latest command-port device smoke: Pinyin `nihao` → Return → comma produced `你好，`; candidate
 selection and punctuation queries succeeded, with no crash-buffer entry.
+
+## Clipboard retention ownership
+
+Removed the now-unused global soft-delete purge API. Retention selects exact active, unpinned IDs
+using timestamp then ID ordering; the SQL predicate also excludes pinned and pending-undo rows.
+This preserves recently reused older entries and avoids creating new unowned retention tombstones.
+Existing historical tombstones are not swept by this change. Retention preference updates and
+delete/restore count updates use database transactions. Text edits publish preview updates only after
+the database write succeeds. Clipboard listeners are snapshotted under a lock because registration
+and worker-thread publication use different threads.
+
+Policy tests cover timestamp-vs-ID order, tied timestamps and boundary limits. An in-memory SQLite
+predicate check retained pinned and pending-undo rows during retention, and finalized only the
+explicit marked row. No device history was used for these checks.
