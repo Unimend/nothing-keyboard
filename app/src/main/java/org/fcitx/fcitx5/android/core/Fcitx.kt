@@ -425,35 +425,23 @@ class Fcitx(private val context: Context) : FcitxAPI, FcitxLifecycleOwner {
             DataManager.sync()
             val locale = Locales.fcitxLocale
             val dataDir = DataManager.dataDir.absolutePath
-            val plugins = DataManager.getLoadedPlugins()
-            val nativeLibDir = StringBuilder(context.applicationInfo.nativeLibraryDir)
-            val extDomains = arrayListOf<String>()
-            plugins.forEach {
-                if (it.nativeLibraryDir.isNotBlank()) {
-                    nativeLibDir.append(':')
-                    nativeLibDir.append(it.nativeLibraryDir)
-                }
-                it.domain?.let { d ->
-                    extDomains.add(d)
-                }
-            }
+            val nativeLibDir = context.applicationInfo.nativeLibraryDir
             Timber.d(
                 """
                Starting fcitx with:
                locale=$locale
                dataDir=$dataDir
                nativeLibDir=$nativeLibDir
-               extDomains=${extDomains.joinToString()}
             """.trimIndent()
             )
             with(FcitxApplication.getInstance().directBootAwareContext) {
                 startupFcitx(
                     locale,
                     dataDir,
-                    nativeLibDir.toString(),
+                    nativeLibDir,
                     (getExternalFilesDir(null) ?: filesDir).absolutePath,
                     (externalCacheDir ?: cacheDir).absolutePath,
-                    extDomains.toTypedArray()
+                    emptyArray()
                 )
             }
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
