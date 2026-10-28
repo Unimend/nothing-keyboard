@@ -44,9 +44,6 @@ class MainFragment : PaddingPreferenceFragment() {
             menu.item(R.string.faq) {
                 startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(Const.faqUrl)))
             }
-            menu.item(R.string.developer) {
-                navigateWithAnim(SettingsRoute.Developer)
-            }
             menu.item(R.string.about) {
                 navigateWithAnim(SettingsRoute.About)
             }

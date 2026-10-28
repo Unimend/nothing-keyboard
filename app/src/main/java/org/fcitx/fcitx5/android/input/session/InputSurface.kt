@@ -11,6 +11,5 @@ sealed interface InputSurface {
     data object Clipboard : InputSurface
     data class Picker(val kind: String) : InputSurface
     data object Status : InputSurface
-    data object EditorInfo : InputSurface
     data object Auxiliary : InputSurface
 }

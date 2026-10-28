@@ -60,7 +60,6 @@ import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
 import org.fcitx.fcitx5.android.input.runtime.InputEngineAccess
 import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
 import org.fcitx.fcitx5.android.input.runtime.ImePlatformAccess
-import org.fcitx.fcitx5.android.input.runtime.EditorInfoAccess
 import org.fcitx.fcitx5.android.utils.switchToNextIME
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
@@ -133,7 +132,6 @@ class InputView(
     private val sessionAccess = InputSessionAccess(service.inputSession)
     private val engineAccess = InputEngineAccess(service.engineCommands, service.engineQueries)
     private val editingAccess = InputEditingAccess(service.editingCommands)
-    private val editorInfoAccess = EditorInfoAccess { service.currentInputEditorInfo }
     private val platformAccess = ImePlatformAccess(
         inputMethods = service.platformInputMethods,
         hideKeyboardAction = { service.requestHideSelf(0) },
@@ -168,7 +166,6 @@ class InputView(
         scope += sessionAccess
         scope += engineAccess
         scope += editingAccess
-        scope += editorInfoAccess
         scope += platformAccess
         scope += service.dialogs
         scope += service.inputMethodPicker

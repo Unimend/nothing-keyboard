@@ -2,13 +2,9 @@
 <resources>
     <string name="app_name_release">Fcitx5</string>
     <string name="app_name_debug">Fcitx5 (depuración)</string>
-    <string name="save">Guardar</string>
     <string name="input_methods">Métodos de entrada</string>
-    <string name="add_input_method">Añadir método de entrada</string>
     <string name="addons">Complementos</string>
-    <string name="conf">Configuración</string>
     <string name="global_options">Opciones globales</string>
-    <string name="behavior">Comportamiento</string>
     <string name="advanced">Avanzado</string>
     <string name="ignore_sys_cursor">Ignorar posición del cursor del sistema</string>
     <string name="hide_key_config">Ocultar configuraciones de atajos</string>
@@ -21,7 +17,6 @@
     <string name="add">Añadir</string>
     <string name="edit">Editar</string>
     <string name="undo">Deshacer</string>
-    <string name="delete_and_sync_data">Eliminar y sincronizar datos de ejecución</string>
     <string name="enable_ime">Activar método de entrada</string>
     <string name="select_ime">Seleccionar método de entrada</string>
     <string name="next">Siguiente</string>
@@ -31,12 +26,10 @@
     <string name="dict_already_exists">El diccionario ya existe</string>
     <string name="invalid_dict">El tipo de diccionario no es válido</string>
     <string name="whether_import_dict">¿Quiere importar este diccionario?</string>
-    <string name="import_">Importar</string>
     <string name="loading">Cargando</string>
     <string name="about">Acerca de</string>
     <string name="faq">Preguntas frecuentes</string>
     <string name="current_version">Versión actual</string>
-    <string name="real_time_logs">Registros en tiempo real</string>
     <string name="pin">Anclar</string>
     <string name="unpin">Desanclar</string>
     <string name="delete">Eliminar</string>
@@ -51,12 +44,6 @@
     <string name="licenses_of_third_party_libraries">Licencias de bibliotecas de terceros</string>
     <string name="github_repo">Repositorio en GitHub</string>
     <string name="select">Seleccionar</string>
-    <string name="clear">Vaciar</string>
-    <string name="export">Exportar</string>
-    <string name="app_crash">La aplicación se cerró inesperadamente</string>
-    <string name="crash_logs">Registros de cierres inesperados</string>
-    <string name="verbose_log">Registro a detalle</string>
-    <string name="verbose_log_summary">Requiere reinicio</string>
     <string name="invalid_value">Valor no válido</string>
     <string name="quickphrase_editor">Editor de frases rápidas</string>
     <string name="quickphrase_already_exists">La frase rápida ya existe</string>
@@ -95,11 +82,7 @@
     <string name="table_dict_select_title">Diccionario de tablas (.dict o .txt)</string>
     <string name="space_behavior_none">Ninguno</string>
     <string name="space_behavior_enumerate">Enumerar métodos de entrada</string>
-    <string name="plugins">Complementos</string>
-    <string name="plugins_failed">Falló la carga</string>
-    <string name="main_program">programa principal</string>
     <string name="show_voice_input_button">Mostrar botón de entrada por voz</string>
-    <string name="no_plugins">No hay ningún complemento disponible</string>
     <string name="whether_reset_switch_preference">¿Quiere restablecer la preferencia a su valor predeterminado?</string>
     <string name="enabled">Activado</string>
     <string name="following_system_settings">Seguir configuración del sistema</string>

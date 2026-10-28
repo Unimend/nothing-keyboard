@@ -301,14 +301,17 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private val inlineSuggestions by InputSettings.keyboard.inlineSuggestions
     private val ignoreSystemCursor by InputSettings.advanced.ignoreSystemCursor
-    private val inlineSuggestionController by lazy {
-        InlineSuggestionController(
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun createInlineSuggestionController() = InlineSuggestionController(
             enabled = { inlineSuggestions },
             isVirtualKeyboard = { inputDeviceMgr.isVirtualKeyboard },
             createRequest = { InlineSuggestionRequestFactory.create(this, ThemeManager.activeTheme) },
             showResponse = { inputView?.handleInlineSuggestions(it) == true }
         )
-    }
+
+    // The lazy is reached only from the API-30 InputMethodService callbacks below.
+    @delegate:SuppressLint("NewApi")
+    private val inlineSuggestionController by lazy(::createInlineSuggestionController)
 
     private val recreateInputViewPrefs: Array<ManagedPreference<*>> = arrayOf(
         InputSettings.keyboard.expandKeypressArea,
@@ -380,7 +383,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         engineDispatcher = FcitxCommandDispatcher(fcitx, lifecycleScope)
         subtypeController = AndroidSubtypeController(engineQueries, engineCommands,
             currentSubtype = { inputMethodManager.currentInputMethodSubtype },
-            switchSubtype = { switchInputMethod(InputMethodUtil.componentName, it) })
+            switchSubtype = { InputMethodUtil.switchInputMethod(this, InputMethodUtil.componentName, it) })
         engineBridge = FcitxEngineBridge(fcitx, inputSession,
             publish = { sessionStore.dispatch(InputSessionEvent.EngineChanged(it)) },
             effectSink = engineEffectRouter::handle)

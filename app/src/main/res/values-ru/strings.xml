@@ -2,13 +2,9 @@
 <resources>
     <string name="app_name_release">Fcitx5</string>
     <string name="app_name_debug">Fcitx5 (Отладка)</string>
-    <string name="save">Сохранить</string>
     <string name="input_methods">Методы ввода</string>
-    <string name="add_input_method">Добавить метод ввода</string>
     <string name="addons">Дополнения</string>
-    <string name="conf">Конфигурация</string>
     <string name="global_options">Глобальные параметры</string>
-    <string name="behavior">Поведение</string>
     <string name="advanced">Расширенное</string>
     <string name="ignore_sys_cursor">Игнорировать позицию системного курсора</string>
     <string name="hide_key_config">Скрыть конфигурации горячих клавиш</string>
@@ -22,8 +18,6 @@
     <string name="add">Добавить</string>
     <string name="edit">Редактировать</string>
     <string name="undo">Отменить</string>
-    <string name="delete_and_sync_data">Удалить и синхронизировать данные среды выполнения</string>
-    <string name="delete_and_sync_data_message">Удалить текущий каталог данных и выполнить синхронизацию с активами, включенными в приложение</string>
     <string name="enable_ime">Включить метод ввода</string>
     <string name="enable_ime_hint">Включить &lt;b>%1$s&lt;/b> в настройках языка и ввода</string>
     <string name="select_ime">Выбор метода ввода</string>
@@ -40,8 +34,6 @@
     <string name="dict_already_exists">Словарь уже существует</string>
     <string name="invalid_dict">Неверный тип словаря</string>
     <string name="whether_import_dict">Хотите импортировать этот словарь?</string>
-    <string name="import_">Импорт</string>
-    <string name="synced">Синхронизировано!</string>
     <string name="loading">Загрузка</string>
     <string name="clipboard_listening">Прослушивание буфера обмена</string>
     <string name="clipboard_limit">Лимит истории буфера обмена</string>
@@ -54,9 +46,7 @@
     <string name="about">О fcitx5 для Android</string>
     <string name="faq">FAQ</string>
     <string name="current_version">Текущая версия</string>
-    <string name="real_time_logs">Журналы в реальном времени</string>
     <string name="developer">Разработчик</string>
-    <string name="clear_clb_db">Очистить базу данных буфера обмена</string>
     <string name="pin">Прикрепить</string>
     <string name="unpin">Открепить</string>
     <string name="delete">Удалить</string>
@@ -80,13 +70,6 @@
     <string name="text_editing">Редактирование текста</string>
     <string name="instruction_enable_clipboard_listening">Чтобы использовать управление буфером обмена, включите прослушивание буфера обмена в настройках.</string>
     <string name="instruction_copy">Попробуйте скопировать что-нибудь</string>
-    <string name="clear">Очистить</string>
-    <string name="export">Экспорт</string>
-    <string name="app_crash">В работе приложения произошёл сбой</string>
-    <string name="app_crash_message">Извините, но мы предоставляем вам несколько журналов для изучения.</string>
-    <string name="crash_logs">Журналы сбоев</string>
-    <string name="verbose_log">Подробное ведение журнала</string>
-    <string name="verbose_log_summary">Требуется перезапуск</string>
     <string name="removed_x">Удалено %1$s</string>
     <string name="added_x">Добавлено %1$s</string>
     <string name="edited_x">Отредактировано %1$s</string>
@@ -94,7 +77,6 @@
     <string name="keyboard_long_press_delay">Задержка при длительном нажатии клавиши</string>
     <string name="quickphrase_editor">Редактор быстрых фраз</string>
     <string name="quickphrase_already_exists">Быстрая фраза уже существует</string>
-    <string name="invalid_quickphrase">Неверный тип быстрой фразы</string>
     <string name="create_new">Создать новый</string>
     <string name="name">Имя</string>
     <string name="reset">Перезагрузить</string>
@@ -122,7 +104,6 @@
     <string name="popup_on_key_press">Всплывающее окно при нажатии клавиши</string>
     <string name="disable_animation">Отключить анимацию</string>
     <string name="import_from_file">Импорт из файла…</string>
-    <string name="exception_logcat_created">Процесс Logcat уже создан</string>
     <string name="exception_quickphrase_parse">Не удалось разобрать строку быстрой фразы: %1$s</string>
     <string name="exception_quickphrase_filename">Расширение имени файла %1$s не указывает на быструю фразу</string>
     <string name="exception_libime_dict_filename">Расширение имени файла %1$s не указывает на словарь libime</string>
@@ -130,7 +111,6 @@
     <string name="exception_sougou_dict_filename">Расширение имени файла %1$s не указывает на словарь sogou</string>
     <string name="exception_dict_filename">Расширение имени файла %1$s не указывает на словарь</string>
     <string name="skip">Пропустить</string>
-    <string name="horizontal_candidate_growth">Растянуть кандидаты по горизонтали, чтобы заполнить оставшуюся ширину</string>
     <string name="none">Нет</string>
     <string name="keep_keyboard_letters_uppercase">Сохранять буквы клавиатуры прописными</string>
     <string name="choose_input_method">Выбор метода ввода</string>
@@ -152,7 +132,6 @@
     <string name="swipe_up">Провести вверх</string>
     <string name="disabled">Отключено</string>
     <string name="system_default">Системные установки по умолчанию</string>
-    <string name="editor_info_inspector">Инспектор EditorInfo</string>
     <string name="default_">По умолчанию</string>
     <string name="saving">Сохранение</string>
     <string name="delete_all_pinned_items">Удалить все закрепленные элементы?</string>
@@ -192,22 +171,9 @@
     <string name="inline_suggestions">Показать встроенные предложения по автозаполнению</string>
     <string name="delete_all_except_pinned">Удалить все элементы, кроме закрепленных?</string>
     <string name="num_items_deleted">%1$d удалить элемент(ы)</string>
-    <string name="capture_heap_dump">Захватить дамп кучи</string>
-    <string name="plugins">Плагины</string>
-    <string name="plugins_loaded">Загружено</string>
-    <string name="plugins_failed">Загрузка не удалась</string>
-    <string name="missing_plugin_descriptor">Отсутствует дескриптор плагина</string>
-    <string name="invalid_plugin_descriptor">Неверный дескриптор плагина</string>
-    <string name="missing_data_descriptor">Отсутствует дескриптор данных</string>
-    <string name="invalid_data_descriptor">Неверный дескриптор данных</string>
-    <string name="incompatible_api">Несовместимый API: %1$s</string>
-    <string name="path_conflict">Путь \"%1$s\" уже принадлежит %2$s</string>
-    <string name="main_program">основная программа</string>
     <string name="show_voice_input_button">Показывать кнопку голосового ввода</string>
     <string name="fcitx_daemon">Демон Fcitx</string>
     <string name="restarting_fcitx">Перезапуск Fcitx</string>
-    <string name="plugin_needs_reload">Обнаружены изменения плагина, нажмите здесь, чтобы перезагрузить</string>
-    <string name="no_plugins">Нет доступных плагинов</string>
     <string name="removed_n_items">Удаленный %1$d элемент(ы)</string>
     <string name="whether_reset_switch_preference">Вы хотите сбросить этот параметр по умолчанию?</string>
     <string name="enabled">Включено</string>
@@ -227,18 +193,14 @@
     <string name="restart_notify_msg">Приложение перезапущено. Нажмите здесь, чтобы открыть</string>
     <string name="i_do_not_need_it">Мне это не нужно</string>
     <string name="grant_permission">Предоставить разрешение</string>
-    <string name="clear_clp_db_confirm">База данных буфера обмена будет полностью очищена, включая закрепленные элементы. Продолжить?</string>
     <string name="expand_keypress_area">Расширить область нажатия клавиш до края</string>
     <string name="update_table">Обновить таблицу</string>
     <string name="table_dict_replace_message">Словарь кодовой таблицы \"%1$s\" существует. Вы можете импортировать новый словарь и заменить его.</string>
     <string name="lang_switch_key_behavior">Поведение клавиши переключения языка</string>
     <string name="lang_switch_behavior_next_ime_app">Переключиться на следующий метод ввода</string>
-    <string name="cannot_be_empty">Не может быть пустым</string>
     <string name="_cannot_be_empty">%1$s не может быть пустым</string>
-    <string name="action_forget_candidate_word">Забыть слово</string>
     <string name="clipboard_mask_sensitive">Маскировать конфиденциальные данные (например, пароли).</string>
     <string name="open_rime_user_data_dir">Будет открыт каталог данных приложения. Каталог пользовательских данных RIME находится в директории \"data/rime\".</string>
-    <string name="restart_to_apply_settings">Для применения новых настроек, приложение будет перезапущено. Продолжить?</string>
     <string name="space_swipe_move_cursor">Провести по клавише пробела, чтобы переместить курсор</string>
     <string name="please_wait">Пожалуйста, подождите…</string>
     <string name="candidates_window">Окно кандидатов</string>
@@ -253,8 +215,6 @@
     <string name="candidates_padding">Отступ от слова-кандидата</string>
     <string name="candidates_window_min_width">Минимальная ширина окна кандидата</string>
     <string name="candidates_window_padding">Поле окна кандидата</string>
-    <string name="restart_fcitx_instance">Перезапустить экземпляр fcitx</string>
-    <string name="restart_fcitx_instance_confirm">Экземпляр Fcitx будет уничтожен и повторно инициализирован. Продолжить?</string>
     <string name="ignore_system_window_insets">Игнорировать поля системного окна</string>
     <string name="browse_user_data_dir">Просмотр каталога пользовательских данных</string>
     <string name="haptic_on_repeat">Вибрация при повторном нажатии клавиши</string>
@@ -289,5 +249,4 @@
     <string name="hide_unsupported_emojis">Скрыть неподдерживаемые эмодзи</string>
     <string name="key_border_stroke">Включить обводку для границы клавиши</string>
     <string name="preferred_voice_input">Предпочтительный голосовой ввод</string>
-    <string name="edit_text_playground">Тестовое поле EditText</string>
     </resources>

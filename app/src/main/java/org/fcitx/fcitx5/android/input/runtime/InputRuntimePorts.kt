@@ -4,7 +4,6 @@
 package org.fcitx.fcitx5.android.input.runtime
 
 import android.view.inputmethod.InputMethodSubtype
-import android.view.inputmethod.EditorInfo
 import org.fcitx.fcitx5.android.input.editing.EditingCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
@@ -20,11 +19,6 @@ class InputEngineAccess(
 ) : UniqueComponent<InputEngineAccess>()
 
 class InputEditingAccess(val commands: EditingCommandPort) : UniqueComponent<InputEditingAccess>()
-
-class EditorInfoAccess(private val currentEditorInfo: () -> EditorInfo) :
-    UniqueComponent<EditorInfoAccess>() {
-    fun current(): EditorInfo = currentEditorInfo()
-}
 
 class ImePlatformAccess(
     val inputMethods: PlatformInputMethodPort,

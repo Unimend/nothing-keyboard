@@ -11,7 +11,6 @@ import org.fcitx.fcitx5.android.input.candidates.expanded.window.FlexboxExpanded
 import org.fcitx.fcitx5.android.input.candidates.expanded.window.GridExpandedCandidateWindow
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
-import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
 import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
@@ -57,8 +56,6 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             }
             InputNavigationCommand.ShowStatus ->
                 windowManager.attachWindow(StatusAreaWindow())
-            InputNavigationCommand.ShowEditorInfo ->
-                windowManager.attachWindow(EditorInfoWindow())
             is InputNavigationCommand.ShowExpandedCandidates ->
                 windowManager.attachWindow(
                     when (command.layout) {
@@ -96,7 +93,6 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             InputNavigationCommand.ShowEditing -> "Editing"
             is InputNavigationCommand.ShowPicker -> "Picker(${kind?.name ?: "remembered"})"
             InputNavigationCommand.ShowStatus -> "Status"
-            InputNavigationCommand.ShowEditorInfo -> "EditorInfo"
             is InputNavigationCommand.ShowExpandedCandidates ->
                 "ExpandedCandidates(${layout.name})"
         }
@@ -121,7 +117,6 @@ internal object ClipboardReturnPolicy {
                 org.fcitx.fcitx5.android.input.mode.PickerKind.fromStorage(surface.kind)
             )
             InputSurface.Status -> InputNavigationCommand.ShowStatus
-            InputSurface.EditorInfo -> InputNavigationCommand.ShowEditorInfo
             else -> InputNavigationCommand.ShowKeyboard(keyboardLayout)
         }
 }

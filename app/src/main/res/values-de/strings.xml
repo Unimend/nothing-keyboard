@@ -2,13 +2,9 @@
 <resources>
     <string name="app_name_release">Fcitx5</string>
     <string name="app_name_debug">Fcitx5 (Debug)</string>
-    <string name="save">Speichern</string>
     <string name="input_methods">Eingabemethoden</string>
-    <string name="add_input_method">Eingabemethode hinzufügen</string>
     <string name="addons">Addons</string>
-    <string name="conf">Konfiguration</string>
     <string name="global_options">Globale Optionen</string>
-    <string name="behavior">Verhalten</string>
     <string name="advanced">Erweitert</string>
     <string name="ignore_sys_cursor">Position des Cursors ignorieren</string>
     <string name="_not_available_">(Nicht verfügbar)</string>
@@ -20,7 +16,6 @@
     <string name="add">Hinzufügen</string>
     <string name="edit">Bearbeiten</string>
     <string name="undo">Rückgängig</string>
-    <string name="delete_and_sync_data">Laufzeitdaten löschen und synchronisieren</string>
     <string name="enable_ime">Eingabemethode aktivieren</string>
     <string name="enable_ime_hint">&lt;b>%1$s&lt;/b> in Sprach- und Eingabeeinstellungen einschalten</string>
     <string name="select_ime">Eingabemethode auswählen</string>
@@ -37,8 +32,6 @@
     <string name="dict_already_exists">Wörterbuch bereits vorhanden</string>
     <string name="invalid_dict">Ungültiger Typ des Wörterbuchs</string>
     <string name="whether_import_dict">Wollen Sie dieses Wörterbuch importieren?</string>
-    <string name="import_">Importieren</string>
-    <string name="synced">Synchronisiert!</string>
     <string name="loading">Wird geladen</string>
     <string name="clipboard_listening">Clipboard zeigen</string>
     <string name="clipboard_limit">Anzahl Clipboard Verlauf</string>
@@ -49,9 +42,7 @@
     <string name="about">Über</string>
     <string name="faq">FAQ</string>
     <string name="current_version">Aktuelle Version</string>
-    <string name="real_time_logs">Echtzeitprotokolle</string>
     <string name="developer">Entwickler</string>
-    <string name="clear_clb_db">Datenbank der Zwischenablage leeren</string>
     <string name="pin">Festlegen</string>
     <string name="delete">Löschen</string>
     <string name="clipboard">Zwischenablage</string>
@@ -70,13 +61,6 @@
     <string name="select">Auswählen</string>
     <string name="text_editing">Textbearbeitung</string>
     <string name="instruction_copy">Versuch etwas zu kopieren</string>
-    <string name="clear">Leeren</string>
-    <string name="export">Exportieren</string>
-    <string name="app_crash">Anwendung abgestürzt</string>
-    <string name="app_crash_message">Entschuldigung, bitte untersuche die Logs</string>
-    <string name="crash_logs">Absturzprotokolle</string>
-    <string name="verbose_log">Ausführliche Protokollierung</string>
-    <string name="verbose_log_summary">Erfordert Neustart</string>
     <string name="removed_x">%1$s entfernt</string>
     <string name="added_x">%1$s hinzugefügt</string>
     <string name="edited_x">%1$s bearbeitet</string>
@@ -143,7 +127,6 @@
     <string name="show_lang_switch_key">Sprachwechseltaste anzeigen</string>
     <string name="horizontal_candidate_style">Stil der horizonttalen Kandidaten</string>
     <string name="num_items_deleted">%1$d Element(e) gelöscht</string>
-    <string name="plugins">Plugins</string>
     <string name="show_voice_input_button">Taste Spracheingabe zeigen</string>
     <string name="fcitx_daemon">Fcitx Daemon</string>
     <string name="removed_n_items"> %1$d Element(e) entfernt</string>

@@ -11,9 +11,7 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
 import android.os.Build
-import android.os.Process
 import androidx.core.content.ContextCompat
-import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.MainScope
@@ -22,14 +20,11 @@ import org.fcitx.fcitx5.android.daemon.FcitxDaemon
 import org.fcitx.fcitx5.android.data.clipboard.ClipboardSystem
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.ui.main.LogActivity
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.Locales
 import org.fcitx.fcitx5.android.utils.setupForest
-import org.fcitx.fcitx5.android.utils.startActivity
 import org.fcitx.fcitx5.android.utils.userManager
 import timber.log.Timber
-import kotlin.system.exitProcess
 
 class FcitxApplication : Application() {
 
@@ -88,36 +83,6 @@ class FcitxApplication : Application() {
         }
         val ctx = directBootAwareContext
 
-        if (!BuildConfig.DEBUG) {
-            Thread.setDefaultUncaughtExceptionHandler { _, e ->
-                val crashTime = System.currentTimeMillis()
-                val sharedPreferences = PreferenceManager.getDefaultSharedPreferences(ctx)
-                val lastCrashTimePrefKey = "last_crash_time"
-                val lastCrashTime = sharedPreferences.getLong(lastCrashTimePrefKey, -1L)
-                // make sure it was written to persistent storage
-                sharedPreferences.edit(commit = true) {
-                    putLong(lastCrashTimePrefKey, crashTime)
-                }
-                if (crashTime - lastCrashTime <= 10_000L) {
-                    // continuous crashes within 10 seconds, maybe in a crash loop. just bail
-                    exitProcess(10)
-                }
-                startActivity<LogActivity> {
-                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    putExtra(LogActivity.FROM_CRASH, true)
-                    // avoid transaction overflow
-                    val truncated = e.stackTraceToString().let {
-                        if (it.length > MAX_STACKTRACE_SIZE)
-                            it.take(MAX_STACKTRACE_SIZE) + "<truncated>"
-                        else
-                            it
-                    }
-                    putExtra(LogActivity.CRASH_STACK_TRACE, truncated)
-                }
-                exitProcess(10)
-            }
-        }
-
         instance = this
         // we don't have AppPrefs available yet
         val sharedPrefs = PreferenceManager.getDefaultSharedPreferences(ctx)
@@ -126,13 +91,6 @@ class FcitxApplication : Application() {
         Timber.d("isDirectBootMode=$isDirectBootMode")
 
         AppPrefs.init(sharedPrefs)
-        // record last pid for crash logs
-        AppPrefs.getInstance().internal.pid.apply {
-            val currentPid = Process.myPid()
-            lastPid = getValue()
-            Timber.d("Last pid is $lastPid. Set it to current pid: $currentPid")
-            setValue(currentPid)
-        }
         ClipboardSystem.init(ctx)
         ThemeManager.init()
         Locales.onLocaleChange(resources.configuration)
@@ -157,13 +115,9 @@ class FcitxApplication : Application() {
     }
 
     companion object {
-        private var lastPid: Int? = null
         private var instance: FcitxApplication? = null
         fun getInstance() =
             instance ?: throw IllegalStateException("FcitxApplication has not been created!")
-
-        fun getLastPid() = lastPid
-        private const val MAX_STACKTRACE_SIZE = 128000
 
         const val ACTION_RESTART_FCITX_INSTANCE =
             "${BuildConfig.APPLICATION_ID}.action.RESTART_FCITX_INSTANCE"

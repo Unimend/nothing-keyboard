@@ -33,8 +33,6 @@ class AppPrefs(private val sharedPreferences: SharedPreferences) {
         val lastSymbolLayout = string("last_symbol_layout", PickerKind.Symbol.name)
         val lastPickerType = string("last_picker_type", PickerKind.Emoji.name)
         val verboseLog = bool("verbose_log", false)
-        val pid = int("pid", 0)
-        val editorInfoInspector = bool("editor_info_inspector", false)
         val needNotifications = bool("need_notifications", true)
     }
 
@@ -408,7 +406,6 @@ class AppPrefs(private val sharedPreferences: SharedPreferences) {
         sp.edit {
             listOf(
                 internal.verboseLog,
-                internal.editorInfoInspector,
                 advanced.ignoreSystemCursor,
                 advanced.disableAnimation,
                 advanced.vivoKeypressWorkaround

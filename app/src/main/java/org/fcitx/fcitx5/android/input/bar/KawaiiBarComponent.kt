@@ -4,6 +4,7 @@
  */
 package org.fcitx.fcitx5.android.input.bar
 
+import android.annotation.SuppressLint
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
 import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionPresenter
 
@@ -479,7 +480,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         barStateMachine.push(WindowDetached)
     }
 
-    private val inlinePresenter by lazy {
+    @RequiresApi(Build.VERSION_CODES.R)
+    private fun createInlinePresenter() =
         InlineSuggestionPresenter(context, inputView.surfaceScope, context.dp(HEIGHT)) { content ->
             if (content == null) {
                 idleUi.inlineSuggestionsBar.clear()
@@ -489,7 +491,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             }
             updateToolbar(ToolbarEvent.InlineSuggestionChanged(content != null))
         }
-    }
+
+    // Access is guarded by API-30 callbacks or an explicit SDK check.
+    @delegate:SuppressLint("NewApi")
+    private val inlinePresenter by lazy(::createInlinePresenter)
 
     @RequiresApi(Build.VERSION_CODES.R)
     fun handleInlineSuggestions(response: InlineSuggestionsResponse): Boolean =

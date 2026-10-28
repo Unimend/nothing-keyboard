@@ -16,6 +16,5 @@ sealed interface InputNavigationCommand {
     data object ShowEditing : InputNavigationCommand
     data class ShowPicker(val kind: PickerKind? = null) : InputNavigationCommand
     data object ShowStatus : InputNavigationCommand
-    data object ShowEditorInfo : InputNavigationCommand
     data class ShowExpandedCandidates(val layout: CandidateLayout) : InputNavigationCommand
 }

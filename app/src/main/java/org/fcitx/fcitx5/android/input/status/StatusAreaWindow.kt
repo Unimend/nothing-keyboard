@@ -16,14 +16,11 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.launchOnReady
-import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
-import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
-import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.InputMethod
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.Keyboard
@@ -56,9 +53,6 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     private val engine: InputEngineAccess by manager.must()
     private val platform: ImePlatformAccess by manager.must()
     private val theme by manager.theme()
-    private val navigator: InputNavigator by manager.must()
-
-    private val editorInfoInspector by InputSettings.internal.editorInfoInspector
 
     private val staticEntries by lazy {
         arrayOf(
@@ -183,13 +177,6 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
 
     override fun onCreateView() = view
 
-    private val editorInfoButton by lazy {
-        ToolButton(context, R.drawable.ic_baseline_info_24, theme).apply {
-            contentDescription = context.getString(R.string.editor_info_inspector)
-            setOnClickListener { navigator.navigate(InputNavigationCommand.ShowEditorInfo) }
-        }
-    }
-
     private val settingsButton by lazy {
         ToolButton(context, R.drawable.ic_baseline_settings_24, theme).apply {
             contentDescription = context.getString(R.string.open_input_method_settings)
@@ -199,9 +186,6 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
 
     private val barExtension by lazy {
         context.horizontalLayout {
-            if (editorInfoInspector) {
-                add(editorInfoButton, lParams(dp(40), dp(40)))
-            }
             add(settingsButton, lParams(dp(40), dp(40)))
         }
     }
