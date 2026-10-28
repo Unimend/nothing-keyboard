@@ -134,6 +134,20 @@ Device checks after the user handed over the phone: selected delete/undo no long
 symbol clear/undo restores `abc123`; emoji range deletion restores `abc123😀` with a collapsed cursor;
 expanded candidate “比” maps to `比hao`, Return commits `比好`, and delete/undo restores Chinese rather
 than pinyin. Rotation with Editing open returns to a ready Keyboard with no crash-buffer entries;
-the original `free` rotation setting was restored. The final read-only session-port change still
-requires a smoke test on the latest APK. Candidate font measurement was visually checked in the
+the original `free` rotation setting was restored. The final read-only session-port change passed
+the latest APK smoke test: English input/Return, Editing select/delete/undo, Emoji horizontal
+delete/undo and Pinyin composition. Candidate font measurement was visually checked in the
 expanded Chinese grid; exhaustive mixed-script/density checks remain pending.
+
+## Gesture cancellation closure
+
+Android ACTION_CANCEL previously reused Up, allowing an interrupted gesture to commit a deletion
+or popup choice. Cancel is now a separate event through the shared gesture policy. Keyboard teardown
+uses the same cancellation entry point. Backspace cancellation collapses transient selection without
+deleting; popup cancellation dismisses without choosing; space cancellation cannot open Editing.
+Pure tests cover cancellation across all directional step combinations, with a source boundary guard.
+
+On the Android 12 device, injected DOWN/MOVE/CANCEL sequences on the Emoji backspace preserved
+`abc😀` for both upward clear and horizontal range gestures; the cursor ended at 5..5. Normal
+horizontal deletion followed by down-swipe undo also restored `abc😀` at 5..5. These are separate
+from long-press repeat semantics, which may already have committed before cancellation.

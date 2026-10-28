@@ -160,8 +160,8 @@ the former parallel input broadcast API has been removed and is forbidden by an 
   `CharSequence` with `toString()` before drawing is forbidden.
 - `AutoScaleTextView` measures and draws styled runs, preserving mixed typefaces and candidate
   colors.
-- Candidate grid width estimation still uses a generic `Paint`; migrate it to rendered typography
-  metrics as part of the candidate-system phase.
+- Candidate grid width estimation uses `NothingTextMeasurer`, sharing semantic spans, letter
+  spacing and displayed candidate/comment text with the rendered candidate.
 - Pure geometric drawables and RecyclerView decorations draw no semantic text and are unaffected.
 - Touch, window, and engine-event components still hold local state; migrate those systems only
   after their state is represented in the session/command layers.

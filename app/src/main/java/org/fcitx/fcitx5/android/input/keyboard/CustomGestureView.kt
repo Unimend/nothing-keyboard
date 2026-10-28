@@ -23,7 +23,7 @@ import org.fcitx.fcitx5.android.input.gesture.SwipeTracker
 
 open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
 
-    enum class GestureType { Down, Move, Up }
+    enum class GestureType { Down, Move, Up, Cancel }
 
     data class Event(
         val type: GestureType,
@@ -128,6 +128,8 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     }
 
     fun cancelGestures() {
+        // Both Android cancellation and keyboard teardown use this cleanup path.
+        dispatchGestureEvent(GestureType.Cancel, 0f, 0f)
         isPressed = false
         resetState()
         // reset double tap state on cancel
@@ -238,7 +240,6 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                 return true
             }
             MotionEvent.ACTION_CANCEL -> {
-                dispatchGestureEvent(GestureType.Up, event.x, event.y)
                 cancelGestures()
                 return true
             }

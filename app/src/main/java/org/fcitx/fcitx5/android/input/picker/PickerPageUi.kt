@@ -20,6 +20,7 @@ import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
 import org.fcitx.fcitx5.android.input.keyboard.ImageKeyView
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
@@ -140,6 +141,9 @@ class PickerPageUi(
                     },
                     undo = {
                         keyActionListener?.onKeyAction(UndoAction, Source.Keyboard)
+                    },
+                    cancel = {
+                        keyActionListener?.onKeyAction(KeyAction.CancelSelectionAction, Source.Keyboard)
                     }
                 )
             )
@@ -255,6 +259,10 @@ class PickerPageUi(
                                     onPopupTrigger(view.id).also {
                                         onPopupAction(PopupAction.DismissAction(view.id))
                                     }
+                                }
+                                CustomGestureView.GestureType.Cancel -> {
+                                    onPopupAction(PopupAction.DismissAction(view.id))
+                                    true
                                 }
                             }
                         }

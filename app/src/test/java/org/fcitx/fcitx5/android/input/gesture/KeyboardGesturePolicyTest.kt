@@ -11,6 +11,17 @@ import org.junit.Test
 
 class KeyboardGesturePolicyTest {
     @Test
+    fun `cancel never commits destructive or navigation gestures`() {
+        for (x in -3..3) for (y in -3..3) {
+            val snapshot = GestureSnapshot(GesturePhase.Cancel, x, x, y)
+            assertNull(KeyboardGesturePolicy.space(snapshot).action)
+            assertEquals(KeyboardGestureAction.CancelSelection,
+                KeyboardGesturePolicy.backspace(snapshot).action)
+            assertTrue(KeyboardGesturePolicy.backspace(snapshot).consumed)
+        }
+    }
+
+    @Test
     fun `space horizontal movement requests cursor steps`() {
         val result = KeyboardGesturePolicy.space(
             GestureSnapshot(GesturePhase.Move, countX = -2, totalX = -2, totalY = 0)

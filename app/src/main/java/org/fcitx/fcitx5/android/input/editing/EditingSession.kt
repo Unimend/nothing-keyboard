@@ -47,6 +47,11 @@ class EditingSession {
         return leaveSelectionMode(EditingCommand.ClearAll)
     }
 
+    fun cancelSelection(): EditingCommand {
+        hasSelection = false
+        return leaveSelectionMode(EditingCommand.CancelSelection)
+    }
+
     private fun leaveSelectionMode(command: EditingCommand): EditingCommand {
         userSelection = false
         return command

@@ -178,6 +178,10 @@ class CommonKeyActionListener :
                 }
                 ClearAllTextAction -> editingCommands.execute(EditingCommand.ClearAll)
                 UndoAction -> editingCommands.execute(EditingCommand.Undo)
+                KeyAction.CancelSelectionAction -> {
+                    backspaceSwipeState = Stopped
+                    editingCommands.execute(EditingCommand.CancelSelection)
+                }
                 ShowTextEditingAction -> navigator.navigate(InputNavigationCommand.ShowEditing)
                 is PickerSwitchAction ->
                     navigator.navigate(InputNavigationCommand.ShowPicker(action.kind))

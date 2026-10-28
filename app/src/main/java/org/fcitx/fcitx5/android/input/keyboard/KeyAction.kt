@@ -47,6 +47,7 @@ sealed class KeyAction {
     data object ClearAllTextAction : KeyAction()
 
     data object UndoAction : KeyAction()
+    data object CancelSelectionAction : KeyAction()
 
     data object ShowTextEditingAction : KeyAction()
 

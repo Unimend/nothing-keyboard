@@ -181,6 +181,7 @@ abstract class BaseKeyboard(
                     val phase = when (event.type) {
                         GestureType.Move -> GesturePhase.Move
                         GestureType.Up -> GesturePhase.Up
+                        GestureType.Cancel -> GesturePhase.Cancel
                         else -> return@OnGestureListener false
                     }
                     val decision = KeyboardGesturePolicy.space(
@@ -221,7 +222,8 @@ abstract class BaseKeyboard(
                             onAction(KeyAction.DeleteSelectionAction(it))
                         },
                         clearAll = { onAction(KeyAction.ClearAllTextAction) },
-                        undo = { onAction(KeyAction.UndoAction) }
+                        undo = { onAction(KeyAction.UndoAction) },
+                        cancel = { onAction(KeyAction.CancelSelectionAction) }
                     )
                 )
             }
@@ -293,6 +295,10 @@ abstract class BaseKeyboard(
                                 GestureType.Up -> {
                                     onPopupTrigger(view.id)
                                 }
+                                GestureType.Cancel -> {
+                                    onPopupAction(PopupAction.DismissAction(view.id))
+                                    false
+                                }
                                 else -> false
                             } || oldOnGestureListener.onGesture(view, event)
                         }
@@ -315,6 +321,10 @@ abstract class BaseKeyboard(
                                 GestureType.Up -> {
                                     onPopupTrigger(view.id)
                                 }
+                                GestureType.Cancel -> {
+                                    onPopupAction(PopupAction.DismissAction(view.id))
+                                    false
+                                }
                                 else -> false
                             } || oldOnGestureListener.onGesture(view, event)
                         }
@@ -335,7 +345,7 @@ abstract class BaseKeyboard(
                                             PopupAction.PreviewUpdateAction(view.id, text)
                                         )
                                     }
-                                    GestureType.Up -> {
+                                    GestureType.Up, GestureType.Cancel -> {
                                         onPopupAction(PopupAction.DismissAction(view.id))
                                     }
                                 }
@@ -353,7 +363,7 @@ abstract class BaseKeyboard(
                                     GestureType.Down -> onPopupAction(
                                         PopupAction.PreviewAction(view.id, it.content, view.bounds)
                                     )
-                                    GestureType.Up -> {
+                                    GestureType.Up, GestureType.Cancel -> {
                                         onPopupAction(PopupAction.DismissAction(view.id))
                                     }
                                     else -> {}

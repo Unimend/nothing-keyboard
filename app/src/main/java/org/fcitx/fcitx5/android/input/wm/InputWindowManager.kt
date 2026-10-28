@@ -88,6 +88,7 @@ class InputWindowManager(private val surfaceSink: SurfaceStateSink) : UniqueView
      * Moreover, [attachWindow] can also add the essential window with key.
      */
     fun attachWindow(windowKey: EssentialWindow.Key) {
+        if (isDisposed) return
         essentialWindows[windowKey]?.let { (window, _) ->
             attachWindow(window)
         } ?: throw IllegalStateException("$windowKey is not a known essential window key")

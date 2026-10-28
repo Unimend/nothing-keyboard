@@ -11,6 +11,18 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `touch cancellation has a non-committing shared cleanup path`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/keyboard/CustomGestureView.kt"
+        ).readText()
+        val cancel = source.substringAfter("MotionEvent.ACTION_CANCEL -> {").substringBefore("return true")
+        assertTrue("cancelGestures()" in cancel)
+        assertFalse("GestureType.Up" in cancel)
+        val cleanup = source.substringAfter("fun cancelGestures() {").substringBefore("isPressed = false")
+        assertTrue("GestureType.Cancel" in cleanup)
+    }
+
+    @Test
     fun `surface teardown precedes dependency scope destruction`() {
         val source = sourceRoot.resolve("org/fcitx/fcitx5/android/input/InputView.kt").readText()
             .substringAfter("override fun onDetachedFromWindow()")

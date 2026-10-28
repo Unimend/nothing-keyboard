@@ -108,7 +108,11 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
                         commandExecutor.execute(session.clearAll())
                         updateSelection(session.hasSelection, session.userSelection)
                     },
-                    undo = { commandExecutor.execute(EditingCommand.Undo) }
+                    undo = { commandExecutor.execute(EditingCommand.Undo) },
+                    cancel = {
+                        commandExecutor.execute(session.cancelSelection())
+                        updateSelection(session.hasSelection, session.userSelection)
+                    }
                 )
             )
             clipboardButton.setOnClickListener {

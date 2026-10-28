@@ -5,7 +5,7 @@ package org.fcitx.fcitx5.android.input.gesture
 
 import kotlin.math.absoluteValue
 
-enum class GesturePhase { Move, Up }
+enum class GesturePhase { Move, Up, Cancel }
 
 data class GestureSnapshot(
     val phase: GesturePhase,
@@ -21,6 +21,7 @@ sealed interface KeyboardGestureAction {
     data object OpenEditingPanel : KeyboardGestureAction
     data object ClearAllText : KeyboardGestureAction
     data object Undo : KeyboardGestureAction
+    data object CancelSelection : KeyboardGestureAction
 }
 
 data class GestureDecision(
@@ -30,6 +31,7 @@ data class GestureDecision(
 
 object KeyboardGesturePolicy {
     fun space(snapshot: GestureSnapshot): GestureDecision = when (snapshot.phase) {
+        GesturePhase.Cancel -> GestureDecision(consumed = true)
         GesturePhase.Move -> when {
             snapshot.totalY.absoluteValue > snapshot.totalX.absoluteValue ->
                 GestureDecision(consumed = true)
@@ -48,6 +50,7 @@ object KeyboardGesturePolicy {
     }
 
     fun backspace(snapshot: GestureSnapshot): GestureDecision = when (snapshot.phase) {
+        GesturePhase.Cancel -> GestureDecision(KeyboardGestureAction.CancelSelection, consumed = true)
         GesturePhase.Move -> when {
             snapshot.totalY != 0 &&
                 snapshot.totalY.absoluteValue >= snapshot.totalX.absoluteValue ->

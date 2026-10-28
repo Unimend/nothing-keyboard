@@ -15,7 +15,8 @@ object BackspaceGestureController {
         val moveSelection: (Int) -> Unit,
         val deleteSelection: (Int) -> Unit,
         val clearAll: () -> Unit,
-        val undo: () -> Unit
+        val undo: () -> Unit,
+        val cancel: () -> Unit
     )
 
     fun bind(
@@ -37,11 +38,11 @@ object BackspaceGestureController {
                     gestureView.parent?.requestDisallowInterceptTouchEvent(true)
                     false
                 }
-                GestureType.Move, GestureType.Up -> {
-                    val phase = if (event.type == GestureType.Move) {
-                        GesturePhase.Move
-                    } else {
-                        GesturePhase.Up
+                GestureType.Move, GestureType.Up, GestureType.Cancel -> {
+                    val phase = when (event.type) {
+                        GestureType.Move -> GesturePhase.Move
+                        GestureType.Cancel -> GesturePhase.Cancel
+                        else -> GesturePhase.Up
                     }
                     val decision = KeyboardGesturePolicy.backspace(
                         GestureSnapshot(phase, event.countX, event.totalX, event.totalY)
@@ -61,9 +62,10 @@ object BackspaceGestureController {
                             KeyboardFeedback.confirmation(gestureView, theme)
                             actions.undo()
                         }
+                        KeyboardGestureAction.CancelSelection -> actions.cancel()
                         else -> Unit
                     }
-                    if (event.type == GestureType.Up) {
+                    if (event.type != GestureType.Move) {
                         gestureView.parent?.requestDisallowInterceptTouchEvent(false)
                     }
                     decision.consumed

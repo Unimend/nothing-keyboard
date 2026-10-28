@@ -11,6 +11,16 @@ import org.junit.Test
 
 class EditingSessionTest {
     @Test
+    fun `cancel clears transient selection without deletion`() {
+        val session = EditingSession()
+        session.toggleSelection()
+        session.updateSelection(1, 5)
+        assertEquals(EditingCommand.CancelSelection, session.cancelSelection())
+        assertFalse(session.selectionActive)
+        assertFalse(session.hasSelection)
+    }
+
+    @Test
     fun `selection mode extends cursor movement`() {
         val session = EditingSession()
         assertNull(session.toggleSelection())
