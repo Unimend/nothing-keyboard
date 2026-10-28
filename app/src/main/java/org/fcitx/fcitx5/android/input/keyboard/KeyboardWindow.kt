@@ -4,16 +4,16 @@
  */
 package org.fcitx.fcitx5.android.input.keyboard
 
-import android.text.InputType
 import android.view.Gravity
 import android.view.View
-import android.view.inputmethod.EditorInfo
 import android.widget.FrameLayout
 import androidx.core.content.ContextCompat
 import androidx.transition.Slide
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
+import org.fcitx.fcitx5.android.input.session.EditorInputKind
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
@@ -144,10 +144,10 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
         }
     }
 
-    override fun onStartInput(info: EditorInfo, capFlags: CapabilityFlags) {
-        val targetLayout = when (info.inputType and InputType.TYPE_MASK_CLASS) {
-            InputType.TYPE_CLASS_NUMBER -> NumberKeyboard.Name
-            InputType.TYPE_CLASS_PHONE -> NumberKeyboard.Name
+    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
+        if (change != EditorSessionChange.Started) return
+        val targetLayout = when (session.editor.inputKind) {
+            EditorInputKind.Number, EditorInputKind.Phone -> NumberKeyboard.Name
             else -> TextKeyboard.Name
         }
         switchLayout(targetLayout, remember = false)

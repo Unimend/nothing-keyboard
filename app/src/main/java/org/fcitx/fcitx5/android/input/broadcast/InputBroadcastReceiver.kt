@@ -4,18 +4,18 @@
  */
 package org.fcitx.fcitx5.android.input.broadcast
 
-import android.view.inputmethod.EditorInfo
 import androidx.annotation.DrawableRes
-import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.input.session.EngineCandidateList
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.session.EngineStatusAction
 import org.fcitx.fcitx5.android.input.session.EngineText
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 
 interface InputBroadcastReceiver {
 
-    fun onStartInput(info: EditorInfo, capFlags: CapabilityFlags) {}
+    fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {}
 
     fun onClientPreeditUpdate(data: EngineText) {}
 
@@ -26,8 +26,6 @@ interface InputBroadcastReceiver {
     fun onCandidateUpdate(data: EngineCandidateList) {}
 
     fun onStatusAreaUpdate(actions: List<EngineStatusAction>) {}
-
-    fun onSelectionUpdate(start: Int, end: Int) {}
 
     fun onPunctuationUpdate(mapping: Map<String, String>) {}
 

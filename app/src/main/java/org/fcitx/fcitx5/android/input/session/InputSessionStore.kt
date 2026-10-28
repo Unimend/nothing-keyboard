@@ -10,19 +10,36 @@ enum class InputLifecycle { Inactive, InputStarted, InputViewStarted }
 
 data class SessionRange(val start: Int = -1, val end: Int = -1)
 
+enum class EditorInputKind { Text, Number, Phone, Other }
+
+enum class EditorAction { Return, Go, Search, Send, Next, Done, Previous }
+
 data class EditorSnapshot(
     val packageName: String = "",
     val inputType: Int = 0,
     val imeOptions: Int = 0,
     val privateImeOptions: String? = null,
-    val initialSelection: SessionRange = SessionRange()
+    val initialSelection: SessionRange = SessionRange(),
+    val inputKind: EditorInputKind = EditorInputKind.Other,
+    val action: EditorAction = EditorAction.Return,
+    val privateMode: Boolean = false
 )
+
+data class EditorSessionSnapshot(
+    val editor: EditorSnapshot,
+    val selection: SessionRange,
+    val restarting: Boolean,
+    val password: Boolean
+)
+
+enum class EditorSessionChange { Started, Selection }
 
 data class InputSessionSnapshot(
     val lifecycle: InputLifecycle = InputLifecycle.Inactive,
     val editor: EditorSnapshot? = null,
     val selection: SessionRange = SessionRange(),
     val capabilityFlags: ULong = 0u,
+    val password: Boolean = false,
     val surface: InputSurface = InputSurface.None,
     val previousSurface: InputSurface = InputSurface.None,
     val restarting: Boolean = false,
@@ -34,6 +51,7 @@ sealed interface InputSessionEvent {
     data class InputStarted(
         val editor: EditorSnapshot,
         val capabilityFlags: ULong,
+        val password: Boolean = false,
         val restarting: Boolean
     ) : InputSessionEvent
 
@@ -57,6 +75,7 @@ object InputSessionReducer {
                 editor = event.editor,
                 selection = event.editor.initialSelection,
                 capabilityFlags = event.capabilityFlags,
+                password = event.password,
                 restarting = event.restarting
             )
             is InputSessionEvent.InputViewStarted -> state.copy(
@@ -94,4 +113,8 @@ class InputSessionStore {
     fun dispatch(event: InputSessionEvent) {
         mutableState.value = InputSessionReducer.reduce(mutableState.value, event)
     }
+}
+
+fun InputSessionSnapshot.editorSessionOrNull(): EditorSessionSnapshot? = editor?.let {
+    EditorSessionSnapshot(it, selection, restarting, password)
 }

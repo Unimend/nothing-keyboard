@@ -10,7 +10,6 @@ import android.util.Size
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestion
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
@@ -27,9 +26,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.CapabilityFlag
-import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.input.session.EngineCandidateList
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
 import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -68,7 +67,6 @@ import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleObserver
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.mechdancer.dependency.manager.must
-import splitties.bitflags.hasFlag
 import splitties.dimensions.dp
 import splitties.views.backgroundColor
 import splitties.views.dsl.core.add
@@ -108,7 +106,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private var isClipboardFresh: Boolean = false
     private var isInlineSuggestionPresent: Boolean = false
-    private var isCapabilityFlagsPassword: Boolean = false
+    private var isPasswordEditor: Boolean = false
     private var isKeyboardLayoutNumber: Boolean = false
     private var isToolbarManuallyToggled: Boolean = false
 
@@ -176,7 +174,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             numberRowState == NumberRowState.ForceShow -> IdleUi.State.NumberRow
             isClipboardFresh -> IdleUi.State.Clipboard
             isInlineSuggestionPresent -> IdleUi.State.InlineSuggestion
-            isCapabilityFlagsPassword && !isKeyboardLayoutNumber && numberRowState != NumberRowState.ForceHide -> IdleUi.State.NumberRow
+            isPasswordEditor && !isKeyboardLayoutNumber && numberRowState != NumberRowState.ForceHide -> IdleUi.State.NumberRow
             /**
              * state matrix:
              *                               expandToolbarByDefault
@@ -207,7 +205,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     // - If vertical is dominant and down, hide keyboard.
     private val swipeHideKeyboardCallback = CustomGestureView.OnGestureListener { v, e ->
         require(v is ToolButton)
-        val numberRowAvailable = isCapabilityFlagsPassword && !isKeyboardLayoutNumber
+        val numberRowAvailable = isPasswordEditor && !isKeyboardLayoutNumber
         if (numberRowAvailable) {
             val dir = if (context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_LTR) 1 else -1
             // `e.x` and `e.y` are relative to the view's top-left corner
@@ -434,11 +432,12 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         clipboardItemTimeout.registerOnChangeListener(onClipboardTimeoutUpdateListener)
     }
 
-    override fun onStartInput(info: EditorInfo, capFlags: CapabilityFlags) {
+    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
+        if (change != EditorSessionChange.Started) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            idleUi.privateMode(info.imeOptions.hasFlag(EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING))
+            idleUi.privateMode(session.editor.privateMode)
         }
-        isCapabilityFlagsPassword = toolbarNumRowOnPassword && capFlags.has(CapabilityFlag.Password)
+        isPasswordEditor = toolbarNumRowOnPassword && session.password
         isInlineSuggestionPresent = false
         numberRowState = NumberRowState.Auto
         // Keep the utility toolbar collapsed when entering a text field. It can still be
@@ -449,7 +448,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         }
         voiceInputSubtype = InputMethodUtil.findVoiceSubtype(preferredVoiceInput)
         val shouldShowVoiceInput =
-            showVoiceInputButton && voiceInputSubtype != null && !capFlags.has(CapabilityFlag.Password)
+            showVoiceInputButton && voiceInputSubtype != null && !session.password
         idleUi.setHideKeyboardIsVoiceInput(
             shouldShowVoiceInput,
             if (shouldShowVoiceInput) switchToVoiceInputCallback else hideKeyboardCallback

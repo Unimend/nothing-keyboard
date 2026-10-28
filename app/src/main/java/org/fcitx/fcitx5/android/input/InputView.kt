@@ -11,13 +11,11 @@ import android.graphics.Point
 import android.os.Build
 import android.view.View
 import android.view.WindowInsets
-import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.widget.ImageView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.view.updateLayoutParams
-import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
@@ -42,6 +40,9 @@ import org.fcitx.fcitx5.android.input.picker.symbolPicker
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.preedit.PreeditComponent
 import org.fcitx.fcitx5.android.input.session.EngineState
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionChange
+import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleDispatcher
 import org.fcitx.fcitx5.android.utils.unset
@@ -339,10 +340,10 @@ class InputView(
     /**
      * called when [InputView] is about to show, or restart
      */
-    fun startInput(info: EditorInfo, capFlags: CapabilityFlags, restarting: Boolean = false) {
-        broadcaster.onStartInput(info, capFlags)
-        returnKeyDrawable.updateDrawableOnEditorInfo(info)
-        if (focusChangeResetKeyboard || !restarting) {
+    fun startInput(session: EditorSessionSnapshot) {
+        broadcaster.onEditorSessionUpdate(session, EditorSessionChange.Started)
+        returnKeyDrawable.updateDrawableOnEditor(session.editor)
+        if (focusChangeResetKeyboard || !session.restarting) {
             navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
     }
@@ -384,7 +385,9 @@ class InputView(
     }
 
     fun updateSelection(start: Int, end: Int) {
-        broadcaster.onSelectionUpdate(start, end)
+        service.inputSession.current.editorSessionOrNull()?.let {
+            broadcaster.onEditorSessionUpdate(it, EditorSessionChange.Selection)
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

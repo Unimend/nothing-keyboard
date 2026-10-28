@@ -4,13 +4,13 @@
  */
 package org.fcitx.fcitx5.android.input.broadcast
 
-import android.view.inputmethod.EditorInfo
-import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.input.session.EngineCandidateList
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.session.EngineStatusAction
 import org.fcitx.fcitx5.android.input.session.EngineText
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.ScopeEvent
 import org.mechdancer.dependency.UniqueComponent
@@ -44,8 +44,8 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
         receivers.forEach { it.onInputPanelUpdate(data) }
     }
 
-    override fun onStartInput(info: EditorInfo, capFlags: CapabilityFlags) {
-        receivers.forEach { it.onStartInput(info, capFlags) }
+    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
+        receivers.forEach { it.onEditorSessionUpdate(session, change) }
     }
 
     override fun onImeUpdate(ime: EngineInputMethod) {
@@ -58,10 +58,6 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
 
     override fun onStatusAreaUpdate(actions: List<EngineStatusAction>) {
         receivers.forEach { it.onStatusAreaUpdate(actions) }
-    }
-
-    override fun onSelectionUpdate(start: Int, end: Int) {
-        receivers.forEach { it.onSelectionUpdate(start, end) }
     }
 
     override fun onPunctuationUpdate(mapping: Map<String, String>) {

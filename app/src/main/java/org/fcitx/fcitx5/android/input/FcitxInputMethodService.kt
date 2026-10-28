@@ -50,6 +50,7 @@ import kotlinx.coroutines.channels.consumeEach
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlags
+import org.fcitx.fcitx5.android.core.CapabilityFlag
 import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.core.FormattedText
 import org.fcitx.fcitx5.android.core.KeyStates
@@ -82,6 +83,7 @@ import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
+import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.forceShowSelf
@@ -766,7 +768,10 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         val flags = CapabilityFlags.fromEditorInfo(attribute)
         capabilityFlags = flags
         inputSession.dispatch(
-            InputSessionEvent.InputStarted(attribute.toEditorSnapshot(), flags.flags, restarting)
+            InputSessionEvent.InputStarted(
+                attribute.toEditorSnapshot(), flags.flags,
+                flags.has(CapabilityFlag.Password), restarting
+            )
         )
         // EditorInfo may change between onStartInput and onStartInputView
         inputDeviceMgr.notifyOnStartInput(attribute)
@@ -787,7 +792,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         if (inputDeviceMgr.evaluateOnStartInputView(info, this)) {
             // because onStartInputView will always be called after onStartInput,
             // editorInfo and capFlags should be up-to-date
-            inputView?.startInput(info, capabilityFlags, restarting)
+            inputSession.current.editorSessionOrNull()?.let { inputView?.startInput(it) }
         } else {
             if (currentInputConnection?.monitorCursorAnchor() != true) {
                 if (!decorLocationUpdated) {

@@ -19,7 +19,9 @@ class InputSessionReducerTest {
         var state = InputSessionSnapshot()
         state = InputSessionReducer.reduce(
             state,
-            InputSessionEvent.InputStarted(editor, capabilityFlags = 7u, restarting = false)
+            InputSessionEvent.InputStarted(
+                editor, capabilityFlags = 7u, password = true, restarting = false
+            )
         )
         state = InputSessionReducer.reduce(
             state,
@@ -35,6 +37,11 @@ class InputSessionReducerTest {
         assertEquals(SessionRange(8, 10), state.selection)
         assertEquals(InputSurface.Clipboard, state.surface)
         assertEquals(7uL, state.capabilityFlags)
+        assertEquals(true, state.password)
+        assertEquals(
+            EditorSessionSnapshot(editor, SessionRange(8, 10), false, true),
+            state.editorSessionOrNull()
+        )
     }
 
     @Test

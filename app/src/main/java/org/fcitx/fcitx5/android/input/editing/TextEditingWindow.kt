@@ -20,6 +20,9 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
+import org.fcitx.fcitx5.android.input.session.EditorSessionChange
+import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.mechdancer.dependency.manager.must
 
 class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
@@ -114,15 +117,17 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     override fun onCreateView(): View = ui.root
 
     override fun onAttached() {
-        val range = service.currentInputSelection
-        onSelectionUpdate(range.start, range.end)
+        service.inputSession.current.editorSessionOrNull()?.let {
+            onEditorSessionUpdate(it, EditorSessionChange.Selection)
+        }
     }
 
     override fun onDetached() {}
 
-    override fun onSelectionUpdate(start: Int, end: Int) {
-        session.updateSelection(start, end)
-        ui.updateSelection(session.hasSelection, session.userSelection)
+    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
+        if (change != EditorSessionChange.Selection) return
+        this.session.updateSelection(session.selection.start, session.selection.end)
+        ui.updateSelection(this.session.hasSelection, this.session.userSelection)
     }
 
     override val showTitle: Boolean = false
