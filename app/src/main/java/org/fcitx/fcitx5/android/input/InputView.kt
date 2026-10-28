@@ -410,6 +410,7 @@ class InputView(
     override fun onDetachedFromWindow() {
         advancedPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
         keyboardPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
+        kawaiiBar.onInputScopeDestroyed()
         // clear DynamicScope, implies that InputView should not be attached again after detached.
         scope.clear()
         super.onDetachedFromWindow()

@@ -97,12 +97,12 @@ class TextKeyboard(
     private val showLangSwitchKeyListener = ManagedPreference.OnChangeListener<Boolean> { _, v ->
         updateLangSwitchKey(v)
     }
+    private var preferenceListenerRegistered = false
 
     private val keepLettersUppercase by AppPrefs.getInstance().keyboard.keepLettersUppercase
 
     init {
         updateLangSwitchKey(showLangSwitchKey.getValue())
-        showLangSwitchKey.registerOnChangeListener(showLangSwitchKeyListener)
     }
 
     private val textKeys: List<TextKeyView> by lazy {
@@ -158,9 +158,31 @@ class TextKeyboard(
     }
 
     override fun onAttach() {
+        super.onAttach()
+        if (!preferenceListenerRegistered) {
+            showLangSwitchKey.registerOnChangeListener(showLangSwitchKeyListener)
+            preferenceListenerRegistered = true
+        }
         capsState = CapsState.None
         updateCapsButtonIcon()
         updateAlphabetKeys()
+    }
+
+    override fun onDetach() {
+        unregisterPreferenceListener()
+        super.onDetach()
+    }
+
+    private fun unregisterPreferenceListener() {
+        if (preferenceListenerRegistered) {
+            showLangSwitchKey.unregisterOnChangeListener(showLangSwitchKeyListener)
+            preferenceListenerRegistered = false
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        unregisterPreferenceListener()
+        super.onDetachedFromWindow()
     }
 
     override fun onReturnDrawableUpdate(returnDrawable: Int) {

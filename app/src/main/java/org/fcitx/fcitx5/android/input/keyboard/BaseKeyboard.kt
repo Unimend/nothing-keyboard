@@ -70,6 +70,7 @@ abstract class BaseKeyboard(
             it.swipeEnabled = v
         }
     }
+    private var preferenceListenersRegistered = false
 
     private val vivoKeypressWorkaround by prefs.advanced.vivoKeypressWorkaround
 
@@ -143,7 +144,18 @@ abstract class BaseKeyboard(
                 centerHorizontally()
             })
         }
+    }
+
+    private fun registerPreferenceListeners() {
+        if (preferenceListenersRegistered) return
         spaceSwipeMoveCursor.registerOnChangeListener(spaceSwipeChangeListener)
+        preferenceListenersRegistered = true
+    }
+
+    private fun unregisterPreferenceListeners() {
+        if (!preferenceListenersRegistered) return
+        spaceSwipeMoveCursor.unregisterOnChangeListener(spaceSwipeChangeListener)
+        preferenceListenersRegistered = false
     }
 
     private fun createKeyView(def: KeyDef): KeyView {
@@ -501,7 +513,7 @@ abstract class BaseKeyboard(
     }
 
     open fun onAttach() {
-        // do nothing by default
+        registerPreferenceListeners()
     }
 
     open fun onReturnDrawableUpdate(@DrawableRes returnDrawable: Int) {
@@ -518,6 +530,13 @@ abstract class BaseKeyboard(
 
     open fun onDetach() {
         releaseAllTouchTargets()
+        unregisterPreferenceListeners()
+    }
+
+    override fun onDetachedFromWindow() {
+        releaseAllTouchTargets()
+        unregisterPreferenceListeners()
+        super.onDetachedFromWindow()
     }
 
 }

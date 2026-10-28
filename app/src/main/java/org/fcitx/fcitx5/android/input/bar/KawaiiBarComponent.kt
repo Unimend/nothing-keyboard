@@ -100,6 +100,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val preferredVoiceInput by prefs.keyboard.preferredVoiceInput
 
     private var clipboardTimeoutJob: Job? = null
+    private var inputScopeReady = false
 
     private var toolbarState = ToolbarState()
 
@@ -384,6 +385,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     fun onInputScopeReady() {
+        if (inputScopeReady) return
+        inputScopeReady = true
         ClipboardManager.lastEntry?.let {
             val now = System.currentTimeMillis()
             val clipboardTimeout = clipboardItemTimeout.getValue() * 1000L
@@ -394,6 +397,16 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         ClipboardManager.addOnUpdateListener(onClipboardUpdateListener)
         clipboardSuggestion.registerOnChangeListener(onClipboardSuggestionUpdateListener)
         clipboardItemTimeout.registerOnChangeListener(onClipboardTimeoutUpdateListener)
+    }
+
+    fun onInputScopeDestroyed() {
+        if (!inputScopeReady) return
+        inputScopeReady = false
+        clipboardTimeoutJob?.cancel()
+        clipboardTimeoutJob = null
+        ClipboardManager.removeOnUpdateListener(onClipboardUpdateListener)
+        clipboardSuggestion.unregisterOnChangeListener(onClipboardSuggestionUpdateListener)
+        clipboardItemTimeout.unregisterOnChangeListener(onClipboardTimeoutUpdateListener)
     }
 
     override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {

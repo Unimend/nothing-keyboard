@@ -59,12 +59,7 @@ object NothingTypographyPolicy {
             when {
                 character in 'A'..'Z' || character in 'a'..'z' || character in '0'..'9' ->
                     containsLatinOrNumber = true
-                Character.UnicodeScript.of(character.code) in setOf(
-                    Character.UnicodeScript.HAN,
-                    Character.UnicodeScript.HIRAGANA,
-                    Character.UnicodeScript.KATAKANA,
-                    Character.UnicodeScript.HANGUL
-                ) -> containsCjk = true
+                isCjk(character) -> containsCjk = true
             }
         }
         return when {
@@ -73,6 +68,18 @@ object NothingTypographyPolicy {
             else -> KeyboardTextKind.Symbol
         }
     }
+
+    /** API 23-safe BMP ranges used by Android's CJK system fonts. */
+    private fun isCjk(character: Char): Boolean = character.code in 0x3040..0x30FF ||
+        character.code in 0x3130..0x318F ||
+        character.code in 0x31F0..0x31FF ||
+        character.code in 0x3400..0x4DBF ||
+        character.code in 0x4E00..0x9FFF ||
+        character.code in 0x1100..0x11FF ||
+        character.code in 0xA960..0xA97F ||
+        character.code in 0xAC00..0xD7AF ||
+        character.code in 0xD7B0..0xD7FF ||
+        character.code in 0xF900..0xFAFF
 }
 
 private object NothingTypefaceCache {

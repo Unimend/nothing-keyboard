@@ -23,6 +23,8 @@ class NothingTypographyPolicyTest {
             KeyboardTextKind.Cjk,
             NothingTypographyPolicy.classify("杭州 Hangzhou")
         )
+        assertEquals(KeyboardTextKind.Cjk, NothingTypographyPolicy.classify("かな カナ"))
+        assertEquals(KeyboardTextKind.Cjk, NothingTypographyPolicy.classify("한글"))
     }
 
     @Test

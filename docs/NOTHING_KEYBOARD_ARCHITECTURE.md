@@ -31,6 +31,20 @@ visual system ------------------------+----------------+
 Views may render models and emit user intents. They must not infer engine indices, own paging
 state, classify fonts independently or embed feature-specific gesture state.
 
+## Lifecycle ownership
+
+Every listener, collector, delayed job, animator, and adapter callback must be owned by the
+shortest-lived surface that uses it. Registration and cancellation are symmetric:
+
+- service listeners live from `onCreate` to `onDestroy`;
+- input-view listeners live from scope setup/attachment to `onDetachedFromWindow`;
+- keyboard-layout preferences live only while that layout is attached;
+- window jobs and adapter listeners live from `onAttached` to `onDetached`.
+
+`DynamicScope.clear()` releases dependency references but is not a substitute for unregistering
+callbacks held by singleton managers or preferences. A component with external registrations must
+expose an idempotent destruction hook and the owning view must call it before clearing the scope.
+
 ## Shared semantic controls
 
 Buttons with the same meaning on different surfaces must emit the same command and use the same
