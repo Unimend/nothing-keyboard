@@ -370,6 +370,21 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `service delegates rebuild signal lifetime to surface controller`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("Surface rebuild controller must be installed", "InputSurfaceRebuildController(" in service)
+        listOf(
+            "registerOnChangeListener(recreateInputViewListener)",
+            "registerOnChangeListener(recreateCandidatesViewListener)",
+            "ThemeManager.addOnChangedListener(onThemeChangeListener)"
+        ).forEach { assertFalse("Legacy rebuild listener escaped into Service: $it", it in service) }
+        assertTrue("Listener lifetime must start once", "surfaceRebuilds.start()" in service)
+        assertTrue("Listener lifetime must stop symmetrically", "surfaceRebuilds.stop()" in service)
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",

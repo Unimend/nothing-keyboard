@@ -222,3 +222,7 @@ The first Service split keeps two lifetimes deliberately separate: `InputLifecyc
 owns stable editor/session/engine transitions, while `FcitxInputMethodService` remains the Android
 composition root for views, input-device presentation, candidate anchoring and window callbacks.
 Renderers must not reconstruct lifecycle command order.
+
+Input-surface rebuild reasons are also centralized. Keyboard-layout preferences rebuild only the
+keyboard surface, candidate preferences rebuild only candidates, and theme changes rebuild both.
+`AndroidInputSurfaceRebuildSignals` is the sole owner of the corresponding listener lifetime.

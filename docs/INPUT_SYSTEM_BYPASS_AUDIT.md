@@ -23,6 +23,7 @@ unrepresentable, and a test must prevent it from returning.
 | Hardware key events | `AndroidKeyEventController` | Service/UI caching native events or synthesizing modifier sequences | Static ownership test |
 | Engine command scheduling | `FcitxCommandDispatcher` + `SerialCommandQueue` | Service managing native jobs; caller join starting queued work | Queue behavior tests and Service boundary test |
 | Android input lifecycle | `InputLifecycleController` | Service independently ordering session, editor and engine focus transitions | Sequence tests and lifecycle-delegation boundary test |
+| Input-surface rebuild | `InputSurfaceRebuildController` + Android signal adapter | Service registering theme/preference listeners or guessing partial rebuild scope | Scope test and listener-lifetime boundary test |
 
 ## Removed legacy escape hatches
 
@@ -52,6 +53,9 @@ unrepresentable, and a test must prevent it from returning.
 - Repeated lifecycle transition sequences in `FcitxInputMethodService`. `InputLifecycleController`
   now owns the stable order of gesture reset, editor/session publication, capabilities and engine
   focus. The Service retains only Android view/device effects that depend on platform objects.
+- Theme and preference listener ownership formerly split between `onCreate`, three Service fields
+  and `onDestroy`. `AndroidInputSurfaceRebuildSignals` now owns the symmetric registration lifetime;
+  `InputSurfaceRebuildController` maps each reason to keyboard-only, candidates-only or full rebuild.
 
 ## Deliberate platform boundaries (not legacy UI)
 
@@ -82,8 +86,8 @@ The service still routes engine effects and owns platform view/device orchestrat
 lifecycle transitions have moved to `InputLifecycleController`; view creation, candidate anchoring
 and input-device presentation remain separate platform boundaries.
 
-1. **Service decomposition:** `FcitxInputMethodService` still contains Android view creation,
-   window/insets/device orchestration in one large class. Stable editor/session/engine lifecycle
+1. **Service decomposition:** `FcitxInputMethodService` still constructs Android views and owns
+   window/insets/device orchestration. Stable editor/session/engine lifecycle
    ordering now belongs to `InputLifecycleController`. Command scheduling and
    subtype synchronization now belong to the engine/platform boundary; editor effects belong to
    editing. Editor capabilities are semantic values, encoded into native bits only by the adapter.

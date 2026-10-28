@@ -24,7 +24,6 @@ import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
 import android.widget.FrameLayout
-import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
@@ -38,7 +37,6 @@ import org.fcitx.fcitx5.android.daemon.FcitxDaemon
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
-import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.editing.EditorController
@@ -50,6 +48,9 @@ import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionRequestFactory
 import org.fcitx.fcitx5.android.input.wm.AndroidImeWindowLayout
 import org.fcitx.fcitx5.android.input.wm.AndroidCandidateAnchorController
+import org.fcitx.fcitx5.android.input.wm.AndroidInputSurfaceRebuildSignals
+import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildController
+import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildHost
 import org.fcitx.fcitx5.android.input.platform.ImeDialogController
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerController
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
@@ -230,19 +231,19 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         replaceCandidateView(theme)
     }
 
-    @Keep
-    private val recreateInputViewListener = ManagedPreference.OnChangeListener<Any> { _, _ ->
-        replaceInputView(ThemeManager.activeTheme)
-    }
-
-    @Keep
-    private val recreateCandidatesViewListener = ManagedPreferenceProvider.OnChangeListener {
-        replaceCandidateView(ThemeManager.activeTheme)
-    }
-
-    @Keep
-    private val onThemeChangeListener = ThemeManager.OnThemeChangeListener {
-        replaceInputViews(it)
+    private val surfaceRebuilds by lazy {
+        InputSurfaceRebuildController(
+            signals = AndroidInputSurfaceRebuildSignals(
+                keyboardPreferences = recreateInputViewPrefs,
+                candidatePreferences = prefs.candidates
+            ),
+            activeTheme = { ThemeManager.activeTheme },
+            host = object : InputSurfaceRebuildHost {
+                override fun replaceKeyboard(theme: Theme) { replaceInputView(theme) }
+                override fun replaceCandidates(theme: Theme) { replaceCandidateView(theme) }
+                override fun replaceAll(theme: Theme) { replaceInputViews(theme) }
+            }
+        )
     }
 
     private fun submitHardwareKey(event: KeyEvent, eventId: Int): Boolean =
@@ -268,11 +269,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             inputSession.state.collect(InputCoreDiagnostics::publishSession)
         }
         pkgNameCache = PackageNameCache(this)
-        recreateInputViewPrefs.forEach {
-            it.registerOnChangeListener(recreateInputViewListener)
-        }
-        prefs.candidates.registerOnChangeListener(recreateCandidatesViewListener)
-        ThemeManager.addOnChangedListener(onThemeChangeListener)
+        surfaceRebuilds.start()
         lifecycleScope.launch { platformInputMethods.synchronize() }
         super.onCreate()
         window.window!!.apply {
@@ -320,8 +317,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         submitEngineCommand(EngineCommand.Reset)
         /**
          * skip keyboard|keyboardHidden changes, because we have [inputDeviceMgr]
-         * skip uiMode (system light/dark mode) changes, because we have [onThemeChangeListener]
-         * to replace InputView(s) when needed
+         * skip uiMode (system light/dark mode) changes, because [surfaceRebuilds]
+         * replaces the input surfaces when the active theme changes
          * [android.inputmethodservice.InputMethodService.onConfigurationChanged] would call
          * resetStateForNewConfiguration() which calls initViews() causes InputView(s) to be replaced again
          * https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-15.0.0_r36/core/java/android/inputmethodservice/InputMethodService.java#1984
@@ -350,7 +347,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onCreateInputView(): View? {
-        replaceInputViews(ThemeManager.activeTheme)
+        surfaceRebuilds.createInitialSurfaces()
         // We will call `setInputView` by ourselves. This is fine.
         return null
     }
@@ -511,11 +508,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onDestroy() {
-        recreateInputViewPrefs.forEach {
-            it.unregisterOnChangeListener(recreateInputViewListener)
-        }
-        prefs.candidates.unregisterOnChangeListener(recreateCandidatesViewListener)
-        ThemeManager.removeOnChangedListener(onThemeChangeListener)
+        surfaceRebuilds.stop()
         dialogs.dismiss()
         super.onDestroy()
         // Fcitx might be used in super.onDestroy()
