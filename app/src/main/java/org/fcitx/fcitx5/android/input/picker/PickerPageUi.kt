@@ -11,7 +11,7 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.engine.EngineKey
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
@@ -82,8 +82,8 @@ class PickerPageUi(
         Low(12, 4, 3, 19f, true, false)
     }
 
-    private val popupOnKeyPress by AppPrefs.getInstance().keyboard.popupOnKeyPress
-    private val hapticOnRepeat by AppPrefs.getInstance().keyboard.hapticOnRepeat
+    private val popupOnKeyPress by InputSettings.keyboard.popupOnKeyPress
+    private val hapticOnRepeat by InputSettings.keyboard.hapticOnRepeat
 
     var keyActionListener: KeyActionListener? = null
     var popupActionListener: PopupActionListener? = null

@@ -5,7 +5,7 @@
 
 package org.fcitx.fcitx5.android.input.picker
 
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
 import org.fcitx.fcitx5.android.input.popup.EmojiModifier
 
@@ -52,7 +52,7 @@ class EmojiPickerPolicy : PickerPolicy {
         val defaultSkinTone: EmojiModifier.SkinTone
     )
 
-    private val symbolPrefs = AppPrefs.getInstance().symbols
+    private val symbolPrefs = InputSettings.symbols
     private val hideUnsupportedEmojis by symbolPrefs.hideUnsupportedEmojis
     private val defaultSkinTone by symbolPrefs.defaultEmojiSkinTone
 

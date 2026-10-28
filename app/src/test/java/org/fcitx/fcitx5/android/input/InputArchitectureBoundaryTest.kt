@@ -329,6 +329,65 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `persisted app settings enter input code through one boundary`() {
+        val root = sourceRoot.resolve("org/fcitx/fcitx5/android/input")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(root).invariantSeparatorsPath
+            relative != "settings/InputSettings.kt" && "AppPrefs" in file.readText()
+        }
+        assertTrue("Persisted settings bypassed InputSettings: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `Android editor compatibility decisions have one policy owner`() {
+        val editor = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/editing/EditorController.kt"
+        ).readText()
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertFalse("Editor controller reintroduced Android input-type branches", "InputType." in editor)
+        assertFalse("Service reintroduced capability parsing", "AndroidEditorCapabilities.fromAndroid" in service)
+        assertTrue("Editor operations must delegate platform quirks", "AndroidEditorPolicy." in editor)
+    }
+
+    @Test
+    fun `service input callbacks delegate to one lifecycle coordinator`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        listOf("imeLifecycle.bind(", "imeLifecycle.startInput(", "imeLifecycle.startInputView(",
+            "imeLifecycle.selectionChanged(", "imeLifecycle.finishInputView()",
+            "imeLifecycle.finishInput()", "imeLifecycle.unbind(")
+            .forEach { assertTrue("Missing IME lifecycle delegation: $it", it in service) }
+        assertFalse("Service directly parses editor capabilities", "fromAndroid(attribute" in service)
+    }
+
+    @Test
+    fun `service creates Android base and window before dependent systems`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText().substringAfter("override fun onCreate()")
+        val base = source.indexOf("super.onCreate()")
+        val content = source.indexOf("contentView =")
+        val daemon = source.indexOf("FcitxDaemon.connect")
+        val signals = source.indexOf("surfaceRebuilds.start()")
+        assertTrue("Android base must exist before service dependencies", base in 0 until daemon)
+        assertTrue("Window content must exist before surface signals", content in 0 until signals)
+    }
+
+    @Test
+    fun `diagnostics updates are atomic event reductions`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/debug/InputCoreDiagnostics.kt"
+        ).readText()
+        assertTrue("Diagnostics must use atomic StateFlow update", "mutableState.update" in source)
+        assertTrue("Diagnostics must expose explicit events", "sealed interface InputDiagnosticEvent" in source)
+        assertFalse("Diagnostics must not perform read then write increments",
+            "mutableState.value.engine" in source)
+    }
+
+    @Test
     fun `service cannot implement native engine command execution`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
@@ -432,13 +491,9 @@ class InputArchitectureBoundaryTest {
             "org/fcitx/fcitx5/android/input/session/InputLifecycleController.kt"
         ).readText()
 
-        listOf(
-            "inputLifecycle.startInput(",
-            "inputLifecycle.startInputView(",
-            "inputLifecycle::finishInputView",
-            "inputLifecycle.finishInput()",
-            "inputLifecycle.unbindInput()"
-        ).forEach { assertTrue("Missing lifecycle delegation: $it", it in service) }
+        listOf("imeLifecycle.startInput(", "imeLifecycle.startInputView(",
+            "imeLifecycle.finishInputView()", "imeLifecycle.finishInput()", "imeLifecycle.unbind(")
+            .forEach { assertTrue("Missing lifecycle delegation: $it", it in service) }
         listOf(
             "EditingCommand.ResetDeletionGesture",
             "EngineCommand.SetCapabilities",
@@ -469,7 +524,7 @@ class InputArchitectureBoundaryTest {
         ).readText()
         assertTrue(
             "Android selection callback must delegate reconciliation order",
-            "inputLifecycle.selectionChanged(" in service
+            "imeLifecycle.selectionChanged(" in service
         )
         assertFalse(
             "Service must not call the concrete editor selection path",
@@ -507,8 +562,8 @@ class InputArchitectureBoundaryTest {
         val service = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
         ).readText()
-        assertTrue("Bind callback must enter context controller", "inputContextLifecycle.bind(" in service)
-        assertTrue("Unbind callback must enter context controller", "inputContextLifecycle.unbind(" in service)
+        assertTrue("Bind callback must enter lifecycle coordinator", "imeLifecycle.bind(" in service)
+        assertTrue("Unbind callback must enter lifecycle coordinator", "imeLifecycle.unbind(" in service)
         assertFalse("Service must not activate engine context directly", "submitEngineCommand(EngineCommand.ActivateContext" in service)
         assertFalse("Service must not deactivate engine context directly", "submitEngineCommand(EngineCommand.DeactivateContext" in service)
     }
@@ -518,10 +573,10 @@ class InputArchitectureBoundaryTest {
         val service = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
         ).readText()
-        assertTrue("Start presentation must use its controller", "inputViewPresentation.start(" in service)
+        assertTrue("Start presentation must use lifecycle coordinator", "imeLifecycle.startInputView(" in service)
         assertTrue(
             "Finish presentation must wrap lifecycle cleanup",
-            "inputViewPresentation.finish(inputLifecycle::finishInputView)" in service
+            "imeLifecycle.finishInputView()" in service
         )
         assertFalse(
             "Service must not keep the old partial anchor cleanup",

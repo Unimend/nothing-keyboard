@@ -3,12 +3,12 @@
  */
 package org.fcitx.fcitx5.android.input.mode
 
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.mechdancer.dependency.UniqueComponent
 
 class InputModeStore : UniqueComponent<InputModeStore>() {
-    private var lastSymbolStorage by AppPrefs.getInstance().internal.lastSymbolLayout
-    private var lastPickerStorage by AppPrefs.getInstance().internal.lastPickerType
+    private var lastSymbolStorage by InputSettings.internal.lastSymbolLayout
+    private var lastPickerStorage by InputSettings.internal.lastPickerType
 
     var state: InputModeState = InputModeState(
         rememberedSymbolMode = decodeSymbolMode(lastSymbolStorage),

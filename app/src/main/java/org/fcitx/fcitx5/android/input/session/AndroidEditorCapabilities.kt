@@ -60,6 +60,8 @@ object AndroidEditorCapabilities {
                             equals(InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD)
                         ) {
                             flags += EditorCapability.Password
+                            flags += EditorCapability.Private
+                            flags += EditorCapability.NoSuggestions
                         }
                         if (equals(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)) {
                             flags += EditorCapability.Private
@@ -75,6 +77,7 @@ object AndroidEditorCapabilities {
                     flags += EditorCapability.Number
                     if ((it and InputType.TYPE_MASK_VARIATION) == InputType.TYPE_NUMBER_VARIATION_PASSWORD) {
                         flags += EditorCapability.Password
+                        flags += EditorCapability.Private
                     }
                 }
                 InputType.TYPE_CLASS_PHONE -> {

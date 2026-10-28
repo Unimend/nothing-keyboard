@@ -9,9 +9,9 @@ import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
 import android.view.inputmethod.EditorInfo
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
+import org.fcitx.fcitx5.android.input.session.AndroidEditorPolicy
 import org.fcitx.fcitx5.android.input.candidates.floating.FloatingCandidatesMode
-import org.fcitx.fcitx5.android.utils.isTypeNull
 
 class InputDeviceManager(
     private val systemWantsInputView: () -> Boolean,
@@ -67,10 +67,10 @@ class InputDeviceManager(
     private var startedInputView = false
     private var isNullInputType = true
 
-    private var candidatesViewMode by AppPrefs.getInstance().candidates.mode
+    private var candidatesViewMode by InputSettings.candidates.mode
 
     fun notifyOnStartInput(attribute: EditorInfo) {
-        isNullInputType = attribute.isTypeNull()
+        isNullInputType = AndroidEditorPolicy.isRawEditor(attribute)
     }
 
     /**
@@ -78,7 +78,7 @@ class InputDeviceManager(
      */
     fun evaluateOnStartInputView(info: EditorInfo): Boolean {
         startedInputView = true
-        isNullInputType = info.isTypeNull()
+        isNullInputType = AndroidEditorPolicy.isRawEditor(info)
         isVirtualKeyboard = InputDeviceVisibilityPolicy.onStartInputView(
             candidatesViewMode, isVirtualKeyboard, systemWantsInputView()
         )

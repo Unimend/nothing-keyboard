@@ -12,7 +12,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.InputFeedbacks
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
@@ -38,7 +38,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
     private val editing: InputEditingAccess by manager.must()
     private val theme by manager.theme()
 
-    private val hapticOnRepeat by AppPrefs.getInstance().keyboard.hapticOnRepeat
+    private val hapticOnRepeat by InputSettings.keyboard.hapticOnRepeat
 
     private val buttonRipple by ThemeManager.prefs.keyRippleEffect
     private val buttonBorder by ThemeManager.prefs.keyBorder

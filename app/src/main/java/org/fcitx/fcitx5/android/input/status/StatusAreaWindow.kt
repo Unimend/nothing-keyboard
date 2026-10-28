@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.launchOnReady
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
@@ -59,7 +59,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     private val theme by manager.theme()
     private val navigator: InputNavigator by manager.must()
 
-    private val editorInfoInspector by AppPrefs.getInstance().internal.editorInfoInspector
+    private val editorInfoInspector by InputSettings.internal.editorInfoInspector
 
     private val staticEntries by lazy {
         arrayOf(

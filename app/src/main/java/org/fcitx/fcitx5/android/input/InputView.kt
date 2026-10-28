@@ -21,7 +21,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.daemon.launchOnReady
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
@@ -192,7 +192,7 @@ class InputView(
         kawaiiBar.onInputScopeReady()
     }
 
-    private val keyboardPrefs = AppPrefs.getInstance().keyboard
+    private val keyboardPrefs = InputSettings.keyboard
 
     private val focusChangeResetKeyboard by keyboardPrefs.focusChangeResetKeyboard
 
@@ -203,7 +203,7 @@ class InputView(
     private val keyboardBottomPadding = keyboardPrefs.keyboardBottomPadding
     private val keyboardBottomPaddingLandscape = keyboardPrefs.keyboardBottomPaddingLandscape
 
-    private val advancedPrefs = AppPrefs.getInstance().advanced
+    private val advancedPrefs = InputSettings.advanced
     private val keyboardHeightPercentBase = advancedPrefs.keyboardHeightPercentBase
 
     private val keyboardSizePrefs = listOf(

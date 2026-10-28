@@ -28,7 +28,7 @@ import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardHistory
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardObservation
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardUpdateListener
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.ClickToAttachWindow
@@ -94,15 +94,13 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val popup: PopupComponent by manager.must()
     private val navigator: InputNavigator by manager.must()
 
-    private val prefs = AppPrefs.getInstance()
-
-    private val clipboardSuggestion = prefs.clipboard.clipboardSuggestion
-    private val clipboardItemTimeout = prefs.clipboard.clipboardItemTimeout
-    private val clipboardMaskSensitive by prefs.clipboard.clipboardMaskSensitive
-    private val expandedCandidateStyle by prefs.keyboard.expandedCandidateStyle
-    private val toolbarNumRowOnPassword by prefs.keyboard.toolbarNumRowOnPassword
-    private val showVoiceInputButton by prefs.keyboard.showVoiceInputButton
-    private val preferredVoiceInput by prefs.keyboard.preferredVoiceInput
+    private val clipboardSuggestion = InputSettings.clipboard.clipboardSuggestion
+    private val clipboardItemTimeout = InputSettings.clipboard.clipboardItemTimeout
+    private val clipboardMaskSensitive by InputSettings.clipboard.clipboardMaskSensitive
+    private val expandedCandidateStyle by InputSettings.keyboard.expandedCandidateStyle
+    private val toolbarNumRowOnPassword by InputSettings.keyboard.toolbarNumRowOnPassword
+    private val showVoiceInputButton by InputSettings.keyboard.showVoiceInputButton
+    private val preferredVoiceInput by InputSettings.keyboard.preferredVoiceInput
 
     private var clipboardTimeoutJob: Job? = null
     private var inputScopeReady = false

@@ -15,7 +15,7 @@ import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.data.InputFeedbacks
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
@@ -56,13 +56,13 @@ abstract class BaseKeyboard(
 
     var keyActionListener: KeyActionListener? = null
 
-    private val prefs = AppPrefs.getInstance()
+    private val keyboardSettings = InputSettings.keyboard
 
-    private val popupOnKeyPress by prefs.keyboard.popupOnKeyPress
-    private val expandKeypressArea by prefs.keyboard.expandKeypressArea
-    private val swipeSymbolDirection by prefs.keyboard.swipeSymbolDirection
+    private val popupOnKeyPress by keyboardSettings.popupOnKeyPress
+    private val expandKeypressArea by keyboardSettings.expandKeypressArea
+    private val swipeSymbolDirection by keyboardSettings.swipeSymbolDirection
 
-    private val spaceSwipeMoveCursor = prefs.keyboard.spaceSwipeMoveCursor
+    private val spaceSwipeMoveCursor = keyboardSettings.spaceSwipeMoveCursor
     private val spaceKeys = mutableListOf<KeyView>()
     private val spaceSwipeChangeListener = ManagedPreference.OnChangeListener<Boolean> { _, v ->
         spaceKeys.forEach {
@@ -71,9 +71,9 @@ abstract class BaseKeyboard(
     }
     private var preferenceListenersRegistered = false
 
-    private val vivoKeypressWorkaround by prefs.advanced.vivoKeypressWorkaround
+    private val vivoKeypressWorkaround by InputSettings.advanced.vivoKeypressWorkaround
 
-    private val hapticOnRepeat by prefs.keyboard.hapticOnRepeat
+    private val hapticOnRepeat by keyboardSettings.hapticOnRepeat
 
     var popupActionListener: PopupActionListener? = null
 

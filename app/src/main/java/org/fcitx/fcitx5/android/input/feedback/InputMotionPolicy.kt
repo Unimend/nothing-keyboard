@@ -3,7 +3,7 @@
  */
 package org.fcitx.fcitx5.android.input.feedback
 
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.data.theme.Theme
@@ -32,7 +32,7 @@ object InputMotionPolicy {
 
 /** The single runtime gateway for animation preference and semantic motion timing. */
 object InputMotionSystem {
-    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
+    private val disableAnimation by InputSettings.advanced.disableAnimation
 
     val enabled: Boolean get() = !disableAnimation
 

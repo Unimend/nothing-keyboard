@@ -2,7 +2,6 @@
 package org.fcitx.fcitx5.android.input.editing
 
 import android.os.Build
-import android.text.InputType
 import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import org.fcitx.fcitx5.android.input.cursor.CursorRange
@@ -11,9 +10,10 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
 import org.fcitx.fcitx5.android.input.session.EngineText
+import org.fcitx.fcitx5.android.input.session.AndroidEditorPolicy
+import org.fcitx.fcitx5.android.input.session.EditorReturnBehavior
 import org.fcitx.fcitx5.android.input.session.InputLifecycleEditor
 import org.fcitx.fcitx5.android.utils.withBatchEdit
-import splitties.bitflags.hasFlag
 import timber.log.Timber
 
 import android.view.inputmethod.InputConnection
@@ -98,9 +98,9 @@ class EditorController(
             override val hasActiveComposition: Boolean
                 get() = composing.isNotEmpty()
             override val shouldSimulateBackspaceKey: Boolean
-                get() = editorInfo().privateImeOptions != "org.fcitx.fcitx5.android.DELETE_SURROUNDING" ||
-                    editorInfo().inputType and InputType.TYPE_MASK_CLASS ==
-                    InputType.TYPE_NULL
+                get() = AndroidEditorPolicy.shouldSimulateBackspace(
+                    editorInfo(), "org.fcitx.fcitx5.android.DELETE_SURROUNDING"
+                )
 
             override fun predictEditingSelection(start: Int, end: Int) {
                 selection.predict(start, end)
@@ -147,32 +147,16 @@ class EditorController(
     }
 
     fun handleReturnKey() {
-        editorInfo().run {
-            if (inputType and InputType.TYPE_MASK_CLASS == InputType.TYPE_NULL ||
-                imeOptions.hasFlag(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-            ) {
-                sendKey(KeyEvent.KEYCODE_ENTER)
-                return
-            }
-            if (actionLabel?.isNotEmpty() == true && actionId != EditorInfo.IME_ACTION_UNSPECIFIED) {
-                connection()?.performEditorAction(actionId)
-                return
-            }
-            when (val action = imeOptions and EditorInfo.IME_MASK_ACTION) {
-                EditorInfo.IME_ACTION_UNSPECIFIED,
-                EditorInfo.IME_ACTION_NONE -> sendKey(KeyEvent.KEYCODE_ENTER)
-                else -> connection()?.performEditorAction(action)
-            }
+        when (val behavior = AndroidEditorPolicy.returnBehavior(editorInfo())) {
+            EditorReturnBehavior.SendEnterKey -> sendKey(KeyEvent.KEYCODE_ENTER)
+            is EditorReturnBehavior.PerformAction ->
+                connection()?.performEditorAction(behavior.actionId)
         }
     }
 
     fun handleArrowKey(keyCode: Int) {
-        val type = editorInfo().inputType and InputType.TYPE_MASK_CLASS
-        val variation = editorInfo().inputType and InputType.TYPE_MASK_VARIATION
-        if (type == InputType.TYPE_NULL ||
-            // confirm URL suggestion in browser location bar, see also https://bugzilla.mozilla.org/show_bug.cgi?id=1999915
-            type == InputType.TYPE_CLASS_TEXT && variation == InputType.TYPE_TEXT_VARIATION_URI
-        ) {
+        // URL bars require key events to confirm browser suggestions.
+        if (AndroidEditorPolicy.useKeyEventsForArrows(editorInfo())) {
             sendKey(keyCode)
             return
         }

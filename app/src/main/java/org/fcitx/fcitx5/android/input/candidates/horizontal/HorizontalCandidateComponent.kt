@@ -16,7 +16,7 @@ import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateLoadReques
 import org.fcitx.fcitx5.android.input.runtime.InputEngineAccess
 import timber.log.Timber
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AutoFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
@@ -38,9 +38,9 @@ class HorizontalCandidateComponent :
     private val candidateInteraction: CandidateInteractionController by manager.must()
     private val engine: InputEngineAccess by manager.must()
 
-    private val fillStyle by AppPrefs.getInstance().keyboard.horizontalCandidateStyle
+    private val fillStyle by InputSettings.keyboard.horizontalCandidateStyle
     private val maxSpanCountPref by lazy {
-        AppPrefs.getInstance().keyboard.run {
+        InputSettings.keyboard.run {
             if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
                 expandedCandidateGridSpanCount
             else

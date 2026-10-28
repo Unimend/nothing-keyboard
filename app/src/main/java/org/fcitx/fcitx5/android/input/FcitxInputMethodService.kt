@@ -28,11 +28,10 @@ import kotlinx.coroutines.Job
 import org.fcitx.fcitx5.android.input.engine.FcitxCommandDispatcher
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.input.session.AndroidEditorCapabilities
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.FcitxDaemon
 import org.fcitx.fcitx5.android.data.InputFeedbacks
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
@@ -55,6 +54,8 @@ import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationController
 import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationHost
 import org.fcitx.fcitx5.android.input.platform.InputViewPresentationController
 import org.fcitx.fcitx5.android.input.platform.InputViewPresentationHost
+import org.fcitx.fcitx5.android.input.platform.ImeInputLifecycleCoordinator
+import org.fcitx.fcitx5.android.input.platform.ImeInputLifecycleHost
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerController
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
@@ -73,13 +74,11 @@ import org.fcitx.fcitx5.android.input.session.EditorSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.engine.AndroidSubtypeController
 import org.fcitx.fcitx5.android.input.engine.PlatformInputMethodPort
-import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.forceShowSelf
 import org.fcitx.fcitx5.android.utils.inputMethodManager
-import org.fcitx.fcitx5.android.utils.isTypeNull
 import org.fcitx.fcitx5.android.utils.monitorCursorAnchor
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
 import org.fcitx.fcitx5.android.utils.styledFloat
@@ -268,9 +267,28 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         InputContextLifecycleController(engineCommands, subtypeController::onBindInput)
     }
 
-    private val prefs = AppPrefs.getInstance()
-    private val inlineSuggestions by prefs.keyboard.inlineSuggestions
-    private val ignoreSystemCursor by prefs.advanced.ignoreSystemCursor
+    private val imeLifecycle by lazy {
+        ImeInputLifecycleCoordinator(
+            lifecycle = inputLifecycle,
+            presentation = inputViewPresentation,
+            contextLifecycle = inputContextLifecycle,
+            host = object : ImeInputLifecycleHost {
+                override fun notifyInputStarted(info: EditorInfo) =
+                    inputDeviceMgr.notifyOnStartInput(info)
+
+                override fun evaluateInputView(info: EditorInfo): Boolean =
+                    inputDeviceMgr.evaluateOnStartInputView(info)
+
+                override fun currentEditorSession(): EditorSessionSnapshot? =
+                    inputSession.current.editorSessionOrNull()
+
+                override fun resetHardwareKeys() = keyEvents.reset()
+            }
+        )
+    }
+
+    private val inlineSuggestions by InputSettings.keyboard.inlineSuggestions
+    private val ignoreSystemCursor by InputSettings.advanced.ignoreSystemCursor
     private val inlineSuggestionController by lazy {
         InlineSuggestionController(
             enabled = { inlineSuggestions },
@@ -281,9 +299,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     private val recreateInputViewPrefs: Array<ManagedPreference<*>> = arrayOf(
-        prefs.keyboard.expandKeypressArea,
-        prefs.advanced.disableAnimation,
-        prefs.advanced.ignoreSystemWindowInsets,
+        InputSettings.keyboard.expandKeypressArea,
+        InputSettings.advanced.disableAnimation,
+        InputSettings.advanced.ignoreSystemWindowInsets,
     )
 
     private fun replaceInputView(theme: Theme): InputView {
@@ -317,7 +335,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         InputSurfaceRebuildController(
             signals = AndroidInputSurfaceRebuildSignals(
                 keyboardPreferences = recreateInputViewPrefs,
-                candidatePreferences = prefs.candidates
+                candidatePreferences = InputSettings.candidates
             ),
             activeTheme = { ThemeManager.activeTheme },
             host = object : InputSurfaceRebuildHost {
@@ -337,6 +355,17 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         engineDispatcher.submit(command, guard)
 
     override fun onCreate() {
+        super.onCreate()
+        window.window!!.apply {
+            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            attributes = attributes.apply { format = PixelFormat.TRANSLUCENT }
+            decorView.setBackgroundColor(Color.TRANSPARENT)
+        }
+        decorView = window.window!!.decorView
+        contentView = decorView.findViewById(android.R.id.content)
+        contentView.setBackgroundColor(Color.TRANSPARENT)
+        lastKnownConfig = resources.configuration
+
         fcitx = FcitxDaemon.connect(javaClass.name)
         engineQueries = FcitxEngineQueries(fcitx)
         engineDispatcher = FcitxCommandDispatcher(fcitx, lifecycleScope)
@@ -353,16 +382,6 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         pkgNameCache = PackageNameCache(this)
         surfaceRebuilds.start()
         lifecycleScope.launch { platformInputMethods.synchronize() }
-        super.onCreate()
-        window.window!!.apply {
-            setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-            attributes = attributes.apply { format = PixelFormat.TRANSLUCENT }
-            decorView.setBackgroundColor(Color.TRANSPARENT)
-        }
-        decorView = window.window!!.decorView
-        contentView = decorView.findViewById(android.R.id.content)
-        contentView.setBackgroundColor(Color.TRANSPARENT)
-        lastKnownConfig = resources.configuration
     }
 
     private lateinit var lastKnownConfig: Configuration
@@ -461,7 +480,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         val uid = currentInputBinding.uid
         val pkgName = pkgNameCache.forUid(uid)
         Timber.d("onBindInput: uid=$uid pkg=$pkgName")
-        inputContextLifecycle.bind(uid, pkgName)
+        imeLifecycle.bind(uid, pkgName)
     }
 
     override fun onCurrentInputMethodSubtypeChanged(newSubtype: InputMethodSubtype) {
@@ -470,27 +489,13 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
-        val capabilities = AndroidEditorCapabilities.fromAndroid(attribute.inputType, attribute.imeOptions)
-        // EditorInfo may change between onStartInput and onStartInputView
-        inputDeviceMgr.notifyOnStartInput(attribute)
-        inputLifecycle.startInput(
-            editorSnapshot = attribute.toEditorSnapshot(),
-            capabilities = capabilities,
-            initialSelectionStart = attribute.initialSelStart,
-            initialSelectionEnd = attribute.initialSelEnd,
-            restarting = restarting,
-            acceptsEngineFocus = !attribute.isTypeNull()
-        )
+        imeLifecycle.startInput(attribute, restarting)
         Timber.d("onStartInput: initialSel=${editor.currentSelection}, restarting=$restarting")
     }
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         Timber.d("onStartInputView: restarting=$restarting")
-        inputLifecycle.startInputView(info.toEditorSnapshot(), restarting)
-        inputViewPresentation.start(
-            isVirtualKeyboard = inputDeviceMgr.evaluateOnStartInputView(info),
-            session = inputSession.current.editorSessionOrNull()
-        )
+        imeLifecycle.startInputView(info, restarting)
     }
 
     override fun onUpdateSelection(
@@ -503,7 +508,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     ) {
         // onUpdateSelection can left behind when user types quickly enough, eg. long press backspace
         Timber.d("onUpdateSelection: old=[$oldSelStart,$oldSelEnd] new=[$newSelStart,$newSelEnd] cand=[$candidatesStart,$candidatesEnd]")
-        inputLifecycle.selectionChanged(
+        imeLifecycle.selectionChanged(
             newSelStart,
             newSelEnd,
             candidatesStart,
@@ -525,21 +530,19 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
-        inputViewPresentation.finish(inputLifecycle::finishInputView)
+        imeLifecycle.finishInputView()
     }
 
     override fun onFinishInput() {
         Timber.d("onFinishInput")
-        inputLifecycle.finishInput()
+        imeLifecycle.finishInput()
     }
 
     override fun onUnbindInput() {
-        keyEvents.reset()
-        inputLifecycle.unbindInput()
         // currentInputBinding can be null on some devices under some special Multi-screen mode
         val uid = currentInputBinding?.uid
         Timber.d("onUnbindInput: uid=$uid")
-        inputContextLifecycle.unbind(uid)
+        imeLifecycle.unbind(uid)
     }
 
     override fun onDestroy() {

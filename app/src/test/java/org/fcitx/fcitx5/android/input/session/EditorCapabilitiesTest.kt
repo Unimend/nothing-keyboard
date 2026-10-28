@@ -13,7 +13,10 @@ class EditorCapabilitiesTest {
             InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD,
             InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
         ).forEach { type ->
-            assertTrue(EditorCapability.Password in AndroidEditorCapabilities.fromAndroid(type, 0))
+            val capabilities = AndroidEditorCapabilities.fromAndroid(type, 0)
+            assertTrue(EditorCapability.Password in capabilities)
+            assertTrue(EditorCapability.Private in capabilities)
+            assertTrue(EditorCapability.NoSuggestions in capabilities)
         }
         assertFalse(EditorCapability.Password in AndroidEditorCapabilities.fromAndroid(InputType.TYPE_CLASS_NUMBER, 0))
     }

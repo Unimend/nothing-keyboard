@@ -18,7 +18,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.data.InputFeedbacks
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.gesture.SwipeTracker
 import org.fcitx.fcitx5.android.input.feedback.KeyboardFeedback
 
@@ -284,7 +284,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     }
 
     companion object {
-        val longPressDelay by AppPrefs.getInstance().keyboard.longPressDelay
+        val longPressDelay by InputSettings.keyboard.longPressDelay
         const val RepeatInterval = 50L
     }
 }

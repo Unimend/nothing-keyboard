@@ -46,10 +46,10 @@ but that does not mean the entire product has passed every device/lifecycle case
 
 | Area | Owner / contract | Remaining verification or cleanup |
 |---|---|---|
-| 1. Android lifecycle | Service, InputDeviceManager | Further isolate insets/device orchestration |
+| 1. Android lifecycle | IME lifecycle/presentation/window controllers; Service composition root | Device and multi-window smoke matrix |
 | 2. Session state | InputSessionStore → InputSessionReader; narrow sinks | Reader-port device smoke passed; broader editor matrix remains |
 | 3. Engine integration | EngineCommandPort / InputEngineQueries / EngineEffect | Replacement-engine integration is not yet tested |
-| 4. Editor capabilities | EditorCapability + Android policy + native adapter | Password editor/device matrix |
+| 4. Editor capabilities | EditorCapability + AndroidEditorPolicy + native adapter | Vendor editor smoke matrix |
 | 5. Composition and cursor | EditorController | Complex external editor/filter cases |
 | 6. Key commands and hardware | Semantic keys + AndroidKeyEventController | Physical keyboard and stale native replies |
 | 7. Input modes | InputModeStore | Cross-session remembered-mode matrix |
@@ -63,7 +63,7 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 15. Layout/theme | NothingDesignTokens + semantic surface/color styles | Device/font-scale visual matrix |
 | 16. Motion/feedback | InputMotionSystem + InputMotionPolicy + KeyboardFeedback | Device refresh-rate feel tuning |
 | 17. Popups | Popup contract + PopupComponent + PopupGeometry | Multi-window and unusual inset device matrix |
-| 18. Settings, persistence and diagnostics | AppPrefs/data layer + InputCoreDiagnostics/tests | Settings/data ownership is not yet fully audited |
+| 18. Settings, persistence and diagnostics | InputSettings boundary + repositories + atomic diagnostic reducer | Migration/device restore smoke matrix |
 
 ### 当前完整架构树与完成状态
 
@@ -77,12 +77,13 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
 │
 ├── 平台与引擎层
 │   │
-│   ├── 01. 🟡 Android 生命周期系统
-│   │   ├── 输入法 Service 组合根
-│   │   ├── 输入视图开始 / 结束事务
-│   │   ├── 设备模式与硬件键盘显示策略
-│   │   ├── Insets、导航栏与光标锚点
-│   │   └── 待完成：继续隔离少量设备/窗口编排与实机矩阵
+│   ├── 01. ✅ Android 生命周期系统
+│   │   ├── FcitxInputMethodService：只保留 Android 回调与组合根
+│   │   ├── ImeInputLifecycleCoordinator：输入开始、视图、选区与结束顺序
+│   │   ├── InputViewPresentationController：可见界面开始/清理事务
+│   │   ├── InputDevicePresentationController：软/硬键盘模式切换
+│   │   ├── AndroidImeWindowLayout / CandidateAnchor / DialogController
+│   │   └── Service 基类、Window、引擎与界面信号有固定创建/销毁顺序
 │   │
 │   ├── 02. ✅ 输入会话与状态系统
 │   │   ├── InputSessionStore：唯一可变状态所有者
@@ -97,11 +98,13 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
 │   │   ├── FcitxEngineCommandAdapter：唯一协议适配器
 │   │   └── SerialCommandQueue：保证命令顺序
 │   │
-│   └── 04. 🟡 编辑器能力与平台兼容系统
+│   └── 04. ✅ 编辑器能力与平台兼容系统
 │       ├── EditorCapability：输入框能力模型
-│       ├── Android 编辑器策略与原生适配器
+│       ├── AndroidEditorPolicy：平台特殊行为唯一判断入口
+│       ├── AndroidEditorCapabilities：InputType → 语义能力
+│       ├── AndroidInputSessionAdapter：EditorInfo → 会话快照
 │       ├── 密码、单行、动作键、选区能力判断
-│       └── 待完成：密码框、定制编辑器和设备兼容矩阵
+│       └── 密码输入统一启用 Password / Private / NoSuggestions
 │
 ├── 输入核心层
 │   │
@@ -199,17 +202,18 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
 │
 └── 应用支持层
     │
-    └── 18. 🟡 设置、持久化与诊断系统
-        ├── AppPrefs：现有设置存储入口
-        ├── 数据保留与迁移策略
-        ├── InputCoreDiagnostics：输入核心诊断页
-        ├── 架构回归测试与纯策略单元测试
-        └── 待完成：设置职责、持久化边界和诊断入口整体审计
+    └── 18. ✅ 设置、持久化与诊断系统
+        ├── InputSettings：输入系统读取持久设置的唯一入口
+        ├── AppPrefs：限制在设置适配边界内
+        ├── Repository / RetentionPolicy：存储事务与保留策略
+        ├── InputDiagnosticEvent：明确的诊断事件模型
+        ├── reduceInputDiagnostics：纯 reducer 与原子 StateFlow 更新
+        └── InputCoreDiagnosticsActivity + 架构/策略回归测试
 ```
 
-当前共计：`15 个已完成`、`3 个进行中`、`0 个未开始`。当前仍在进行的是 01 号
-Android 生命周期、04 号编辑器平台兼容矩阵和 18 号设置/持久化/诊断系统；它们保持
-为独立后续阶段，不为了增加绿色数量而混入本轮视觉与交互改造。
+当前共计：`18 个已完成`、`0 个进行中`、`0 个未开始`。这里的完成表示每项责任已有
+唯一所有者、明确模型或事件接口，并由架构测试阻止旧路径重新出现；不同厂商设备、
+第三方编辑器、横竖屏和多窗口仍属于持续实机验证矩阵，不与架构完成状态混为一谈。
 
 ### Visual-system upgrade
 

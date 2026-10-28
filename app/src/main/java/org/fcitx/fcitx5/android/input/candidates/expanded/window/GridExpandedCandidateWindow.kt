@@ -10,7 +10,7 @@ import android.util.DisplayMetrics
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearSmoothScroller
 import androidx.recyclerview.widget.RecyclerView
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateLayout
 import org.fcitx.fcitx5.android.input.candidates.expanded.GridPagingCandidateViewAdapter
@@ -21,7 +21,7 @@ class GridExpandedCandidateWindow :
     BaseExpandedCandidateWindow<GridExpandedCandidateWindow>() {
 
     private val gridSpanCount by lazy {
-        AppPrefs.getInstance().keyboard.run {
+        InputSettings.keyboard.run {
             if (context.resources.configuration.orientation == Configuration.ORIENTATION_PORTRAIT)
                 expandedCandidateGridSpanCount
             else

@@ -8,7 +8,7 @@ package org.fcitx.fcitx5.android.input.keyboard
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.input.engine.EngineKey
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
@@ -53,7 +53,7 @@ class CommonKeyActionListener :
     private val editing: InputEditingAccess by manager.must()
     private val platform: ImePlatformAccess by manager.must()
 
-    private val kbdPrefs = AppPrefs.getInstance().keyboard
+    private val kbdPrefs = InputSettings.keyboard
 
     private val spaceKeyLongPressBehavior by kbdPrefs.spaceKeyLongPressBehavior
     private val langSwitchKeyBehavior by kbdPrefs.langSwitchKeyBehavior

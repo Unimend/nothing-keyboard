@@ -28,7 +28,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.dependency.inputView
@@ -80,7 +80,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
         renderViewMode()
     }
 
-    private val prefs = AppPrefs.getInstance().clipboard
+    private val prefs = InputSettings.clipboard
 
     private val clipboardEnabledPref = prefs.clipboardListening
     private val clipboardReturnAfterPaste by prefs.clipboardReturnAfterPaste

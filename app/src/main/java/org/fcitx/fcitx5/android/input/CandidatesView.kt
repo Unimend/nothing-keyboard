@@ -17,7 +17,7 @@ import android.widget.TextView
 import androidx.annotation.Size
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.launchOnReady
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.floating.PagedCandidatesUi
 import org.fcitx.fcitx5.android.input.candidates.interaction.selectCandidate
@@ -56,7 +56,7 @@ class CandidatesView(
 
     private val ctx = context.withTheme(R.style.Theme_InputViewTheme)
 
-    private val candidatesPrefs = AppPrefs.getInstance().candidates
+    private val candidatesPrefs = InputSettings.candidates
     private val orientation by candidatesPrefs.orientation
     private val windowMinWidth by candidatesPrefs.windowMinWidth
     private val windowPadding by candidatesPrefs.windowPadding

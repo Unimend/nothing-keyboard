@@ -14,7 +14,7 @@ import androidx.core.view.allViews
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.input.engine.EngineKeyModifier
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
+import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
@@ -93,7 +93,7 @@ class TextKeyboard(
     val space: TextKeyView by lazy { findViewById(R.id.button_space) }
     val `return`: ImageKeyView by lazy { findViewById(R.id.button_return) }
 
-    private val showLangSwitchKey = AppPrefs.getInstance().keyboard.showLangSwitchKey
+    private val showLangSwitchKey = InputSettings.keyboard.showLangSwitchKey
 
     @Keep
     private val showLangSwitchKeyListener = ManagedPreference.OnChangeListener<Boolean> { _, v ->
@@ -101,7 +101,7 @@ class TextKeyboard(
     }
     private var preferenceListenerRegistered = false
 
-    private val keepLettersUppercase by AppPrefs.getInstance().keyboard.keepLettersUppercase
+    private val keepLettersUppercase by InputSettings.keyboard.keepLettersUppercase
 
     init {
         updateLangSwitchKey(showLangSwitchKey.getValue())
