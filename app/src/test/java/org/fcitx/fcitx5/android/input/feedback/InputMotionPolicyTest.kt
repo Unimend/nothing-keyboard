@@ -9,6 +9,15 @@ import org.junit.Test
 
 class InputMotionPolicyTest {
     @Test
+    fun semanticRoleResolvesItsDuration() {
+        assertEquals(
+            NothingDesignTokens.Motion.QuickFeedbackMs,
+            InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
+        )
+        assertEquals(0L, InputMotionPolicy.duration(false, InputMotionRole.QuickFeedback))
+    }
+
+    @Test
     fun `disabled motion never delays commands`() {
         assertEquals(0L, InputMotionPolicy.duration(false, 120L))
         assertEquals(0L, InputMotionPolicy.confirmationActionDelay(false, true))

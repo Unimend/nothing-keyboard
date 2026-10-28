@@ -13,7 +13,8 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.session.SurfaceStateSink
 import org.mechdancer.dependency.DynamicScope
 import org.mechdancer.dependency.manager.must
@@ -53,7 +54,7 @@ class InputWindowManager(private val surfaceSink: SurfaceStateSink) : UniqueView
         TransitionManager.beginDelayedTransition(view, TransitionSet().apply {
             enterAnimation?.let { addTransition(it) }
             exitAnimation?.let { addTransition(it) }
-            duration = NothingDesignTokens.Motion.WindowTransitionMs
+            duration = InputMotionPolicy.duration(true, InputMotionRole.WindowTransition)
         })
     }
 

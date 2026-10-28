@@ -19,7 +19,8 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
-import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.bar.ui.idle.ButtonsBarUi
 import org.fcitx.fcitx5.android.input.bar.ui.idle.ClipboardSuggestionUi
 import org.fcitx.fcitx5.android.input.bar.ui.idle.InlineSuggestionsUi
@@ -92,7 +93,7 @@ class IdleUi(
 
     private val inAnimation by lazy {
         AnimationSet(true).apply {
-            duration = NothingDesignTokens.Motion.QuickFeedbackMs
+            duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
             addAnimation(AlphaAnimation(0f, 1f))
             // 2 stands for Animation.RELATIVE_TO_PARENT
             addAnimation(TranslateAnimation(2, -0.3f * translateDirection, 2, 0f, 0, 0f, 0, 0f))
@@ -101,7 +102,7 @@ class IdleUi(
 
     private val outAnimation by lazy {
         AnimationSet(true).apply {
-            duration = NothingDesignTokens.Motion.QuickFeedbackMs
+            duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
             addAnimation(AlphaAnimation(1f, 0f))
             addAnimation(TranslateAnimation(2, 0f, 2, -0.3f * translateDirection, 0, 0f, 0, 0f))
         }
@@ -184,8 +185,9 @@ class IdleUi(
     }
 
     private fun enableSlideTransition(inTarget: View, outTarget: View, inGravity: Int, outGravity: Int) {
-        val slideIn = Slide(inGravity).apply { duration = NothingDesignTokens.Motion.QuickFeedbackMs }
-        val slideOut = Slide(outGravity).apply { duration = NothingDesignTokens.Motion.QuickFeedbackMs }
+        val duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
+        val slideIn = Slide(inGravity).apply { this.duration = duration }
+        val slideOut = Slide(outGravity).apply { this.duration = duration }
         slideIn.addTarget(inTarget)
         slideOut.addTarget(outTarget)
         val set = TransitionSet().apply {

@@ -81,8 +81,14 @@ Migration proceeds from the highest-frequency shared foundations outward:
 4. motion choreography after static geometry is stable.
 
 The first slice covers keyboard height/radius/space treatment, candidate marker geometry and
-clipboard grid/entry geometry. Typography and glyph ownership remain separate systems and are not
-folded into this policy.
+clipboard grid/entry geometry. The second adds toolbar controls, editing-button construction and
+picker geometry. Typography and glyph ownership remain separate systems and are not folded into
+this policy.
+
+Motion is selected by semantic `InputMotionRole` through `InputMotionPolicy`. A renderer may choose
+the Android animation primitive and targets, but it must not choose an unrelated raw duration.
+This preserves one timing vocabulary across candidates, toolbar transitions, caps feedback and
+window changes while keeping the global disable-animation preference authoritative.
 
 The session's general write API is private to the Service composition root and store. Ordinary
 surfaces receive a reader, not a mutable store. Each producer receives only its own sink: engine

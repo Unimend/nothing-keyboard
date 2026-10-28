@@ -43,6 +43,25 @@ object NothingDesignTokens {
 
     object Bar {
         const val HeightDp = 50
+        const val ControlSizeDp = 40
+        const val IconPaddingDp = 10
+        const val LabelTextSizeSp = 24f
+        const val TitleSpacingDp = 8
+        const val ExtensionEndInsetDp = 5
+        const val PressRadiusDp = 20
+    }
+
+    object Editing {
+        const val ShadowWidthDp = 1
+        const val ContentInsetDp = 4
+        const val DividerWidthDp = 1
+    }
+
+    object Picker {
+        const val DenseSymbolTextSizeSp = 21f
+        const val PunctuationTextSizeSp = 23f
+        const val PaginationHeightDp = 2
+        const val EmbeddedKeyboardHeightFraction = 0.25f
     }
 
     object Keyboard {

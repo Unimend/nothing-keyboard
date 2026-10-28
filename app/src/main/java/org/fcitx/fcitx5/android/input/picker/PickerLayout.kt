@@ -13,6 +13,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.keyboard.*
 import org.fcitx.fcitx5.android.input.mode.InputMode
 import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.above
 import splitties.views.dsl.constraintlayout.below
@@ -33,19 +34,19 @@ class PickerLayout(context: Context, theme: Theme, switchKey: KeyDef) :
         context, theme, listOf(
             listOf(
                 LayoutSwitchKey("ABC", InputMode.Keyboard(KeyboardLayout.Text)),
-                PunctuationKey(","),
+                PunctuationKey(",", theme.inputSurfaceStyle.picker.punctuationTextSizeSp),
                 switchKey,
                 SpaceKey(),
-                PunctuationKey("."),
+                PunctuationKey(".", theme.inputSurfaceStyle.picker.punctuationTextSizeSp),
                 ReturnKey()
             )
         )
     ) {
 
-        class PunctuationKey(val symbol: String) : KeyDef(
+        class PunctuationKey(val symbol: String, textSizeSp: Float) : KeyDef(
             Appearance.Text(
                 displayText = symbol,
-                textSize = 23f,
+                textSize = textSizeSp,
                 percentWidth = 0.1f,
                 variant = Appearance.Variant.Alternative
             ),
@@ -69,6 +70,8 @@ class PickerLayout(context: Context, theme: Theme, switchKey: KeyDef) :
 
     val paginationUi = PickerPaginationUi(context, theme)
 
+    private val visualStyle = theme.inputSurfaceStyle.picker
+
     init {
         add(pager, lParams {
             topOfParent()
@@ -79,9 +82,9 @@ class PickerLayout(context: Context, theme: Theme, switchKey: KeyDef) :
             below(pager)
             centerHorizontally()
             bottomOfParent()
-            matchConstraintPercentHeight = 0.25f
+            matchConstraintPercentHeight = visualStyle.embeddedKeyboardHeightFraction
         })
-        add(paginationUi.root, lParams(matchConstraints, dp(2)) {
+        add(paginationUi.root, lParams(matchConstraints, dp(visualStyle.paginationHeightDp)) {
             centerHorizontally()
             below(pager, dp(-1))
         })

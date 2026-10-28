@@ -12,6 +12,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.after
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -31,6 +32,8 @@ import splitties.views.gravityVerticalCenter
 
 class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
 
+    private val visualStyle = theme.inputSurfaceStyle.toolbar
+
     private val backButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_back_24, theme).apply {
         contentDescription = ctx.getString(R.string.back_to_keyboard)
     }
@@ -44,14 +47,14 @@ class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
     private var extension: View? = null
 
     override val root = constraintLayout {
-        add(backButton, lParams(dp(40), dp(40)) {
+        add(backButton, lParams(dp(visualStyle.controlSizeDp), dp(visualStyle.controlSizeDp)) {
             topOfParent()
             startOfParent()
             bottomOfParent()
         })
-        add(titleText, lParams(wrapContent, dp(40)) {
+        add(titleText, lParams(wrapContent, dp(visualStyle.controlSizeDp)) {
             topOfParent()
-            after(backButton, dp(8))
+            after(backButton, dp(visualStyle.titleSpacingDp))
             bottomOfParent()
         })
     }
@@ -83,10 +86,10 @@ class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
         titleText.isVisible = showTitle
         extension = view
         root.run {
-            add(view, lParams(matchConstraints, dp(40)) {
+            add(view, lParams(matchConstraints, dp(visualStyle.controlSizeDp)) {
                 centerVertically()
                 if (showTitle) {
-                    endOfParent(dp(5))
+                    endOfParent(dp(visualStyle.extensionEndInsetDp))
                 } else {
                     centerHorizontally()
                 }

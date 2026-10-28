@@ -35,15 +35,40 @@ data class KeyboardSurfaceStyle(
     val primaryLabelVerticalOffsetDp: Int
 )
 
+data class ToolbarSurfaceStyle(
+    val controlSizeDp: Int,
+    val iconPaddingDp: Int,
+    val labelTextSizeSp: Float,
+    val titleSpacingDp: Int,
+    val extensionEndInsetDp: Int,
+    val pressRadiusDp: Int
+)
+
+data class EditingSurfaceStyle(
+    val shadowWidthDp: Int,
+    val contentInsetDp: Int,
+    val dividerWidthDp: Int
+)
+
+data class PickerSurfaceStyle(
+    val denseSymbolTextSizeSp: Float?,
+    val punctuationTextSizeSp: Float,
+    val paginationHeightDp: Int,
+    val embeddedKeyboardHeightFraction: Float
+)
+
 data class InputSurfaceStyle(
     val isNothing: Boolean,
     val keyboard: KeyboardSurfaceStyle,
+    val toolbar: ToolbarSurfaceStyle,
+    val editing: EditingSurfaceStyle,
+    val picker: PickerSurfaceStyle,
     val candidate: CandidateSurfaceStyle,
     val clipboard: ClipboardSurfaceStyle
 )
 
 object InputSurfaceStylePolicy {
-    fun resolve(isNothing: Boolean): InputSurfaceStyle = if (isNothing) {
+    private val nothingStyle =
         InputSurfaceStyle(
             isNothing = true,
             keyboard = KeyboardSurfaceStyle(
@@ -53,6 +78,26 @@ object InputSurfaceStylePolicy {
                 alternateTextSizeSp = NothingTextStyle.KeyAlternate.sizeSp,
                 primaryLabelVerticalOffsetDp =
                     NothingDesignTokens.Keyboard.PrimaryLabelVerticalOffsetDp
+            ),
+            toolbar = ToolbarSurfaceStyle(
+                controlSizeDp = NothingDesignTokens.Bar.ControlSizeDp,
+                iconPaddingDp = NothingDesignTokens.Bar.IconPaddingDp,
+                labelTextSizeSp = NothingDesignTokens.Bar.LabelTextSizeSp,
+                titleSpacingDp = NothingDesignTokens.Bar.TitleSpacingDp,
+                extensionEndInsetDp = NothingDesignTokens.Bar.ExtensionEndInsetDp,
+                pressRadiusDp = NothingDesignTokens.Bar.PressRadiusDp
+            ),
+            editing = EditingSurfaceStyle(
+                shadowWidthDp = NothingDesignTokens.Editing.ShadowWidthDp,
+                contentInsetDp = NothingDesignTokens.Editing.ContentInsetDp,
+                dividerWidthDp = NothingDesignTokens.Editing.DividerWidthDp
+            ),
+            picker = PickerSurfaceStyle(
+                denseSymbolTextSizeSp = NothingDesignTokens.Picker.DenseSymbolTextSizeSp,
+                punctuationTextSizeSp = NothingDesignTokens.Picker.PunctuationTextSizeSp,
+                paginationHeightDp = NothingDesignTokens.Picker.PaginationHeightDp,
+                embeddedKeyboardHeightFraction =
+                    NothingDesignTokens.Picker.EmbeddedKeyboardHeightFraction
             ),
             candidate = CandidateSurfaceStyle(
                 showDotMarker = true,
@@ -69,7 +114,8 @@ object InputSurfaceStylePolicy {
                 entryTextSizeSp = NothingTextStyle.ClipboardEntry.sizeSp
             )
         )
-    } else {
+
+    private val defaultStyle =
         InputSurfaceStyle(
             isNothing = false,
             keyboard = KeyboardSurfaceStyle(
@@ -78,6 +124,25 @@ object InputSurfaceStylePolicy {
                 showSpaceIndicator = false,
                 alternateTextSizeSp = 10.666667f,
                 primaryLabelVerticalOffsetDp = 0
+            ),
+            toolbar = ToolbarSurfaceStyle(
+                controlSizeDp = 40,
+                iconPaddingDp = 10,
+                labelTextSizeSp = 24f,
+                titleSpacingDp = 8,
+                extensionEndInsetDp = 5,
+                pressRadiusDp = 20
+            ),
+            editing = EditingSurfaceStyle(
+                shadowWidthDp = 1,
+                contentInsetDp = 4,
+                dividerWidthDp = 1
+            ),
+            picker = PickerSurfaceStyle(
+                denseSymbolTextSizeSp = null,
+                punctuationTextSizeSp = 23f,
+                paginationHeightDp = 2,
+                embeddedKeyboardHeightFraction = 0.25f
             ),
             candidate = CandidateSurfaceStyle(
                 showDotMarker = false,
@@ -94,7 +159,9 @@ object InputSurfaceStylePolicy {
                 entryTextSizeSp = null
             )
         )
-    }
+
+    fun resolve(isNothing: Boolean): InputSurfaceStyle =
+        if (isNothing) nothingStyle else defaultStyle
 }
 
 val Theme.inputSurfaceStyle: InputSurfaceStyle

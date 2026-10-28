@@ -36,7 +36,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
 import org.fcitx.fcitx5.android.input.keyboard.KeyView
 import org.fcitx.fcitx5.android.input.keyboard.TextKeyView
-import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupResult
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
@@ -61,6 +61,8 @@ class PickerPageUi(
     density: Density,
     bordered: Boolean = false
 ) : Ui {
+
+    private val visualStyle = theme.inputSurfaceStyle.picker
 
     enum class Density(
         val pageSize: Int,
@@ -88,11 +90,9 @@ class PickerPageUi(
 
     private val keyAppearance = Appearance.Text(
         displayText = "",
-        textSize = if (theme.isNothingStyle && density == Density.High) {
-            21f
-        } else {
-            density.textSize
-        },
+        textSize = if (density == Density.High) {
+            visualStyle.denseSymbolTextSizeSp ?: density.textSize
+        } else density.textSize,
         variant = Variant.Normal,
         border = if (bordered) Border.On else Border.Off
     )

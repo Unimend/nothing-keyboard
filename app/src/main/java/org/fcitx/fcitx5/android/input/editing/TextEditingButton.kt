@@ -16,6 +16,7 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.shadowedKeyBackgroundDrawable
 import org.fcitx.fcitx5.android.input.keyboard.insetRadiusDrawable
@@ -42,13 +43,15 @@ class TextEditingButton(
     private val altStyle: Boolean = false
 ) : CustomGestureView(ctx) {
 
+    private val visualStyle = theme.inputSurfaceStyle.editing
+
     // bordered
-    private val shadowWidth = dp(1)
-    private val hInset = dp(4)
-    private val vInset = dp(4)
+    private val shadowWidth = dp(visualStyle.shadowWidthDp)
+    private val hInset = dp(visualStyle.contentInsetDp)
+    private val vInset = dp(visualStyle.contentInsetDp)
 
     // !bordered
-    private val lineWidth = max(1, dp(1) / 2)
+    private val lineWidth = max(1, dp(visualStyle.dividerWidthDp) / 2)
 
     init {
         if (bordered) {

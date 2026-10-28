@@ -12,11 +12,14 @@ import com.google.android.flexbox.JustifyContent
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.view
 
 class ButtonsBarUi(override val ctx: Context, private val theme: Theme) : Ui {
+
+    private val visualStyle = theme.inputSurfaceStyle.toolbar
 
     override val root = view(::FlexboxLayout) {
         alignItems = AlignItems.CENTER
@@ -24,7 +27,7 @@ class ButtonsBarUi(override val ctx: Context, private val theme: Theme) : Ui {
     }
 
     private fun toolButton(@DrawableRes icon: Int) = ToolButton(ctx, icon, theme).also {
-        val size = ctx.dp(40)
+        val size = ctx.dp(visualStyle.controlSizeDp)
         root.addView(it, FlexboxLayout.LayoutParams(size, size))
     }
 

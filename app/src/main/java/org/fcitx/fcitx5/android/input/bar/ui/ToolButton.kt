@@ -18,6 +18,7 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.utils.borderlessRippleDrawable
 import org.fcitx.fcitx5.android.utils.circlePressHighlightDrawable
 import splitties.dimensions.dp
@@ -63,6 +64,8 @@ class ToolButton(context: Context) : CustomGestureView(context) {
 
     constructor(context: Context, @DrawableRes icon: Int, theme: Theme) : this(context) {
         glyphTheme = theme
+        val visualStyle = theme.inputSurfaceStyle.toolbar
+        image.padding = dp(visualStyle.iconPaddingDp)
         image.imageTintList = ColorStateList.valueOf(theme.altKeyTextColor)
         setIcon(icon)
         setPressHighlightColor(theme.keyPressHighlightColor)
@@ -85,14 +88,22 @@ class ToolButton(context: Context) : CustomGestureView(context) {
         image.visibility = View.GONE
         label.visibility = View.VISIBLE
         label.setTextColor(theme.altKeyTextColor)
-        label.setNothingText(value, theme, NothingTextStyle.ControlLabel, sizeSp = 24f)
+        label.setNothingText(
+            value,
+            theme,
+            NothingTextStyle.ControlLabel,
+            sizeSp = theme.inputSurfaceStyle.toolbar.labelTextSizeSp
+        )
     }
 
     fun setPressHighlightColor(@ColorInt color: Int) {
         background = if (disableAnimation) {
             circlePressHighlightDrawable(color)
         } else {
-            borderlessRippleDrawable(color, dp(20))
+            borderlessRippleDrawable(
+                color,
+                dp(glyphTheme?.inputSurfaceStyle?.toolbar?.pressRadiusDp ?: 20)
+            )
         }
     }
 }

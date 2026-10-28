@@ -23,6 +23,8 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
+import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
@@ -106,7 +108,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
                 markerAnimator = ValueAnimator.ofInt(
                     0, NothingDesignTokens.Candidate.MarkerRows
                 ).apply {
-                    duration = NothingDesignTokens.Motion.QuickFeedbackMs
+                    duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
                     interpolator = LinearInterpolator()
                     addUpdateListener {
                         nothingMarkerDrawable?.setActiveDots(it.animatedValue as Int)

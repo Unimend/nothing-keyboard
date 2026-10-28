@@ -17,7 +17,8 @@ import org.fcitx.fcitx5.android.input.engine.EngineKeyModifier
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
@@ -284,7 +285,7 @@ class TextKeyboard(
                         .alpha(1f)
                         .scaleX(1f)
                         .scaleY(1f)
-                        .setDuration(NothingDesignTokens.Motion.CapsFeedbackMs)
+                        .setDuration(InputMotionPolicy.duration(true, InputMotionRole.CapsStateChange))
                         .setInterpolator(DecelerateInterpolator())
                         .start()
                 }

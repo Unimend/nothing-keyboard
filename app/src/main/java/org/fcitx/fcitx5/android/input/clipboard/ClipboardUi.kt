@@ -16,6 +16,8 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import splitties.dimensions.dp
 import splitties.views.backgroundColor
 import splitties.views.dsl.coordinatorlayout.coordinatorLayout
@@ -76,7 +78,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         Timber.d("Switch clipboard to $state")
         if (!disableAnimation)
             TransitionManager.beginDelayedTransition(root, Fade().apply {
-                duration = NothingDesignTokens.Motion.InstantFeedbackMs
+                duration = InputMotionPolicy.duration(true, InputMotionRole.InstantFeedback)
             })
         when (state) {
             ClipboardViewMode.Normal -> {

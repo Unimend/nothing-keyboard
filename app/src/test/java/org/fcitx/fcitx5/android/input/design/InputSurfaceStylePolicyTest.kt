@@ -17,6 +17,11 @@ class InputSurfaceStylePolicyTest {
         assertTrue(style.isNothing)
         assertEquals(NothingDesignTokens.Shape.KeyCornerRadiusDp, style.keyboard.keyCornerRadiusDp)
         assertTrue(style.keyboard.showSpaceIndicator)
+        assertEquals(NothingDesignTokens.Bar.ControlSizeDp, style.toolbar.controlSizeDp)
+        assertEquals(
+            NothingDesignTokens.Picker.DenseSymbolTextSizeSp,
+            style.picker.denseSymbolTextSizeSp
+        )
         assertTrue(style.candidate.showDotMarker)
         assertEquals(NothingDesignTokens.Candidate.NothingLeadingRailDp, style.candidate.leadingRailDp)
         assertTrue(style.clipboard.showDotMarker)
@@ -30,6 +35,7 @@ class InputSurfaceStylePolicyTest {
         assertFalse(style.isNothing)
         assertNull(style.keyboard.keyCornerRadiusDp)
         assertFalse(style.keyboard.showSpaceIndicator)
+        assertNull(style.picker.denseSymbolTextSizeSp)
         assertFalse(style.candidate.showDotMarker)
         assertEquals(NothingDesignTokens.Candidate.DefaultLeadingRailDp, style.candidate.leadingRailDp)
         assertFalse(style.clipboard.showDotMarker)
