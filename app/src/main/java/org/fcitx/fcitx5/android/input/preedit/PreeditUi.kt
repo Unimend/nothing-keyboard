@@ -24,8 +24,8 @@ import androidx.core.text.buildSpannedString
 import org.fcitx.fcitx5.android.core.TextFormatFlag
 import org.fcitx.fcitx5.android.core.hasFlag
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.session.EngineText
 import splitties.dimensions.dp
@@ -57,7 +57,7 @@ open class PreeditUi(
 
     private fun createTextView() = textView {
         setTextColor(theme.keyTextColor)
-        textSize = 16f
+        applyNothingTextStyle(theme, NothingTextStyle.Preedit)
         setupTextView?.invoke(this)
     }
 
@@ -75,7 +75,7 @@ open class PreeditUi(
 
     private fun updateTextView(view: TextView, str: CharSequence, visible: Boolean) {
         view.text = str
-        view.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+        view.applyNothingTextStyle(theme, NothingTextStyle.Preedit)
         view.visibility = if (visible) View.VISIBLE else View.GONE
     }
 

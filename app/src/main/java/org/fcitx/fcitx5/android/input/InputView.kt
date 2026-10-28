@@ -27,6 +27,7 @@ import org.fcitx.fcitx5.android.input.broadcast.InputPresentationComponent
 import org.fcitx.fcitx5.android.input.broadcast.PunctuationComponent
 import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.DisplayMetrics
@@ -82,7 +83,9 @@ class InputView(
     theme: Theme
 ) : BaseInputView(service, theme) {
 
-    private val nothingCompactHeightScale = if (theme.isNothingStyle) 0.9f else 1f
+    private val nothingCompactHeightScale = if (theme.isNothingStyle) {
+        NothingDesignTokens.Keyboard.CompactHeightScale
+    } else 1f
 
     private val keyBorder by ThemeManager.prefs.keyBorder
 

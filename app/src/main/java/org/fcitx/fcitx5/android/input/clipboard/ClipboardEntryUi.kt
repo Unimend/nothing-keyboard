@@ -14,8 +14,9 @@ import android.view.View
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
+import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -42,11 +43,14 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     val textView = textView {
         minLines = 1
         maxLines = 4
-        textSize = if (theme.isNothingStyle) NothingDesignTokens.Typography.ClipboardEntrySp else 14f
-        setPaddingDp(if (theme.isNothingStyle) 22 else 8, 8, 10, 8)
+        textSize = if (theme.isNothingStyle) NothingTextStyle.ClipboardEntry.sizeSp else 14f
+        setPaddingDp(
+            if (theme.isNothingStyle) NothingDesignTokens.Clipboard.EntryStartPaddingDp else 8,
+            8, 10, 8
+        )
         ellipsize = TextUtils.TruncateAt.END
         setTextColor(theme.keyTextColor)
-        applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
+        applyNothingTextStyle(theme, NothingTextStyle.ClipboardEntry, sizeSp = null)
     }
 
     val pin = imageView {
@@ -60,13 +64,16 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
         if (theme.isNothingStyle) {
             add(View(ctx).apply {
                 background = NothingDotMatrixDrawable(
-                    color = Color.rgb(215, 25, 33),
+                    color = NothingDesignTokens.Color.AccentRed,
                     columns = 1,
-                    rows = 4,
-                    dotDiameter = dp(3).toFloat(),
-                    dotGap = dp(2).toFloat()
+                    rows = NothingDesignTokens.Clipboard.MarkerRows,
+                    dotDiameter = dp(NothingDesignTokens.Clipboard.MarkerDotDiameterDp).toFloat(),
+                    dotGap = dp(NothingDesignTokens.Clipboard.MarkerDotGapDp).toFloat()
                 )
-            }, lParams(dp(5), dp(24)) {
+            }, lParams(
+                dp(NothingDesignTokens.Clipboard.MarkerWidthDp),
+                dp(NothingDesignTokens.Clipboard.MarkerHeightDp)
+            ) {
                 centerVertically()
                 leftOfParent(dp(8))
             })
@@ -82,7 +89,9 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
 
     override val root = CustomGestureView(ctx).apply {
         isClickable = true
-        minimumHeight = dp(if (theme.isNothingStyle) 44 else 30)
+        minimumHeight = dp(
+            if (theme.isNothingStyle) NothingDesignTokens.Clipboard.EntryMinimumHeightDp else 30
+        )
         foreground = RippleDrawable(
             ColorStateList.valueOf(theme.keyPressHighlightColor), null,
             GradientDrawable().apply {
@@ -92,14 +101,16 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
         )
         background = GradientDrawable().apply {
             cornerRadius = if (theme.isNothingStyle) dp(NothingDesignTokens.Shape.ClipboardCornerRadiusDp).toFloat() else radius
-            setColor(if (theme.isNothingStyle) Color.rgb(13, 13, 13) else theme.clipboardEntryColor)
+            setColor(
+                if (theme.isNothingStyle) NothingDesignTokens.Color.RaisedSurface
+                else theme.clipboardEntryColor
+            )
         }
         add(layout, lParams(matchParent, matchParent))
     }
 
     fun setEntry(text: String, pinned: Boolean) {
-        textView.text = text
-        textView.applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
+        textView.setNothingText(text, theme, NothingTextStyle.ClipboardEntry, sizeSp = null)
         pin.visibility = if (pinned) View.VISIBLE else View.GONE
     }
 }

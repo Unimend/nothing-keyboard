@@ -12,8 +12,8 @@ import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import splitties.views.backgroundColor
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.textView
@@ -48,7 +48,7 @@ class LabeledCandidateItemUi(
                 }
             }
         }
-        root.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+        root.applyNothingTextStyle(theme, NothingTextStyle.Candidate, sizeSp = null)
         val bg = if (active) theme.genericActiveBackgroundColor else Color.TRANSPARENT
         root.backgroundColor = bg
     }

@@ -16,7 +16,6 @@ import android.graphics.drawable.Drawable
 import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
-import android.util.TypedValue
 import android.view.View
 import android.widget.ImageView
 import androidx.annotation.ColorInt
@@ -32,8 +31,8 @@ import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
@@ -266,11 +265,15 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
         isFocusable = false
         background = null
         text = def.displayText
-        setTextSize(TypedValue.COMPLEX_UNIT_DIP, def.textSize)
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         // Keep the visual language deliberately split: Doto for Latin letters and
         // numbers, the system font for punctuation and the symbol library.
-        applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = def.textStyle != Typeface.NORMAL)
+        applyNothingTextStyle(
+            theme,
+            NothingTextStyle.KeyPrimary,
+            sizeSp = def.textSize,
+            bold = def.textStyle != Typeface.NORMAL
+        )
         setTextColor(
             when (def.variant) {
                 Variant.Normal -> theme.keyTextColor
@@ -289,12 +292,19 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
                 add(view(::View).apply {
                     background = NothingDotMatrixDrawable(
                         color = theme.altKeyTextColor,
-                        columns = 5,
+                        columns = NothingDesignTokens.Keyboard.SpaceIndicatorColumns,
                         rows = 1,
-                        dotDiameter = dp(2).toFloat(),
-                        dotGap = dp(3).toFloat()
+                        dotDiameter = dp(
+                            NothingDesignTokens.Keyboard.SpaceIndicatorDotDiameterDp
+                        ).toFloat(),
+                        dotGap = dp(
+                            NothingDesignTokens.Keyboard.SpaceIndicatorDotGapDp
+                        ).toFloat()
                     )
-                }, lParams(dp(30), dp(4)) {
+                }, lParams(
+                    dp(NothingDesignTokens.Keyboard.SpaceIndicatorWidthDp),
+                    dp(NothingDesignTokens.Keyboard.SpaceIndicatorHeightDp)
+                ) {
                     centerHorizontally()
                     bottomToBottom = parentId
                     bottomMargin = vMargin + dp(7)
@@ -310,13 +320,12 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
     val altText = view(::AutoScaleTextView) {
         isClickable = false
         isFocusable = false
-        // TODO hardcoded alt text size
-        setTextSize(
-            TypedValue.COMPLEX_UNIT_DIP,
-            if (theme.isNothingStyle) NothingDesignTokens.Typography.KeyAltLegendSp else 10.666667f
-        )
         text = def.altText
-        applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+        applyNothingTextStyle(
+            theme,
+            NothingTextStyle.KeyAlternate,
+            sizeSp = if (theme.isNothingStyle) NothingTextStyle.KeyAlternate.sizeSp else 10.666667f
+        )
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         setTextColor(
             when (def.variant) {
@@ -330,7 +339,9 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         if (theme.isNothingStyle) {
             // The top secondary legend makes a mathematically centred letter look too high.
             // Shift only the visual label; keep the touch target and row geometry untouched.
-            mainText.translationY = dp(2).toFloat()
+            mainText.translationY = dp(
+                NothingDesignTokens.Keyboard.PrimaryLabelVerticalOffsetDp
+            ).toFloat()
         }
         appearanceView.apply {
             add(altText, lParams(wrapContent, wrapContent))

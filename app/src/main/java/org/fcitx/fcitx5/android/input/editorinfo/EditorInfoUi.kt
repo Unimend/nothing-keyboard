@@ -8,6 +8,8 @@ import android.content.Context
 import android.widget.TableLayout
 import android.widget.TableRow
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.view
@@ -19,6 +21,7 @@ class EditorInfoUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     private fun createTextView(str: String) = textView {
         text = str
+        applyNothingTextStyle(theme, NothingTextStyle.Body, sizeSp = null)
         setPaddingDp(3)
         setTextColor(theme.keyTextColor)
     }

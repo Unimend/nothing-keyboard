@@ -15,8 +15,8 @@ import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListener
@@ -218,8 +218,13 @@ class PickerPageUi(
                     isEnabled = true
                     val item = items[i]
                     val transformed = policy?.transform(item) ?: item
-                    mainText.text = transformed
-                    mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
+                    mainText.setNothingText(
+                        transformed,
+                        theme,
+                        NothingTextStyle.KeyPrimary,
+                        sizeSp = keyAppearance.textSize,
+                        bold = false
+                    )
                     setOnClickListener {
                         onItemClick(transformed)
                     }

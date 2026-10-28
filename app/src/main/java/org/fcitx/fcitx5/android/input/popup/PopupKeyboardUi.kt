@@ -10,8 +10,8 @@ import android.graphics.drawable.GradientDrawable
 import android.view.ViewOutlineProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
@@ -63,9 +63,8 @@ class PopupKeyboardUi(
         val textView = view(::AutoScaleTextView) {
             text = this@PopupKeyUi.text
             scaleMode = AutoScaleTextView.Mode.Proportional
-            textSize = 23f
             setTextColor(theme.keyTextColor)
-            applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+            applyNothingTextStyle(theme, NothingTextStyle.PopupKey)
         }
 
         override val root = frameLayout {

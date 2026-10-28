@@ -32,8 +32,10 @@ import timber.log.Timber
 class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     val recyclerView = recyclerView {
-        addItemDecoration(SpacesItemDecoration(dp(if (theme.isNothingStyle) 6 else 4)))
-        if (theme.isNothingStyle) backgroundColor = 0xff000000.toInt()
+        addItemDecoration(SpacesItemDecoration(dp(
+            if (theme.isNothingStyle) NothingDesignTokens.Clipboard.GridGapDp else 4
+        )))
+        if (theme.isNothingStyle) backgroundColor = NothingDesignTokens.Color.Surface
     }
 
     val enableUi = ClipboardInstructionUi.Enable(ctx, theme)
@@ -51,7 +53,9 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     override val root = coordinatorLayout {
         if (!keyBorder) {
-            backgroundColor = if (theme.isNothingStyle) 0xff000000.toInt() else theme.barColor
+            backgroundColor = if (theme.isNothingStyle) {
+                NothingDesignTokens.Color.Surface
+            } else theme.barColor
         }
         add(viewAnimator, defaultLParams(matchParent, matchParent))
     }

@@ -17,8 +17,8 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
@@ -58,7 +58,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         // Candidate words keep one stable reading size. Long words expand their item width and
         // are reached by scrolling; they must never become visually less important by shrinking.
         scaleMode = AutoScaleTextView.Mode.None
-        textSize = NothingDesignTokens.Candidate.TextSp
+        applyNothingTextStyle(theme, NothingTextStyle.Candidate)
         isSingleLine = true
         gravity = Gravity.START or Gravity.CENTER_VERTICAL
         setTextColor(theme.candidateTextColor)
@@ -124,6 +124,6 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
                 }
             }
         }
-        text.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+        text.applyNothingTextStyle(theme, NothingTextStyle.Candidate)
     }
 }

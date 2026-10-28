@@ -18,8 +18,8 @@ import org.fcitx.fcitx5.android.core.KeyStates
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import splitties.views.imageResource
@@ -175,7 +175,9 @@ class TextKeyboard(
             ime.subModeLabel.ifEmpty { ime.subModeName.ifEmpty { null } }?.let { append(" ($it)") }
         }
         space.mainText.text = label
-        space.mainText.applyNothingTextRole(theme, NothingTextRole.ControlLabel)
+        space.mainText.setNothingText(
+            space.mainText.text, theme, NothingTextStyle.ControlLabel, sizeSp = null
+        )
         if (capsState != CapsState.None) {
             switchCapsState()
         }
@@ -266,11 +268,13 @@ class TextKeyboard(
     private fun updateAlphabetKeys() {
         textKeys.forEach {
             if (it.def !is KeyDef.Appearance.AltText) return
-            it.mainText.text = it.def.displayText.let { str ->
+            val value = it.def.displayText.let { str ->
                 if (str.length != 1 || !str[0].isLetter()) return@forEach
                 if (keepLettersUppercase) str.uppercase() else transformAlphabet(str)
             }
-            it.mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+            it.mainText.setNothingText(
+                value, theme, NothingTextStyle.KeyPrimary, sizeSp = it.def.textSize
+            )
         }
     }
 
@@ -278,15 +282,18 @@ class TextKeyboard(
         textKeys.forEach {
             if (it is AltTextKeyView) {
                 it.def as KeyDef.Appearance.AltText
-                it.altText.text = transformPunctuation(it.def.altText)
-                it.altText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+                it.altText.setNothingText(
+                    transformPunctuation(it.def.altText), theme, NothingTextStyle.KeyAlternate
+                )
             } else {
                 it.def as KeyDef.Appearance.Text
-                it.mainText.text = it.def.displayText.let { str ->
+                val value = it.def.displayText.let { str ->
                     if (str[0].run { isLetter() || isWhitespace() }) return@forEach
                     transformPunctuation(str)
                 }
-                it.mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent)
+                it.mainText.setNothingText(
+                    value, theme, NothingTextStyle.KeyPrimary, sizeSp = it.def.textSize
+                )
             }
         }
     }

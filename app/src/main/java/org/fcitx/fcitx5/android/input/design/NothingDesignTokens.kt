@@ -11,15 +11,16 @@ package org.fcitx.fcitx5.android.input.design
  * the View boundary.
  */
 object NothingDesignTokens {
+    object Color {
+        const val Surface = 0xff000000.toInt()
+        const val RaisedSurface = 0xff0d0d0d.toInt()
+        const val AccentRed = 0xffd71921.toInt()
+    }
+
     object Shape {
         const val KeyCornerRadiusDp = 8f
         const val SpaceCornerRadiusDp = 3f
         const val ClipboardCornerRadiusDp = 5f
-    }
-
-    object Typography {
-        const val KeyAltLegendSp = 10.5f
-        const val ClipboardEntrySp = 15f
     }
 
     object Motion {
@@ -41,9 +42,28 @@ object NothingDesignTokens {
         const val HeightDp = 50
     }
 
+    object Keyboard {
+        const val CompactHeightScale = 0.9f
+        const val SpaceIndicatorColumns = 5
+        const val SpaceIndicatorDotDiameterDp = 2
+        const val SpaceIndicatorDotGapDp = 3
+        const val SpaceIndicatorWidthDp = 30
+        const val SpaceIndicatorHeightDp = 4
+        const val PrimaryLabelVerticalOffsetDp = 2
+    }
+
+    object Clipboard {
+        const val GridGapDp = 6
+        const val EntryStartPaddingDp = 22
+        const val EntryMinimumHeightDp = 44
+        const val MarkerWidthDp = 5
+        const val MarkerHeightDp = 24
+        const val MarkerRows = 4
+        const val MarkerDotDiameterDp = 3
+        const val MarkerDotGapDp = 2
+    }
+
     object Candidate {
-        const val TextSp = 20f
-        const val ExpandedTabTextSp = 16f
         const val ExpandedRowHeightDp = 48
         const val MinimumItemWidthDp = 48
         const val HorizontalPaddingDp = 14

@@ -3,7 +3,6 @@
  */
 package org.fcitx.fcitx5.android.input.feedback
 
-import android.graphics.Color
 import android.view.View
 import android.view.Gravity
 import org.fcitx.fcitx5.android.data.InputFeedbacks
@@ -28,7 +27,7 @@ object KeyboardFeedback {
         if (!theme.isNothingStyle || view.width <= 0 || view.height <= 0) return
         val tokens = NothingDesignTokens.GestureFeedback
         val dots = NothingDotMatrixDrawable(
-            color = Color.rgb(215, 25, 33),
+            color = NothingDesignTokens.Color.AccentRed,
             columns = tokens.Columns,
             rows = tokens.Rows,
             dotDiameter = view.dp(tokens.DotDiameterDp).toFloat(),

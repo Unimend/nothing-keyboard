@@ -25,6 +25,26 @@ enum class NothingTextRole {
     SystemContent
 }
 
+/** Complete semantic text styles. Components choose a meaning, never a font or raw size. */
+enum class NothingTextStyle(
+    val role: NothingTextRole,
+    val sizeSp: Float,
+    val bold: Boolean
+) {
+    KeyPrimary(NothingTextRole.AdaptiveContent, 23f, false),
+    KeyAlternate(NothingTextRole.AdaptiveContent, 10.5f, true),
+    PopupKey(NothingTextRole.AdaptiveContent, 23f, true),
+    Candidate(NothingTextRole.AdaptiveContent, 20f, true),
+    CandidateTab(NothingTextRole.AdaptiveContent, 16f, false),
+    Preedit(NothingTextRole.AdaptiveContent, 16f, true),
+    PickerTab(NothingTextRole.AdaptiveContent, 16f, true),
+    StatusIcon(NothingTextRole.AdaptiveContent, 20f, true),
+    StatusLabel(NothingTextRole.ControlLabel, 12f, true),
+    ControlLabel(NothingTextRole.ControlLabel, 16f, true),
+    ClipboardEntry(NothingTextRole.SystemContent, 15f, false),
+    Body(NothingTextRole.SystemContent, 14f, false)
+}
+
 object NothingTypographyPolicy {
     fun usesDoto(character: Char): Boolean =
         character in 'A'..'Z' || character in 'a'..'z' || character in '0'..'9'
@@ -89,7 +109,7 @@ class NothingTypefaceSpan(private val newTypeface: Typeface) : MetricAffectingSp
  * system-font baseline and receives Doto spans only over Latin letters and digits, so mixed text
  * never forces CJK or punctuation through the pixel font.
  */
-fun TextView.applyNothingTextRole(
+private fun TextView.applyNothingTextRole(
     theme: Theme,
     role: NothingTextRole,
     bold: Boolean = true
@@ -139,4 +159,26 @@ fun TextView.applyNothingTextRole(
             text = styled
         }
     }
+}
+
+fun TextView.applyNothingTextStyle(
+    theme: Theme,
+    style: NothingTextStyle,
+    sizeSp: Float? = style.sizeSp,
+    bold: Boolean = style.bold
+) {
+    if (sizeSp != null) textSize = sizeSp
+    applyNothingTextRole(theme, style.role, bold)
+}
+
+/** Sets dynamic content and reapplies its complete semantic style in the required order. */
+fun TextView.setNothingText(
+    value: CharSequence,
+    theme: Theme,
+    style: NothingTextStyle,
+    sizeSp: Float? = style.sizeSp,
+    bold: Boolean = style.bold
+) {
+    text = value
+    applyNothingTextStyle(theme, style, sizeSp, bold)
 }

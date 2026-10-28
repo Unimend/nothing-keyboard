@@ -9,8 +9,9 @@ import android.view.View
 import androidx.core.view.isVisible
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
+import org.fcitx.fcitx5.android.input.design.setNothingText
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.after
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -35,10 +36,9 @@ class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
     }
 
     private val titleText = textView {
-        applyNothingTextRole(theme, NothingTextRole.ControlLabel)
+        applyNothingTextStyle(theme, NothingTextStyle.ControlLabel)
         setTextColor(theme.altKeyTextColor)
         gravity = gravityVerticalCenter
-        textSize = 16f
     }
 
     private var extension: View? = null
@@ -63,8 +63,7 @@ class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
     }
 
     fun setTitle(title: String) {
-        titleText.text = title
-        titleText.applyNothingTextRole(theme, NothingTextRole.ControlLabel)
+        titleText.setNothingText(title, theme, NothingTextStyle.ControlLabel)
         backButton.isVisible = true
         titleText.isVisible = true
     }

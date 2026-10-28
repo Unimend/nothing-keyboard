@@ -20,9 +20,8 @@ import androidx.recyclerview.widget.RecyclerView
 import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
-import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -91,7 +90,6 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
 
         private val label = view(::AutoScaleTextView) {
             scaleMode = AutoScaleTextView.Mode.Proportional
-            textSize = NothingDesignTokens.Candidate.ExpandedTabTextSp
             isSingleLine = true
             gravity = gravityCenter
             setTextColor(theme.candidateTextColor)
@@ -112,8 +110,7 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
             }
 
         fun update(tab: EngineCandidateAction) {
-            label.text = tab.text
-            label.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
+            label.setNothingText(tab.text, theme, NothingTextStyle.CandidateTab)
             checkable = tab.checkable
             root.isActivated = tab.checked
         }

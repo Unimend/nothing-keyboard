@@ -12,8 +12,8 @@ import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
 import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.shadowedKeyBackgroundDrawable
 import org.fcitx.fcitx5.android.input.keyboard.insetRadiusDrawable
@@ -91,7 +91,7 @@ class TextEditingButton(
 
     fun setText(id: Int) {
         textView.setText(id)
-        textView.applyNothingTextRole(theme, NothingTextRole.ControlLabel)
+        textView.applyNothingTextStyle(theme, NothingTextStyle.ControlLabel, sizeSp = null)
         removeView(imageView)
         add(textView, lParams(wrapContent, wrapContent, gravityCenter))
     }

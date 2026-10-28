@@ -7,8 +7,8 @@ package org.fcitx.fcitx5.android.input.clipboard
 import android.content.Context
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingTextRole
-import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
+import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.constraintlayout.below
@@ -36,13 +36,13 @@ sealed class ClipboardInstructionUi(override val ctx: Context, protected val the
             setText(R.string.instruction_enable_clipboard_listening)
             setPaddingDp(12, 8, 12, 8)
             setTextColor(theme.keyTextColor)
-            applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
+            applyNothingTextStyle(theme, NothingTextStyle.Body, sizeSp = null)
         }
 
         val enableButton = androidStyles.button.borderless {
             setText(R.string.clipboard_enable)
             setTextColor(theme.accentKeyBackgroundColor)
-            applyNothingTextRole(theme, NothingTextRole.ControlLabel)
+            applyNothingTextStyle(theme, NothingTextStyle.ControlLabel, sizeSp = null)
         }
 
         override val root = constraintLayout {
@@ -69,7 +69,7 @@ sealed class ClipboardInstructionUi(override val ctx: Context, protected val the
         private val instructionText = textView {
             setText(R.string.instruction_copy)
             setTextColor(theme.keyTextColor)
-            applyNothingTextRole(theme, NothingTextRole.SystemContent, bold = false)
+            applyNothingTextStyle(theme, NothingTextStyle.Body, sizeSp = null)
         }
 
         override val root = constraintLayout {
