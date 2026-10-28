@@ -17,6 +17,7 @@ import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -41,6 +42,8 @@ import splitties.views.imageDrawable
 
 class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : Ui {
 
+    private val colors = theme.toInputColorScheme()
+
     private val bkgDrawable = ShapeDrawable(OvalShape())
 
     val bkg = frameLayout {
@@ -58,7 +61,7 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
     val label = textView {
         applyNothingTextStyle(theme, NothingTextStyle.StatusLabel)
         gravity = gravityCenter
-        setTextColor(theme.keyTextColor)
+        setTextColor(colors.keyContent)
     }
 
     override val root = object : CustomGestureView(ctx) {
@@ -87,8 +90,7 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
     }
 
     fun setEntry(entry: StatusAreaEntry) {
-        val contentColor =
-            if (entry.active) theme.genericActiveForegroundColor else theme.keyTextColor
+        val contentColor = if (entry.active) colors.activeContent else colors.keyContent
         if (entry.icon != 0) {
             icon.visibility = View.VISIBLE
             textIcon.visibility = View.GONE
@@ -104,7 +106,7 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
             textIcon.setTextColor(contentColor)
         }
         bkgDrawable.paint.color =
-            if (entry.active) theme.genericActiveBackgroundColor else theme.keyBackgroundColor
+            if (entry.active) colors.activeContainer else colors.keyContainer
         label.setNothingText(entry.label, theme, NothingTextStyle.StatusLabel)
     }
 

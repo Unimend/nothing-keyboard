@@ -19,6 +19,7 @@ import org.fcitx.fcitx5.android.input.keyboard.ImageActionKey
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
 import org.fcitx.fcitx5.android.input.keyboard.ReturnKey
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.utils.setVerticalScrollbarThumbColor
 import org.fcitx.fcitx5.android.utils.singleSideBorderDrawable
 import splitties.dimensions.dp
@@ -40,6 +41,8 @@ import splitties.views.imageResource
 
 @SuppressLint("ViewConstructor")
 class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout(context) {
+
+    private val colors = theme.toInputColorScheme()
 
     class Keyboard(context: Context, theme: Theme) : BaseKeyboard(context, theme, Layout) {
         companion object {
@@ -101,7 +104,7 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
         // always show scrollbar
         isScrollbarFadingEnabled = false
         scrollBarSize = dp(1)
-        setVerticalScrollbarThumbColor(theme.candidateTextColor)
+        setVerticalScrollbarThumbColor(colors.candidateContent)
     }
 
     val pinnedTabs = recyclerView {
@@ -126,11 +129,11 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
         val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val inset = dp(if (landscape) keyVerticalMarginLandscape else keyVerticalMargin)
         tabsContainer.background =
-            singleSideBorderDrawable(dp(1), theme.dividerColor, Gravity.RIGHT, inset)
+            singleSideBorderDrawable(dp(1), colors.divider, Gravity.RIGHT, inset)
         if (!keyBorder) {
-            backgroundColor = theme.barColor
+            backgroundColor = colors.barSurface
             embeddedKeyboard.background =
-                singleSideBorderDrawable(dp(1), theme.dividerColor, Gravity.LEFT, inset)
+                singleSideBorderDrawable(dp(1), colors.divider, Gravity.LEFT, inset)
         }
 
         add(tabsContainer, lParams {

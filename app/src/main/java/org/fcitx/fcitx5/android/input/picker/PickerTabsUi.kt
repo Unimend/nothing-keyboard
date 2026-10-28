@@ -10,6 +10,7 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import org.fcitx.fcitx5.android.utils.rippleDrawable
@@ -29,6 +30,8 @@ import splitties.views.gravityCenter
 
 class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
 
+    private val colors = theme.toInputColorScheme()
+
     companion object {
         val keyRipple by ThemeManager.prefs.keyRippleEffect
     }
@@ -39,7 +42,7 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
         var position: Int = -1
 
         val label = textView {
-            setTextColor(theme.keyTextColor)
+            setTextColor(colors.keyContent)
         }
 
         override val root = view(::CustomGestureView) {
@@ -47,9 +50,9 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
                 gravity = gravityCenter
             })
             if (keyRipple) {
-                background = rippleDrawable(theme.keyPressHighlightColor)
+                background = rippleDrawable(colors.pressed)
             } else {
-                foreground = pressHighlightDrawable(theme.keyPressHighlightColor)
+                foreground = pressHighlightDrawable(colors.pressed)
             }
             setOnClickListener {
                 onTabClick(this@TabUi)
@@ -61,7 +64,7 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
         }
 
         fun setActive(active: Boolean) {
-            val color = theme.keyTextColor.alpha(if (active) 1f else 0.5f)
+            val color = colors.keyContent.alpha(if (active) 1f else 0.5f)
             label.setTextColor(color)
         }
     }

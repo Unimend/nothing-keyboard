@@ -32,6 +32,7 @@ import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
@@ -59,6 +60,8 @@ import kotlin.math.roundToInt
 
 abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearance) :
     CustomGestureView(ctx) {
+
+    protected val colors = theme.toInputColorScheme()
 
     val bordered: Boolean
     val borderStroke: Boolean
@@ -127,17 +130,17 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
         // key border
         if ((bordered && def.border != Border.Off) || def.border == Border.On) {
             val bkgColor = when (def.variant) {
-                Variant.Normal, Variant.AltForeground -> theme.keyBackgroundColor
-                Variant.Alternative -> theme.altKeyBackgroundColor
-                Variant.Accent -> theme.accentKeyBackgroundColor
+                Variant.Normal, Variant.AltForeground -> colors.keyContainer
+                Variant.Alternative -> colors.alternateKeyContainer
+                Variant.Accent -> colors.accentContainer
             }
             val borderOrShadowWidth = dp(1)
             // background: key border
             appearanceView.background = if (borderStroke) borderedKeyBackgroundDrawable(
-                bkgColor, theme.keyShadowColor,
+                bkgColor, colors.shadow,
                 radius, borderOrShadowWidth, hMargin, vMargin
             ) else shadowedKeyBackgroundDrawable(
-                bkgColor, theme.keyShadowColor,
+                bkgColor, colors.shadow,
                 radius, borderOrShadowWidth, hMargin, vMargin
             )
             // foreground: press highlight or ripple
@@ -155,7 +158,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
     private fun setupPressHighlight(mask: Drawable? = null) {
         appearanceView.foreground = if (rippled) {
             RippleDrawable(
-                ColorStateList.valueOf(theme.keyPressHighlightColor), null,
+                ColorStateList.valueOf(colors.pressed), null,
                 // ripple should be masked with an opaque color
                 mask ?: highlightMaskDrawable(Color.WHITE)
             )
@@ -164,7 +167,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 addState(
                     intArrayOf(android.R.attr.state_pressed),
                     borderedKeyBackgroundDrawable(
-                        Color.TRANSPARENT, theme.keyShadowColor,
+                        Color.TRANSPARENT, colors.shadow,
                         radius, dp(2), hMargin, vMargin
                     )
                 )
@@ -174,7 +177,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 addState(
                     intArrayOf(android.R.attr.state_pressed),
                     // use mask drawable as highlight directly
-                    mask ?: highlightMaskDrawable(theme.keyPressHighlightColor)
+                    mask ?: highlightMaskDrawable(colors.pressed)
                 )
             }
         }
@@ -225,7 +228,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 val hInset = dp(10)
                 val vInset = if (h < minHeight) 0 else min((h - minHeight) / 2, dp(16))
                 appearanceView.background = insetRadiusDrawable(
-                    hInset, vInset, bkgRadius, theme.spaceBarColor
+                    hInset, vInset, bkgRadius, colors.spaceContainer
                 )
                 // InsetDrawable sets padding to container view; remove padding to prevent text from bing clipped
                 appearanceView.padding = 0
@@ -233,7 +236,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 setupPressHighlight(
                     insetRadiusDrawable(
                         hInset, vInset, bkgRadius,
-                        if (rippled) Color.WHITE else theme.keyPressHighlightColor
+                        if (rippled) Color.WHITE else colors.pressed
                     )
                 )
             }
@@ -242,12 +245,12 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 val hInset = (w - drawableSize) / 2
                 val vInset = (h - drawableSize) / 2
                 appearanceView.background = insetOvalDrawable(
-                    hInset, vInset, theme.accentKeyBackgroundColor
+                    hInset, vInset, colors.accentContainer
                 )
                 appearanceView.padding = 0
                 setupPressHighlight(
                     insetOvalDrawable(
-                        hInset, vInset, if (rippled) Color.WHITE else theme.keyPressHighlightColor
+                        hInset, vInset, if (rippled) Color.WHITE else colors.pressed
                     )
                 )
             }
@@ -275,9 +278,9 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
         )
         setTextColor(
             when (def.variant) {
-                Variant.Normal -> theme.keyTextColor
-                Variant.AltForeground, Variant.Alternative -> theme.altKeyTextColor
-                Variant.Accent -> theme.accentKeyTextColor
+                Variant.Normal -> colors.keyContent
+                Variant.AltForeground, Variant.Alternative -> colors.alternateKeyContent
+                Variant.Accent -> colors.accentContent
             }
         )
     }
@@ -290,7 +293,7 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
             if (visualStyle.showSpaceIndicator && def.viewId == R.id.button_space) {
                 add(view(::View).apply {
                     background = NothingDotMatrixDrawable(
-                        color = theme.altKeyTextColor,
+                        color = colors.alternateKeyContent,
                         columns = NothingDesignTokens.Keyboard.SpaceIndicatorColumns,
                         rows = 1,
                         dotDiameter = dp(
@@ -329,8 +332,9 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         setTextColor(
             when (def.variant) {
-                Variant.Normal, Variant.AltForeground, Variant.Alternative -> theme.altKeyTextColor
-                Variant.Accent -> theme.accentKeyTextColor
+                Variant.Normal, Variant.AltForeground, Variant.Alternative ->
+                    colors.alternateKeyContent
+                Variant.Accent -> colors.accentContent
             }
         )
     }
@@ -440,11 +444,12 @@ class ImageKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Image) :
 private fun ImageView.configure(theme: Theme, @DrawableRes src: Int, variant: Variant) = apply {
     isClickable = false
     isFocusable = false
+    val colors = theme.toInputColorScheme()
     imageTintList = ColorStateList.valueOf(
         when (variant) {
-            Variant.Normal -> theme.keyTextColor
-            Variant.AltForeground, Variant.Alternative -> theme.altKeyTextColor
-            Variant.Accent -> theme.accentKeyTextColor
+            Variant.Normal -> colors.keyContent
+            Variant.AltForeground, Variant.Alternative -> colors.alternateKeyContent
+            Variant.Accent -> colors.accentContent
         }
     )
     imageResource = if (theme.isNothingStyle) NothingGlyphRegistry.resolve(src) else src

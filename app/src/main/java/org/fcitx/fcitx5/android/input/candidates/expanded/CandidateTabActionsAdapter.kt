@@ -22,6 +22,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -88,11 +89,13 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
         val indicatorStyle: Boolean = false
     ) : Ui {
 
+        private val colors = theme.toInputColorScheme()
+
         private val label = view(::AutoScaleTextView) {
             scaleMode = AutoScaleTextView.Mode.Proportional
             isSingleLine = true
             gravity = gravityCenter
-            setTextColor(theme.candidateTextColor)
+            setTextColor(colors.candidateContent)
         }
 
         override val root = view(::CustomGestureView) {
@@ -117,10 +120,10 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
 
         private fun createBackground(checkable: Boolean, indicatorStyle: Boolean): Drawable {
             if (!checkable) {
-                return pressHighlightDrawable(theme.keyPressHighlightColor)
+                return pressHighlightDrawable(colors.pressed)
             }
             if (!indicatorStyle) {
-                val highlight = ColorDrawable(theme.keyPressHighlightColor)
+                val highlight = ColorDrawable(colors.pressed)
                 return StateListDrawable().apply {
                     addState(intArrayOf(android.R.attr.state_pressed), highlight)
                     addState(intArrayOf(android.R.attr.state_activated), highlight)
@@ -130,16 +133,16 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
                 intArrayOf(android.R.attr.state_activated),
                 intArrayOf()
             )
-            val colors = intArrayOf(
-                theme.accentKeyBackgroundColor,
-                theme.altKeyBackgroundColor
+            val stateColors = intArrayOf(
+                colors.accentContainer,
+                colors.alternateKeyContainer
             )
             return LayerDrawable(
                 arrayOf(
                     ShapeDrawable(RectShape()).apply {
-                        setTintList(ColorStateList(states, colors))
+                        setTintList(ColorStateList(states, stateColors))
                     },
-                    pressHighlightDrawable(theme.keyPressHighlightColor)
+                    pressHighlightDrawable(colors.pressed)
                 )
             ).apply {
                 setLayerSize(0, ctx.dp(11), ctx.dp(2))

@@ -95,6 +95,11 @@ Input surfaces consume `InputColorScheme` roles rather than the persisted `Theme
 container/content, alternate, accent, pressed, candidate and active-state meanings stable even if
 theme storage or the Nothing palette changes later.
 
+The palette migration now covers the core key renderer, candidate rows and tabs, clipboard and
+editing controls, picker navigation, preedit, popup key previews and status entries. Direct Theme
+color access remains acceptable only at platform-owned surfaces (inline autofill templates,
+navigation-bar coloring and Android dialogs) or inside the Theme-to-palette adapter itself.
+
 The session's general write API is private to the Service composition root and store. Ordinary
 surfaces receive a reader, not a mutable store. Each producer receives only its own sink: engine
 events, surface changes, or punctuation maps. A new producer must not regain general dispatch.

@@ -20,6 +20,7 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.design.renderEngineText
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -33,6 +34,8 @@ open class PreeditUi(
     private val setupTextView: (TextView.() -> Unit)? = null
 ) : Ui {
 
+    private val colors = theme.toInputColorScheme()
+
     class CursorSpan(ctx: Context, @ColorInt color: Int, metrics: Paint.FontMetricsInt) :
         DynamicDrawableSpan() {
         private val drawable = ShapeDrawable(RectShape()).apply {
@@ -44,11 +47,11 @@ open class PreeditUi(
     }
 
     private val cursorSpan by lazy {
-        CursorSpan(ctx, theme.keyTextColor, upView.paint.fontMetricsInt)
+        CursorSpan(ctx, colors.keyContent, upView.paint.fontMetricsInt)
     }
 
     private fun createTextView() = textView {
-        setTextColor(theme.keyTextColor)
+        setTextColor(colors.keyContent)
         applyNothingTextStyle(theme, NothingTextStyle.Preedit)
         setupTextView?.invoke(this)
     }
@@ -72,7 +75,7 @@ open class PreeditUi(
     }
 
     fun update(inputPanel: EngineInputPanel) {
-        val activeBkg = theme.genericActiveBackgroundColor
+        val activeBkg = colors.activeContainer
         val upString: SpannedString
         val upCursor: Int
         if (inputPanel.auxiliaryUp.isEmpty) {

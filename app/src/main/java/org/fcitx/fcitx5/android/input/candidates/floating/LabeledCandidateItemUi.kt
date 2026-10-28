@@ -14,6 +14,7 @@ import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import splitties.views.backgroundColor
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.textView
@@ -24,14 +25,16 @@ class LabeledCandidateItemUi(
     setupTextView: TextView.() -> Unit
 ) : Ui {
 
+    private val colors = theme.toInputColorScheme()
+
     override val root = textView {
         setupTextView(this)
     }
 
     fun update(candidate: EngineCandidate, active: Boolean) {
-        val labelFg = if (active) theme.genericActiveForegroundColor else theme.candidateLabelColor
-        val fg = if (active) theme.genericActiveForegroundColor else theme.candidateTextColor
-        val altFg = if (active) theme.genericActiveForegroundColor else theme.candidateCommentColor
+        val labelFg = if (active) colors.activeContent else colors.candidateMarker
+        val fg = if (active) colors.activeContent else colors.candidateContent
+        val altFg = if (active) colors.activeContent else colors.candidateComment
         root.text = buildSpannedString {
             color(labelFg) {
                 append(candidate.label)
@@ -49,7 +52,7 @@ class LabeledCandidateItemUi(
             }
         }
         root.applyNothingTextStyle(theme, NothingTextStyle.Candidate, sizeSp = null)
-        val bg = if (active) theme.genericActiveBackgroundColor else Color.TRANSPARENT
+        val bg = if (active) colors.activeContainer else Color.TRANSPARENT
         root.backgroundColor = bg
     }
 }

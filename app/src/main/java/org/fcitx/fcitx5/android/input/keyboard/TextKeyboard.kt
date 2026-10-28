@@ -22,6 +22,7 @@ import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupResult
 import splitties.views.imageResource
@@ -33,6 +34,7 @@ class TextKeyboard(
 ) : BaseKeyboard(context, theme, Layout) {
 
     private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
+    private val colors = theme.toInputColorScheme()
 
     enum class CapsState { None, Once, Lock }
 
@@ -269,8 +271,8 @@ class TextKeyboard(
             }
             if (theme.isNothingStyle) {
                 imageTintList = ColorStateList.valueOf(
-                    if (capsState == CapsState.None) theme.keyTextColor
-                    else theme.accentKeyBackgroundColor
+                    if (capsState == CapsState.None) colors.keyContent
+                    else colors.accentContainer
                 )
                 animate().cancel()
                 if (disableAnimation) {
