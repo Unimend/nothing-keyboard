@@ -225,3 +225,15 @@ and worker-thread publication use different threads.
 Policy tests cover timestamp-vs-ID order, tied timestamps and boundary limits. An in-memory SQLite
 predicate check retained pinned and pending-undo rows during retention, and finalized only the
 explicit marked row. No device history was used for these checks.
+
+## Android window sizing boundary
+
+`AndroidImeWindowLayout` owns full-window sizing and content/touch insets. `ImeInsetsPolicy`
+provides tested geometry for virtual/hardware keyboards, missing keyboard views and invalid transient
+dimensions. Service delegates instead of retaining a last keyboard coordinate array. Missing geometry
+falls back to the current window bottom rather than stale coordinates.
+
+Latest APK device checks: portrait English `abc` input succeeded; hiding the keyboard expanded the
+diagnostic editor from [0,1831][1440,2058] to [0,2837][1440,3064]. Landscape recreation reported
+READY=true and Keyboard surface at rotation=1. Portrait and the original free-rotation setting were
+restored; crash buffer remained empty. Physical keyboard/floating-candidate geometry is still untested.

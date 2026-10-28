@@ -50,6 +50,7 @@ import org.fcitx.fcitx5.android.input.engine.AndroidKeyEventController
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionRequestFactory
+import org.fcitx.fcitx5.android.input.wm.AndroidImeWindowLayout
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
@@ -298,47 +299,20 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         return null
     }
 
+    private val windowLayout = AndroidImeWindowLayout()
+
     override fun setInputView(view: View) {
         super.setInputView(view)
-        // input method layout has not changed in 11 years:
-        // https://android.googlesource.com/platform/frameworks/base/+/ae3349e1c34f7aceddc526cd11d9ac44951e97b6/core/res/res/layout/input_method.xml
-        // expand inputArea to fullscreen
-        contentView.findViewById<FrameLayout>(android.R.id.inputArea)
-            .updateLayoutParams<ViewGroup.LayoutParams> {
-                height = ViewGroup.LayoutParams.MATCH_PARENT
-            }
-        /**
-         * expand InputView to fullscreen, since [android.inputmethodservice.InputMethodService.setInputView]
-         * would set InputView's height to [ViewGroup.LayoutParams.WRAP_CONTENT]
-         */
-        view.updateLayoutParams<ViewGroup.LayoutParams> {
-            height = ViewGroup.LayoutParams.MATCH_PARENT
-        }
+        windowLayout.expandInputArea(contentView, view)
     }
 
     override fun onConfigureWindow(win: Window, isFullscreen: Boolean, isCandidatesOnly: Boolean) {
-        win.setLayout(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        windowLayout.configure(win)
     }
 
-    private var inputViewLocation = intArrayOf(0, 0)
-
     override fun onComputeInsets(outInsets: Insets) {
-        if (inputDeviceMgr.isVirtualKeyboard) {
-            inputView?.keyboardView?.getLocationInWindow(inputViewLocation)
-            outInsets.apply {
-                contentTopInsets = inputViewLocation[1]
-                visibleTopInsets = inputViewLocation[1]
-                touchableInsets = Insets.TOUCHABLE_INSETS_VISIBLE
-            }
-        } else {
-            val n = decorView.findViewById<View>(android.R.id.navigationBarBackground)?.height ?: 0
-            val h = decorView.height - n
-            outInsets.apply {
-                contentTopInsets = h
-                visibleTopInsets = h
-                touchableInsets = Insets.TOUCHABLE_INSETS_VISIBLE
-            }
-        }
+        windowLayout.computeInsets(outInsets, inputDeviceMgr.isVirtualKeyboard,
+            inputView?.keyboardView, decorView)
     }
 
     // always show InputView since we delegate CandidatesView's visibility to it

@@ -11,6 +11,16 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `service delegates content and touch insets to window adapter`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertFalse("inputViewLocation" in source)
+        assertFalse("touchableInsets =" in source)
+        assertTrue("windowLayout.computeInsets" in source)
+    }
+
+    @Test
     fun `candidate and punctuation controllers require narrow ports not Android service`() {
         listOf("candidates/interaction/CandidateCommands.kt",
             "candidates/interaction/CandidateInteractionController.kt",
