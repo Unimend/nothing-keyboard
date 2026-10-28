@@ -65,59 +65,146 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 17. Popups | PopupAction / PopupResult + PopupComponent | Geometry ownership and configuration changes |
 | 18. Settings, persistence and diagnostics | AppPrefs/data layer + InputCoreDiagnostics/tests | Settings/data ownership is not yet fully audited |
 
-### Current architecture tree and completion state
+### 当前完整架构树与完成状态
 
-Legend: `✅` means the responsibility has one owner and ordinary production paths use the new
-contract; `🟡` means the boundary exists but migration, platform cases or visual coverage remains;
-`⬜` means the responsibility has not entered a dedicated refactor phase. Completion here describes
-architecture ownership, not a claim that every third-party editor and Android version is tested.
+标记含义：`✅ 已完成`表示该责任已有唯一所有者，普通生产路径已统一使用新接口；
+`🟡 进行中`表示边界已经建立，但仍有迁移、平台兼容或实机矩阵需要收尾；
+`⬜ 未开始`表示尚未进入专项重构。这里的“完成”指架构责任完成，不代表所有 Android
+版本、第三方输入框和极端设备条件均已验证。
 
 ```text
-Nothing Keyboard
-├── Android / Fcitx boundary
-│   ├── 🟡 Android lifecycle and device presentation
-│   ├── ✅ Fcitx engine command/effect bridge
-│   ├── ✅ Serialized engine command queue
-│   └── 🟡 Editor capability and platform compatibility policy
+Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
 │
-├── Input core
-│   ├── ✅ Input session snapshot and scoped sinks
-│   ├── ✅ Editor state, composition and cursor controller
-│   ├── ✅ Semantic software/hardware key commands
-│   ├── ✅ Input mode store
-│   └── ✅ Candidate model, paging, selection and interaction
+├── 平台与引擎层
+│   │
+│   ├── 01. 🟡 Android 生命周期系统
+│   │   ├── 输入法 Service 组合根
+│   │   ├── 输入视图开始 / 结束事务
+│   │   ├── 设备模式与硬件键盘显示策略
+│   │   ├── Insets、导航栏与光标锚点
+│   │   └── 待完成：继续隔离少量设备/窗口编排与实机矩阵
+│   │
+│   ├── 02. ✅ 输入会话与状态系统
+│   │   ├── InputSessionStore：唯一可变状态所有者
+│   │   ├── InputSessionReader：界面只读入口
+│   │   ├── Engine / Surface / Punctuation 独立窄写入端口
+│   │   └── 不再允许旧广播或普通界面直接修改会话
+│   │
+│   ├── 03. ✅ Fcitx 引擎集成系统
+│   │   ├── EngineCommandPort：语义命令边界
+│   │   ├── InputEngineQueries：只读查询边界
+│   │   ├── EngineEffect：引擎输出模型
+│   │   ├── FcitxEngineCommandAdapter：唯一协议适配器
+│   │   └── SerialCommandQueue：保证命令顺序
+│   │
+│   └── 04. 🟡 编辑器能力与平台兼容系统
+│       ├── EditorCapability：输入框能力模型
+│       ├── Android 编辑器策略与原生适配器
+│       ├── 密码、单行、动作键、选区能力判断
+│       └── 待完成：密码框、定制编辑器和设备兼容矩阵
 │
-├── Editing and interaction
-│   ├── ✅ Shared editing command port
-│   ├── ✅ Delete/range-delete/clear/undo transaction system
-│   ├── 🟡 Clipboard history, mutations and platform collection
-│   ├── ✅ Gesture recognition and shared semantic bindings
-│   └── ✅ Navigation commands and input-window ownership
+├── 输入核心层
+│   │
+│   ├── 05. ✅ 组合文本、光标与编辑器状态系统
+│   │   ├── EditorController：唯一状态协调者
+│   │   ├── 拼音预编辑、候选提交与原始文本提交
+│   │   ├── 光标、选区与 composing range 对齐
+│   │   └── 引擎效果与 Android InputConnection 的隔离
+│   │
+│   ├── 06. ✅ 按键命令与硬件键系统
+│   │   ├── EngineKey / EngineKeyModifier：语义按键
+│   │   ├── 软件键统一动作入口
+│   │   ├── AndroidKeyEventController：硬件键入口
+│   │   └── Return、删除、符号和语言键不再直接调用旧 API
+│   │
+│   ├── 07. ✅ 输入模式系统
+│   │   ├── InputModeStore：唯一模式状态所有者
+│   │   ├── 拼音 / 英文 / 符号 / Picker 模式
+│   │   └── 跨界面模式切换通过统一命令完成
+│   │
+│   └── 08. ✅ 候选数据与选择系统
+│       ├── 候选快照与稳定索引模型
+│       ├── 横向连续滚动与增量加载
+│       ├── 展开候选、浮动候选与候选操作
+│       ├── CandidateInteractionController：唯一交互入口
+│       └── 候选测量与渲染共享相同文本模型
 │
-├── Visual system
-│   ├── ✅ Typography roles and mixed Doto/system-font rendering
-│   ├── ✅ Functional glyph registry
-│   ├── ✅ Semantic surface geometry and design tokens
-│   ├── 🟡 Semantic color roles (main surfaces complete; platform edges under audit)
-│   ├── 🟡 Motion roles and feedback (timing centralized; choreography remains)
-│   └── 🟡 Popups (actions/results complete; remaining geometry/configuration audit)
+├── 编辑与交互层
+│   │
+│   ├── 09. ✅ 删除、选区与撤回系统
+│   │   ├── EditingCommandPort：所有界面统一命令入口
+│   │   ├── DestructiveEditingController：唯一执行者
+│   │   ├── 普通删除、选区删除、范围滑动删除、清空全部
+│   │   ├── DestructiveEditHistory：键盘自己的撤回历史
+│   │   └── 恢复后强制折叠光标，不恢复旧选区
+│   │
+│   ├── 10. 🟡 剪贴板系统
+│   │   ├── ClipboardInteractionController
+│   │   ├── ClipboardHistory / ClipboardMutations 独立端口
+│   │   ├── 列表、固定、删除、批量删除与撤回
+│   │   └── 待完成：平台采集、保留策略和设置归属审计
+│   │
+│   ├── 11. ✅ 界面导航与窗口系统
+│   │   ├── InputNavigator：用户导航命令唯一入口
+│   │   ├── InputWindowManager：窗口创建、切换与销毁
+│   │   ├── 键盘 / 编辑 / 剪贴板 / Picker / 展开候选
+│   │   └── 界面不能再直接构造并挂载其他界面
+│   │
+│   └── 12. ✅ 手势系统
+│       ├── KeyboardGesturePolicy：阈值与动作判定
+│       ├── BackspaceGestureController：全界面共享删除手势
+│       ├── 上滑清空、下滑撤回、横滑范围删除
+│       ├── 空格滑动与快捷工具手势
+│       └── 手势识别、语义动作和视觉反馈彼此分离
 │
-├── Surfaces
-│   ├── ✅ Main keyboard and candidate rail
-│   ├── ✅ Expanded/floating candidates
-│   ├── ✅ Editing panel
-│   ├── ✅ Clipboard and picker/Emoji surfaces
-│   └── ✅ Preedit, status and toolbar surfaces
+├── 视觉系统层
+│   │
+│   ├── 13. ✅ 字体系统
+│   │   ├── NothingTextRole / NothingTextStyle
+│   │   ├── Doto：英文、数字和控制标签
+│   │   ├── 系统字体：中文、通用符号与用户内容
+│   │   ├── 同一文本中的混合字体 Span
+│   │   └── 测量和绘制保持完全相同的字体规则
+│   │
+│   ├── 14. ✅ 功能图标系统
+│   │   ├── NothingGlyphRegistry：唯一图标映射表
+│   │   ├── 删除、回车、发送、Shift、语言和工具图标
+│   │   ├── ReturnKeyGlyphPolicy：按编辑器语义选择图标
+│   │   └── 未定制图标明确回退原资源，不在界面私自替换
+│   │
+│   ├── 15. 🟡 布局、主题与颜色系统
+│   │   ├── NothingDesignTokens：基础设计令牌
+│   │   ├── InputSurfaceStyle：各类界面的完整语义几何
+│   │   ├── InputColorScheme：输入界面专用颜色角色
+│   │   ├── Theme → InputColorScheme：旧主题唯一兼容入口
+│   │   ├── 主键盘、候选、编辑、剪贴板、Picker、弹窗已接入
+│   │   └── 待完成：少量平台边界与散落尺寸/偏好审计
+│   │
+│   ├── 16. 🟡 动画与反馈系统
+│   │   ├── InputMotionRole：语义动效类型
+│   │   ├── InputMotionPolicy：统一时长与禁用策略
+│   │   ├── KeyboardFeedback：点阵反馈与触觉反馈入口
+│   │   └── 待完成：界面局部 Animator 清理与整体动画编排
+│   │
+│   └── 17. 🟡 弹窗系统
+│       ├── PopupAction / PopupResult：弹窗语义模型
+│       ├── PopupComponent：弹窗生命周期所有者
+│       ├── 长按字符、按键菜单和候选菜单
+│       └── 待完成：几何计算、屏幕边缘与配置变化审计
 │
-└── Application support
-    ├── 🟡 Settings and preference ownership
-    ├── 🟡 Persistence/data retention policy
-    └── ✅ Input-core diagnostics and architecture regression tests
+└── 应用支持层
+    │
+    └── 18. 🟡 设置、持久化与诊断系统
+        ├── AppPrefs：现有设置存储入口
+        ├── 数据保留与迁移策略
+        ├── InputCoreDiagnostics：输入核心诊断页
+        ├── 架构回归测试与纯策略单元测试
+        └── 待完成：设置职责、持久化边界和诊断入口整体审计
 ```
 
-The next completion targets are semantic color platform edges, popup geometry, and then motion
-choreography. Android lifecycle and settings remain separate later phases; they are not mixed into
-the visual upgrade merely to increase the number of green items.
+当前共计：`11 个已完成`、`7 个进行中`、`0 个未开始`。下一批优先完成 15 号视觉
+系统的剩余边界，然后处理 17 号弹窗几何与 16 号动画编排；Android 生命周期和设置
+系统保持为独立后续阶段，不为了增加绿色数量而混入当前视觉改造。
 
 ### Visual-system upgrade
 
