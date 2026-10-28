@@ -19,8 +19,6 @@ import androidx.core.text.color
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import androidx.paging.CombinedLoadStates
-import androidx.paging.Pager
-import androidx.paging.PagingConfig
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.StaggeredGridLayoutManager
@@ -30,8 +28,7 @@ import com.google.android.material.snackbar.SnackbarContentLayout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
-import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
@@ -42,6 +39,7 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.InputWindow
+import org.fcitx.fcitx5.android.input.wm.SurfaceAttachment
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.item
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
@@ -58,12 +56,22 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     private val theme by manager.theme()
     private val navigator: InputNavigator by manager.must()
     private val interaction: ClipboardInteractionController by manager.must()
+    private val history: ClipboardHistory by manager.must()
 
     private val snackbarCtx by lazy {
         context.withTheme(R.style.InputViewSnackbarTheme)
     }
     private var snackbarInstance: Snackbar? = null
     private var renderedMode: ClipboardViewMode? = null
+    private val attachment = SurfaceAttachment()
+
+    private fun <T> launchAttachedResult(operation: suspend () -> T, render: (T) -> Unit) {
+        val token = attachment.capture() ?: return
+        service.lifecycleScope.launch {
+            val result = operation()
+            if (attachment.accepts(token)) render(result)
+        }
+    }
 
     @Keep
     private val clipboardEnabledListener = ManagedPreference.OnChangeListener<Boolean> { _, it ->
@@ -79,9 +87,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
 
     private val clipboardEntryRadius by ThemeManager.prefs.clipboardEntryRadius
 
-    private val clipboardEntriesPager by lazy {
-        Pager(PagingConfig(pageSize = 16)) { ClipboardManager.allEntries() }
-    }
+    private val clipboardPages by lazy { history.pages() }
     private var adapterSubmitJob: Job? = null
 
     private val adapter: ClipboardAdapter by lazy {
@@ -102,7 +108,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
                 AppUtil.launchClipboardEdit(context, id)
             }
 
-            override fun onShare(entry: ClipboardEntry) {
+            override fun onShare(entry: ClipboardItem) {
                 val target = Intent(Intent.ACTION_SEND).apply {
                     type = "text/plain"
                     putExtra(Intent.EXTRA_TEXT, entry.text)
@@ -114,13 +120,10 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             }
 
             override fun onDelete(id: Int) {
-                service.lifecycleScope.launch {
-                    interaction.stageDelete(id)
-                    showUndoSnackbar()
-                }
+                launchAttachedResult({ interaction.stageDelete(id) }) { showUndoSnackbar() }
             }
 
-            override fun onPaste(entry: ClipboardEntry) {
+            override fun onPaste(entry: ClipboardItem) {
                 service.editingCommands.execute(EditingCommand.CommitText(entry.text))
                 if (clipboardReturnAfterPaste) {
                     navigator.navigate(InputNavigationCommand.ShowKeyboard())
@@ -155,19 +158,14 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
                     val position = viewHolder.bindingAdapterPosition
                     if (position == RecyclerView.NO_POSITION) return
                     val entry = adapter.getEntryAt(position) ?: return
-                    service.lifecycleScope.launch {
-                        interaction.stageDelete(entry.id)
-                        showUndoSnackbar()
-                    }
+                    launchAttachedResult({ interaction.stageDelete(entry.id) }) { showUndoSnackbar() }
                 }
             }).attachToRecyclerView(recyclerView)
             enableUi.enableButton.setOnClickListener {
                 clipboardEnabledPref.setValue(true)
             }
             deleteAllButton.setOnClickListener {
-                service.lifecycleScope.launch {
-                    promptDeleteAll(interaction.haveUnpinned())
-                }
+                launchAttachedResult({ interaction.haveUnpinned() }) { promptDeleteAll(it) }
             }
         }
     }
@@ -188,10 +186,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             }).isEnabled = false
             menu.add(android.R.string.cancel)
             menu.item(android.R.string.ok) {
-                service.lifecycleScope.launch {
-                    interaction.stageDeleteAll(skipPinned)
-                    showUndoSnackbar()
-                }
+                launchAttachedResult({ interaction.stageDeleteAll(skipPinned) }) { showUndoSnackbar() }
             }
             setOnDismissListener {
                 if (it === promptMenu) promptMenu = null
@@ -216,9 +211,9 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             }
             .addCallback(object : Snackbar.Callback() {
                 override fun onDismissed(transientBottomBar: Snackbar, event: Int) {
-                    if (snackbarInstance === transientBottomBar) {
-                        snackbarInstance = null
-                    }
+                    // A replaced or detached snackbar cannot finalize the newer undo batch.
+                    if (snackbarInstance !== transientBottomBar) return
+                    snackbarInstance = null
                     when (event) {
                         BaseCallback.DISMISS_EVENT_SWIPE,
                         BaseCallback.DISMISS_EVENT_MANUAL,
@@ -250,15 +245,16 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     }
 
     override fun onAttached() {
+        attachment.attach()
         renderedMode = null
-        val isEmpty = ClipboardManager.itemCount == 0
+        val isEmpty = history.itemCount == 0
         val isListening = clipboardEnabledPref.getValue()
         interaction.setListeningEnabled(isListening)
         interaction.setContentEmpty(isEmpty)
         renderViewMode()
         adapter.addLoadStateListener(loadStateListener)
         adapterSubmitJob = service.lifecycleScope.launch {
-            clipboardEntriesPager.flow.collect {
+            clipboardPages.collect {
                 adapter.submitData(it)
             }
         }
@@ -266,6 +262,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     }
 
     override fun onDetached() {
+        attachment.detach()
         clipboardEnabledPref.unregisterOnChangeListener(clipboardEnabledListener)
         adapter.onDetached()
         adapterSubmitJob?.cancel()

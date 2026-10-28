@@ -140,6 +140,10 @@ object ClipboardManager : ClipboardManager.OnPrimaryClipChangedListener,
         clbDao.realDelete()
     }
 
+    suspend fun finalizeDeleted(ids: IntArray) {
+        if (ids.isNotEmpty()) clbDao.finalizeDeleted(ids)
+    }
+
     suspend fun nukeTable() {
         withContext(coroutineContext) {
             clbDb.clearAllTables()

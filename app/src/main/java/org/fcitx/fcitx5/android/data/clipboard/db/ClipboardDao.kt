@@ -61,4 +61,7 @@ interface ClipboardDao {
 
     @Query("DELETE FROM ${ClipboardEntry.TABLE_NAME} WHERE deleted=1")
     suspend fun realDelete()
+
+    @Query("DELETE FROM ${ClipboardEntry.TABLE_NAME} WHERE deleted=1 AND id in (:ids)")
+    suspend fun finalizeDeleted(ids: IntArray)
 }

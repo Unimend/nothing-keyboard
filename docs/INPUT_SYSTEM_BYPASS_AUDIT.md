@@ -159,3 +159,26 @@ updates no longer manually pair begin/end. Tests cover normal completion, editor
 and editors that report batching unsupported; a source guard rejects new manual batches inside input
 systems. This closes batches on failure; it does not claim to roll back text already accepted by an
 external application's InputConnection.
+
+## Clipboard mutation and surface lifetime boundary
+
+`ClipboardInteractionController` receives `ClipboardMutationPort`; only the persistent adapter
+knows the existing storage singleton. Finalization targets explicit owned IDs instead of deleting
+every soft-deleted database row. Tests use fake storage and cover serialized delete/undo, idempotent
+finalization and failed mutations without phantom undo entries.
+
+Delayed delete/query results carry an attachment generation before rendering a menu/snackbar.
+Detached or reattached surfaces reject old results. Replaced snackbar dismissal callbacks cannot
+finalize the current batch. Database mutations still complete in the owner scope; only stale UI
+delivery is suppressed. No real device clipboard entries were deleted during these tests.
+
+The follow-up read boundary now routes paging and toolbar previews through `ClipboardHistoryPort`.
+Surfaces consume `ClipboardItem`, not Room entities; listeners return an explicit close handle.
+Only the two storage adapters may import clipboard persistence types inside input systems, enforced
+by a source guard. Existing database content and schema remain intact. Platform clipboard collection,
+retention preferences and the standalone history-edit Activity still belong to the data/settings
+side and are not claimed fully refactored by this runtime-boundary milestone.
+
+Verification: 139 unit/boundary tests passed, debug build succeeded, and the latest APK was installed.
+The diagnostic host entered Clipboard and hid the input view without a crash-buffer entry. Destructive
+clipboard cases were verified using fake storage only; no real history entries were removed.

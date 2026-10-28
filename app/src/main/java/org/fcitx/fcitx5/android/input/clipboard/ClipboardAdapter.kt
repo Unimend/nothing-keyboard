@@ -11,7 +11,7 @@ import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 import org.fcitx.fcitx5.android.utils.item
@@ -22,20 +22,20 @@ abstract class ClipboardAdapter(
     private val theme: Theme,
     private val entryRadius: Float,
     private val maskSensitive: Boolean
-) : PagingDataAdapter<ClipboardEntry, ClipboardAdapter.ViewHolder>(diffCallback) {
+) : PagingDataAdapter<ClipboardItem, ClipboardAdapter.ViewHolder>(diffCallback) {
 
     companion object {
-        private val diffCallback = object : DiffUtil.ItemCallback<ClipboardEntry>() {
+        private val diffCallback = object : DiffUtil.ItemCallback<ClipboardItem>() {
             override fun areItemsTheSame(
-                oldItem: ClipboardEntry,
-                newItem: ClipboardEntry
+                oldItem: ClipboardItem,
+                newItem: ClipboardItem
             ): Boolean {
                 return oldItem.id == newItem.id
             }
 
             override fun areContentsTheSame(
-                oldItem: ClipboardEntry,
-                newItem: ClipboardEntry
+                oldItem: ClipboardItem,
+                newItem: ClipboardItem
             ): Boolean {
                 return oldItem == newItem
             }
@@ -63,7 +63,7 @@ abstract class ClipboardAdapter(
                 if (lineBreak < 0) {
                     // no line breaks remaining, substring to end of text
                     if (mask) {
-                        append(ClipboardEntry.BULLET.repeat(excerptEnd - start))
+                        append(ClipboardItem.BULLET.repeat(excerptEnd - start))
                     } else {
                         append(str.substring(start, excerptEnd))
                     }
@@ -72,7 +72,7 @@ abstract class ClipboardAdapter(
                     val end = min(excerptEnd, lineBreak)
                     // append one line exactly
                     if (mask) {
-                        append(ClipboardEntry.BULLET.repeat(end - start))
+                        append(ClipboardItem.BULLET.repeat(end - start))
                     } else {
                         appendLine(str.substring(start, end))
                     }
@@ -144,7 +144,7 @@ abstract class ClipboardAdapter(
         popupMenu = null
     }
 
-    abstract fun onPaste(entry: ClipboardEntry)
+    abstract fun onPaste(entry: ClipboardItem)
 
     abstract fun onPin(id: Int)
 
@@ -152,7 +152,7 @@ abstract class ClipboardAdapter(
 
     abstract fun onEdit(id: Int)
 
-    abstract fun onShare(entry: ClipboardEntry)
+    abstract fun onShare(entry: ClipboardItem)
 
     abstract fun onDelete(id: Int)
 

@@ -11,6 +11,25 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `clipboard persistence types stay inside storage adapters`() {
+        val allowed = setOf("StoredClipboardHistory.kt", "StoredClipboardMutations.kt")
+        val violations = inputSources().filter {
+            it.name !in allowed && "import org.fcitx.fcitx5.android.data.clipboard." in it.readText()
+        }
+        assertTrue("Clipboard storage bypass: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `clipboard interaction owns policy without importing persistent singleton`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/clipboard/ClipboardInteractionController.kt"
+        ).readText()
+        assertFalse("ClipboardManager" in source)
+        assertTrue("ClipboardMutationPort" in source)
+        assertFalse("realDelete()" in source)
+    }
+
+    @Test
     fun `editor operations use the exception-safe batch boundary`() {
         val violations = inputSources().filter {
             Regex("""\b(beginBatchEdit|endBatchEdit)\s*\(""").containsMatchIn(it.readText())

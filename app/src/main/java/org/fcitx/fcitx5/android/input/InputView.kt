@@ -41,6 +41,9 @@ import org.fcitx.fcitx5.android.input.mode.InputModeStore
 import org.fcitx.fcitx5.android.input.engine.PunctuationController
 import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardInteractionController
+import org.fcitx.fcitx5.android.input.clipboard.StoredClipboardMutations
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardHistory
+import org.fcitx.fcitx5.android.input.clipboard.StoredClipboardHistory
 import org.fcitx.fcitx5.android.input.picker.emojiPicker
 import org.fcitx.fcitx5.android.input.picker.emoticonPicker
 import org.fcitx.fcitx5.android.input.picker.symbolPicker
@@ -125,7 +128,8 @@ class InputView(
     private val windowManager = InputWindowManager(surfaceSink)
     private val inputModeStore = InputModeStore()
     private val candidateInteraction = CandidateInteractionController()
-    private val clipboardInteraction = ClipboardInteractionController()
+    private val clipboardInteraction = ClipboardInteractionController(StoredClipboardMutations)
+    private val clipboardHistory = ClipboardHistory(StoredClipboardHistory)
     private val pickerInteractionStore = PickerInteractionStore()
     private val navigator = InputNavigator()
     private val kawaiiBar = KawaiiBarComponent()
@@ -149,6 +153,7 @@ class InputView(
         scope += inputModeStore
         scope += candidateInteraction
         scope += clipboardInteraction
+        scope += clipboardHistory
         scope += pickerInteractionStore
         scope += navigator
         scope += kawaiiBar

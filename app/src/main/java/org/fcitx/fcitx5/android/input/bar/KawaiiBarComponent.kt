@@ -31,8 +31,10 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.session.InputPresentationState
-import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
-import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardHistory
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardObservation
+import org.fcitx.fcitx5.android.input.clipboard.ClipboardUpdateListener
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
@@ -102,19 +104,22 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private var clipboardTimeoutJob: Job? = null
     private var inputScopeReady = false
+    private val clipboardHistory: ClipboardHistory by manager.must()
+    private var clipboardObservation: ClipboardObservation? = null
 
     private var toolbarState = ToolbarState()
 
     @Keep
     private val onClipboardUpdateListener =
-        ClipboardManager.OnClipboardUpdateListener {
-            if (!clipboardSuggestion.getValue()) return@OnClipboardUpdateListener
+        ClipboardUpdateListener {
+            if (!clipboardSuggestion.getValue()) return@ClipboardUpdateListener
             service.lifecycleScope.launch {
+                if (!inputScopeReady) return@launch
                 if (it.text.isEmpty()) {
                     updateToolbar(ToolbarEvent.ClipboardChanged(false))
                 } else {
                     idleUi.clipboardUi.setContent(if (it.sensitive && clipboardMaskSensitive) {
-                        ClipboardEntry.BULLET.repeat(min(42, it.text.length))
+                        ClipboardItem.BULLET.repeat(min(42, it.text.length))
                     } else {
                         it.text.take(42)
                     })
@@ -273,7 +278,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             }
             clipboardUi.suggestionView.apply {
                 setOnClickListener {
-                    ClipboardManager.lastEntry?.let {
+                    clipboardHistory.lastItem?.let {
                         service.editingCommands.execute(EditingCommand.CommitText(it.text))
                     }
                     clipboardTimeoutJob?.cancel()
@@ -281,7 +286,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                     updateToolbar(ToolbarEvent.ClipboardChanged(false))
                 }
                 setOnLongClickListener {
-                    ClipboardManager.lastEntry?.let {
+                    clipboardHistory.lastItem?.let {
                         AppUtil.launchClipboardEdit(context, it.id, true)
                     }
                     true
@@ -388,14 +393,14 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun onInputScopeReady() {
         if (inputScopeReady) return
         inputScopeReady = true
-        ClipboardManager.lastEntry?.let {
+        clipboardHistory.lastItem?.let {
             val now = System.currentTimeMillis()
             val clipboardTimeout = clipboardItemTimeout.getValue() * 1000L
             if (now - it.timestamp < clipboardTimeout) {
                 onClipboardUpdateListener.onUpdate(it)
             }
         }
-        ClipboardManager.addOnUpdateListener(onClipboardUpdateListener)
+        clipboardObservation = clipboardHistory.observe(onClipboardUpdateListener)
         clipboardSuggestion.registerOnChangeListener(onClipboardSuggestionUpdateListener)
         clipboardItemTimeout.registerOnChangeListener(onClipboardTimeoutUpdateListener)
     }
@@ -405,7 +410,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         inputScopeReady = false
         clipboardTimeoutJob?.cancel()
         clipboardTimeoutJob = null
-        ClipboardManager.removeOnUpdateListener(onClipboardUpdateListener)
+        clipboardObservation?.close()
+        clipboardObservation = null
         clipboardSuggestion.unregisterOnChangeListener(onClipboardSuggestionUpdateListener)
         clipboardItemTimeout.unregisterOnChangeListener(onClipboardTimeoutUpdateListener)
     }
