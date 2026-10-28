@@ -62,14 +62,6 @@
             android:exported="false"
             android:parentActivityName=".ui.main.MainActivity" />
         <activity
-            android:name=".ui.main.settings.theme.CustomThemeActivity"
-            android:configChanges="orientation|screenSize"
-            android:exported="false"
-            android:label="@string/edit_theme" />
-        <activity
-            android:name=".ui.main.CropImageActivity"
-            android:exported="false" />
-        <activity
             android:name=".ui.main.MainActivity"
             android:exported="true"
             android:launchMode="singleTask">
@@ -160,17 +152,6 @@
                 <action android:name="android.content.action.DOCUMENTS_PROVIDER" />
             </intent-filter>
         </provider>
-
-        <!-- remove unneeded components from com.canhub.cropper -->
-        <!--suppress DeprecatedClassUsageInspection -->
-        <activity
-            android:name="com.canhub.cropper.CropImageActivity"
-            tools:node="remove" />
-
-        <provider
-            android:name="com.canhub.cropper.CropFileProvider"
-            android:authorities="${applicationId}.cropper.fileprovider"
-            tools:node="remove" />
 
         <provider
             android:name="androidx.startup.InitializationProvider"

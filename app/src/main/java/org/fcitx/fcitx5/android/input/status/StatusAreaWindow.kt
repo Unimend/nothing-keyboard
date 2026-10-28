@@ -28,7 +28,6 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.InputMethod
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.Keyboard
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ReloadConfig
-import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeList
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EngineStatusAction
@@ -63,11 +62,6 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
 
     private val staticEntries by lazy {
         arrayOf(
-            StatusAreaEntry.Android(
-                context.getString(R.string.theme),
-                R.drawable.ic_baseline_palette_24,
-                ThemeList
-            ),
             StatusAreaEntry.Android(
                 context.getString(R.string.input_method_options),
                 R.drawable.ic_baseline_language_24,
@@ -160,7 +154,6 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
                                 }
                         }
                         Keyboard -> AppUtil.launchMainToKeyboard(context)
-                        ThemeList -> AppUtil.launchMainToThemeList(context)
                     }
                 }
             }

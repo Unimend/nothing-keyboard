@@ -134,7 +134,7 @@ class FcitxApplication : Application() {
             setValue(currentPid)
         }
         ClipboardSystem.init(ctx)
-        ThemeManager.init(resources.configuration)
+        ThemeManager.init()
         Locales.onLocaleChange(resources.configuration)
         registerReceiver(shutdownReceiver, IntentFilter(Intent.ACTION_SHUTDOWN))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N && !isDirectBootMode) {
@@ -153,7 +153,6 @@ class FcitxApplication : Application() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
-        ThemeManager.onSystemPlatteChange(newConfig)
         Locales.onLocaleChange(newConfig)
     }
 

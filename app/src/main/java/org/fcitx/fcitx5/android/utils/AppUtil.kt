@@ -39,9 +39,6 @@ object AppUtil {
     fun launchMainToInputMethodList(context: Context) =
         launchMainToDest(context, SettingsRoute.InputMethodList)
 
-    fun launchMainToThemeList(context: Context) =
-        launchMainToDest(context, SettingsRoute.Theme)
-
     fun launchMainToInputMethodConfig(context: Context, uniqueName: String, displayName: String) =
         launchMainToDest(context, SettingsRoute.InputMethodConfig(displayName, uniqueName))
 

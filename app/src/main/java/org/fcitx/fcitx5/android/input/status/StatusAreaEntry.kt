@@ -19,8 +19,7 @@ sealed class StatusAreaEntry(
         enum class Type {
             InputMethod,
             ReloadConfig,
-            Keyboard,
-            ThemeList
+            Keyboard
         }
     }
 

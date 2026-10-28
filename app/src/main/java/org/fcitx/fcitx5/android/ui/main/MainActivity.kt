@@ -19,7 +19,6 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
 import androidx.navigation.NavController
-import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.fragment.NavHostFragment
 import org.fcitx.fcitx5.android.BuildConfig
 import org.fcitx.fcitx5.android.R
@@ -67,11 +66,7 @@ class MainActivity : AppCompatActivity() {
         }
         navController.addOnDestinationChangedListener { _, dest, _ ->
             dest.label?.let { viewModel.setToolbarTitle(it.toString()) }
-            if (dest.hasRoute<SettingsRoute.Theme>()) {
-                viewModel.disableToolbarShadow()
-            } else {
-                viewModel.enableToolbarShadow()
-            }
+            viewModel.enableToolbarShadow()
         }
         processIntent(intent)
         checkNotificationPermission()

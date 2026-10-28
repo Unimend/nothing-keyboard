@@ -7,9 +7,7 @@ package org.fcitx.fcitx5.android.data.theme
 
 import android.content.SharedPreferences
 import android.os.Build
-import androidx.annotation.StringRes
 import androidx.core.content.edit
-import org.fcitx.fcitx5.android.BuildConfig
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceCategory
@@ -17,22 +15,6 @@ import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceEnum
 
 class ThemePrefs(sharedPreferences: SharedPreferences) :
     ManagedPreferenceCategory(R.string.theme, sharedPreferences) {
-
-    private fun themePreference(
-        @StringRes
-        title: Int,
-        key: String,
-        defaultValue: Theme,
-        @StringRes
-        summary: Int? = null,
-        enableUiOn: (() -> Boolean)? = null
-    ): ManagedThemePreference {
-        val pref = ManagedThemePreference(sharedPreferences, key, defaultValue)
-        val ui = ManagedThemePreferenceUi(title, key, defaultValue, summary, enableUiOn)
-        pref.register()
-        ui.registerUi()
-        return pref
-    }
 
     val keyBorder = switch(R.string.key_border, "key_border", true)
 
@@ -123,42 +105,4 @@ class ThemePrefs(sharedPreferences: SharedPreferences) :
         }
     }
 
-    /**
-     * When [followSystemDayNightTheme] is disabled, this theme is used.
-     * This is effectively an internal preference which does not need UI.
-     */
-    val normalModeTheme = ManagedThemePreference(
-        sharedPreferences, "normal_mode_theme", ThemeManager.DefaultTheme
-    ).also {
-        it.register()
-    }
-
-    val followSystemDayNightTheme = switch(
-        R.string.follow_system_day_night_theme,
-        "follow_system_dark_mode",
-        true,
-        summary = R.string.follow_system_day_night_theme_summary
-    )
-
-    val lightModeTheme = themePreference(
-        R.string.light_mode_theme,
-        "light_mode_theme",
-        if (BuildConfig.DEBUG) ThemePreset.NothingDark else ThemePreset.PixelLight,
-        enableUiOn = {
-            followSystemDayNightTheme.getValue()
-        })
-
-    val darkModeTheme = themePreference(
-        R.string.dark_mode_theme,
-        "dark_mode_theme",
-        if (BuildConfig.DEBUG) ThemePreset.NothingDark else ThemePreset.PixelDark,
-        enableUiOn = {
-            followSystemDayNightTheme.getValue()
-        })
-
-    val dayNightModePrefNames = setOf(
-        followSystemDayNightTheme.key,
-        lightModeTheme.key,
-        darkModeTheme.key
-    )
 }

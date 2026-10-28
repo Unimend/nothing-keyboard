@@ -33,7 +33,6 @@ import org.fcitx.fcitx5.android.ui.main.settings.behavior.SymbolSettingsFragment
 import org.fcitx.fcitx5.android.ui.main.settings.global.GlobalConfigFragment
 import org.fcitx.fcitx5.android.ui.main.settings.im.InputMethodConfigFragment
 import org.fcitx.fcitx5.android.ui.main.settings.im.InputMethodListFragment
-import org.fcitx.fcitx5.android.ui.main.settings.theme.ThemeFragment
 import org.fcitx.fcitx5.android.utils.config.ConfigDescriptor
 import org.fcitx.fcitx5.android.utils.parcelable
 import kotlin.reflect.typeOf
@@ -64,9 +63,6 @@ sealed class SettingsRoute : Parcelable {
     data class AddonConfig(val name: String, val uniqueName: String) : SettingsRoute()
 
     /* ========== Android ========== */
-
-    @Serializable
-    data object Theme : SettingsRoute()
 
     @Serializable
     data object VirtualKeyboard : SettingsRoute()
@@ -204,9 +200,6 @@ sealed class SettingsRoute : Parcelable {
 
             /* ========== Android ========== */
 
-            fragment<ThemeFragment, Theme> {
-                label = ctx.getString(R.string.theme)
-            }
             fragment<KeyboardSettingsFragment, VirtualKeyboard> {
                 label = ctx.getString(R.string.virtual_keyboard)
             }

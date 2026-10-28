@@ -86,11 +86,6 @@ class MainFragment : PaddingPreferenceFragment() {
             }
             addCategory("Android") {
                 addDestinationPreference(
-                    R.string.theme,
-                    R.drawable.ic_baseline_palette_24,
-                    SettingsRoute.Theme
-                )
-                addDestinationPreference(
                     R.string.virtual_keyboard,
                     R.drawable.ic_baseline_keyboard_24,
                     SettingsRoute.VirtualKeyboard
