@@ -95,22 +95,13 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val clipboardItemTimeout = prefs.clipboard.clipboardItemTimeout
     private val clipboardMaskSensitive by prefs.clipboard.clipboardMaskSensitive
     private val expandedCandidateStyle by prefs.keyboard.expandedCandidateStyle
-    private val expandToolbarByDefault by prefs.keyboard.expandToolbarByDefault
     private val toolbarNumRowOnPassword by prefs.keyboard.toolbarNumRowOnPassword
     private val showVoiceInputButton by prefs.keyboard.showVoiceInputButton
     private val preferredVoiceInput by prefs.keyboard.preferredVoiceInput
 
     private var clipboardTimeoutJob: Job? = null
 
-    private var isClipboardFresh: Boolean = false
-    private var isInlineSuggestionPresent: Boolean = false
-    private var isPasswordEditor: Boolean = false
-    private var isKeyboardLayoutNumber: Boolean = false
-    private var isToolbarManuallyToggled: Boolean = false
-
-    private enum class NumberRowState { Auto, ForceShow, ForceHide }
-
-    private var numberRowState = NumberRowState.Auto
+    private var toolbarState = ToolbarState()
 
     @Keep
     private val onClipboardUpdateListener =
@@ -118,17 +109,16 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             if (!clipboardSuggestion.getValue()) return@OnClipboardUpdateListener
             service.lifecycleScope.launch {
                 if (it.text.isEmpty()) {
-                    isClipboardFresh = false
+                    updateToolbar(ToolbarEvent.ClipboardChanged(false))
                 } else {
                     idleUi.clipboardUi.setContent(if (it.sensitive && clipboardMaskSensitive) {
                         ClipboardEntry.BULLET.repeat(min(42, it.text.length))
                     } else {
                         it.text.take(42)
                     })
-                    isClipboardFresh = true
+                    updateToolbar(ToolbarEvent.ClipboardChanged(true))
                     launchClipboardTimeoutJob()
                 }
-                evalIdleUiState()
             }
         }
 
@@ -136,8 +126,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val onClipboardSuggestionUpdateListener =
         ManagedPreference.OnChangeListener<Boolean> { _, it ->
             if (!it) {
-                isClipboardFresh = false
-                evalIdleUiState()
+                updateToolbar(ToolbarEvent.ClipboardChanged(false))
                 clipboardTimeoutJob?.cancel()
                 clipboardTimeoutJob = null
             }
@@ -162,26 +151,19 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         if (timeout < 0L) return
         clipboardTimeoutJob = service.lifecycleScope.launch {
             delay(timeout)
-            isClipboardFresh = false
+            updateToolbar(ToolbarEvent.ClipboardChanged(false))
             clipboardTimeoutJob = null
         }
     }
 
-    private fun evalIdleUiState(fromUser: Boolean = false) {
-        val newState = when {
-            numberRowState == NumberRowState.ForceShow -> IdleUi.State.NumberRow
-            isClipboardFresh -> IdleUi.State.Clipboard
-            isInlineSuggestionPresent -> IdleUi.State.InlineSuggestion
-            isPasswordEditor && !isKeyboardLayoutNumber && numberRowState != NumberRowState.ForceHide -> IdleUi.State.NumberRow
-            /**
-             * state matrix:
-             *                               expandToolbarByDefault
-             *                          |   \   |    true |   false
-             * isToolbarManuallyToggled |  true |   Empty | Toolbar
-             *                          | false | Toolbar |   Empty
-             */
-            expandToolbarByDefault == isToolbarManuallyToggled -> IdleUi.State.Empty
-            else -> IdleUi.State.Toolbar
+    private fun updateToolbar(event: ToolbarEvent, fromUser: Boolean = false) {
+        toolbarState = ToolbarReducer.reduce(toolbarState, event)
+        val newState = when (toolbarState.content) {
+            ToolbarContent.Empty -> IdleUi.State.Empty
+            ToolbarContent.Toolbar -> IdleUi.State.Toolbar
+            ToolbarContent.Clipboard -> IdleUi.State.Clipboard
+            ToolbarContent.NumberRow -> IdleUi.State.NumberRow
+            ToolbarContent.InlineSuggestion -> IdleUi.State.InlineSuggestion
         }
         if (newState == idleUi.currentState) return
         idleUi.updateState(newState, fromUser)
@@ -203,7 +185,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     // - If vertical is dominant and down, hide keyboard.
     private val swipeHideKeyboardCallback = CustomGestureView.OnGestureListener { v, e ->
         require(v is ToolButton)
-        val numberRowAvailable = isPasswordEditor && !isKeyboardLayoutNumber
+        val numberRowAvailable = toolbarState.passwordEditor && !toolbarState.keyboardLayoutNumber
         if (numberRowAvailable) {
             val dir = if (context.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_LTR) 1 else -1
             // `e.x` and `e.y` are relative to the view's top-left corner
@@ -229,8 +211,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                         }
                         !in -45f..45f if distance > v.swipeThresholdY -> {
                             v.iconRotation = 90f * dir
-                            numberRowState = NumberRowState.ForceShow
-                            evalIdleUiState(fromUser = true)
+                            updateToolbar(ToolbarEvent.NumberRowRequested, fromUser = true)
                             true
                         }
                         else -> false
@@ -258,20 +239,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val idleUi: IdleUi by lazy {
         IdleUi(context, theme, popup, commonKeyActionListener).apply {
             menuButton.setOnClickListener {
-                when (idleUi.currentState) {
-                    IdleUi.State.Empty -> {
-                        isToolbarManuallyToggled = !expandToolbarByDefault
-                        evalIdleUiState(fromUser = true)
-                    }
-                    IdleUi.State.Toolbar -> {
-                        isToolbarManuallyToggled = expandToolbarByDefault
-                        evalIdleUiState(fromUser = true)
-                    }
-                    else -> {
-                        isToolbarManuallyToggled = !expandToolbarByDefault
-                        idleUi.updateState(IdleUi.State.Toolbar, fromUser = true)
-                    }
-                }
+                updateToolbar(ToolbarEvent.MenuPressed, fromUser = true)
                 // reset timeout timer (if present) when user switch layout
                 if (clipboardTimeoutJob != null) {
                     launchClipboardTimeoutJob()
@@ -308,8 +276,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                     }
                     clipboardTimeoutJob?.cancel()
                     clipboardTimeoutJob = null
-                    isClipboardFresh = false
-                    evalIdleUiState()
+                    updateToolbar(ToolbarEvent.ClipboardChanged(false))
                 }
                 setOnLongClickListener {
                     ClipboardManager.lastEntry?.let {
@@ -320,8 +287,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             }
             numberRow.apply {
                 onCollapseListener = {
-                    numberRowState = NumberRowState.ForceHide
-                    evalIdleUiState(fromUser = true)
+                    updateToolbar(ToolbarEvent.NumberRowCollapsed, fromUser = true)
                 }
             }
         }
@@ -435,12 +401,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             idleUi.privateMode(session.editor.privateMode)
         }
-        isPasswordEditor = toolbarNumRowOnPassword && session.password
-        isInlineSuggestionPresent = false
-        numberRowState = NumberRowState.Auto
-        // Keep the utility toolbar collapsed when entering a text field. It can still be
-        // opened explicitly from the menu button when needed.
-        isToolbarManuallyToggled = expandToolbarByDefault
+        updateToolbar(ToolbarEvent.SessionStarted(toolbarNumRowOnPassword && session.password))
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             idleUi.inlineSuggestionsBar.clear()
         }
@@ -451,7 +412,6 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             shouldShowVoiceInput,
             if (shouldShowVoiceInput) switchToVoiceInputCallback else hideKeyboardCallback
         )
-        evalIdleUiState()
     }
 
     override fun onInputPresentationUpdate(state: InputPresentationState) {
@@ -493,8 +453,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun handleInlineSuggestions(response: InlineSuggestionsResponse): Boolean {
         val suggestions = response.inlineSuggestions
         if (suggestions.isEmpty()) {
-            isInlineSuggestionPresent = false
-            evalIdleUiState()
+            updateToolbar(ToolbarEvent.InlineSuggestionChanged(false))
             idleUi.inlineSuggestionsBar.clear()
             return true
         }
@@ -525,8 +484,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             }.awaitAll()
             idleUi.inlineSuggestionsBar.setScrollableViews(views)
         }
-        isInlineSuggestionPresent = true
-        evalIdleUiState()
+        updateToolbar(ToolbarEvent.InlineSuggestionChanged(true))
         return true
     }
 
@@ -545,8 +503,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     fun onKeyboardLayoutSwitched(isNumber: Boolean) {
-        isKeyboardLayoutNumber = isNumber
-        evalIdleUiState()
+        updateToolbar(ToolbarEvent.KeyboardLayoutChanged(isNumber))
     }
 
 }
