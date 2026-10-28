@@ -200,3 +200,14 @@ extensions target that port, and `CandidateInteractionController` receives it at
 Tests exercise candidate commands without Android Service and ensure late/non-cooperative punctuation
 queries cannot overwrite a newer map or publish after disposal. The Service retains private lifecycle
 submission helpers; these are not callable by surfaces.
+
+## Autofill presentation extraction
+
+`input/autofill` now owns platform request styling, stable pinned/scrollable ordering and the
+cancellable suggestion presenter. Service delegates request construction; the toolbar renders
+`InlineSuggestionContent` and emits lifecycle calls without owning inflation jobs. The previous
+style builder and inflation implementation were removed from those classes. Ordering tests and
+source boundaries pass; provider-backed autofill still needs a real compatible provider scenario.
+
+Latest command-port device smoke: Pinyin `nihao` → Return → comma produced `你好，`; candidate
+selection and punctuation queries succeeded, with no crash-buffer entry.

@@ -179,7 +179,7 @@ the former parallel input broadcast API has been removed and is forbidden by an 
   composition, clipboard entries, popup legends and picker pages cannot retain a stale typeface.
 - Android-owned dialogs and the developer-only editor-info inspector intentionally retain native
   system typography; they are outside the themed input-surface hierarchy.
-- Pixel glyph selection will be centralized in a glyph registry.
+- Pixel glyph selection is centralized in `NothingGlyphRegistry`.
 - Candidate text never shrinks to fit; candidate containers grow and scroll instead.
 - New behavior requires a pure policy/model test before device-only verification.
 

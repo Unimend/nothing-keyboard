@@ -26,15 +26,26 @@ class InputArchitectureBoundaryTest {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt"
         ).readText()
-        val request = source.substringAfter("fun handleInlineSuggestions(")
-            .substringBefore("private fun cancelInlineSuggestions")
-        assertTrue("inlineSuggestionsJob = service.lifecycleScope.launch" in request)
+        val request = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/autofill/InlineSuggestionPresenter.kt"
+        ).readText()
+        assertTrue("request = scope.launch" in request)
         assertTrue("ensureActive()" in request)
         assertFalse("service.lifecycleScope.async" in source)
-        assertTrue("cancelInlineSuggestions()" in source.substringAfter("fun onInputScopeDestroyed()")
+        assertFalse("inflateInlineContentView" in source)
+        assertTrue("inlinePresenter.dispose()" in source.substringAfter("fun onInputScopeDestroyed()")
             .substringBefore("fun onEditorSessionUpdate"))
         assertTrue("cancelInlineSuggestions()" in source.substringAfter("fun onEditorSessionUpdate")
             .substringBefore("fun onInputPresentationUpdate"))
+    }
+
+    @Test
+    fun `service delegates autofill styling to platform presentation adapter`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertFalse("InlineSuggestionUi.newStyleBuilder" in source)
+        assertTrue("InlineSuggestionRequestFactory.create" in source)
     }
 
     @Test

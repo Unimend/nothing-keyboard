@@ -8,16 +8,13 @@ package org.fcitx.fcitx5.android.input
 import android.annotation.SuppressLint
 import android.app.Dialog
 import android.content.pm.ActivityInfo
-import android.content.res.ColorStateList
 import android.content.res.Configuration
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
-import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
 import android.text.InputType
-import android.util.Size
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -29,14 +26,8 @@ import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
 import android.widget.FrameLayout
-import android.widget.inline.InlinePresentationSpec
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
-import androidx.autofill.inline.UiVersions
-import androidx.autofill.inline.common.ImageViewStyle
-import androidx.autofill.inline.common.TextViewStyle
-import androidx.autofill.inline.common.ViewStyle
-import androidx.autofill.inline.v1.InlineSuggestionUi
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
@@ -58,6 +49,7 @@ import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
 import org.fcitx.fcitx5.android.input.engine.AndroidKeyEventController
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
+import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionRequestFactory
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
@@ -516,62 +508,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         candidatesView?.updateCursorAnchor(anchorPosition, contentSize)
     }
 
-    @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.R)
     override fun onCreateInlineSuggestionsRequest(uiExtras: Bundle): InlineSuggestionsRequest? {
-        // ignore inline suggestion when disabled by user || using physical keyboard with floating candidates view
         if (!inlineSuggestions || !inputDeviceMgr.isVirtualKeyboard) return null
-        val theme = ThemeManager.activeTheme
-        val chipDrawable =
-            if (theme.isDark) R.drawable.bkg_inline_suggestion_dark else R.drawable.bkg_inline_suggestion_light
-        val chipBg = Icon.createWithResource(this, chipDrawable).setTint(theme.keyTextColor)
-        val style = InlineSuggestionUi.newStyleBuilder()
-            .setSingleIconChipStyle(
-                ViewStyle.Builder()
-                    .setBackgroundColor(Color.TRANSPARENT)
-                    .setPadding(0, 0, 0, 0)
-                    .build()
-            )
-            .setChipStyle(
-                ViewStyle.Builder()
-                    .setBackground(chipBg)
-                    .setPadding(dp(10), 0, dp(10), 0)
-                    .build()
-            )
-            .setTitleStyle(
-                TextViewStyle.Builder()
-                    .setLayoutMargin(dp(4), 0, dp(4), 0)
-                    .setTextColor(theme.keyTextColor)
-                    .setTextSize(14f)
-                    .build()
-            )
-            .setSubtitleStyle(
-                TextViewStyle.Builder()
-                    .setTextColor(theme.altKeyTextColor)
-                    .setTextSize(12f)
-                    .build()
-            )
-            .setStartIconStyle(
-                ImageViewStyle.Builder()
-                    .setTintList(ColorStateList.valueOf(theme.altKeyTextColor))
-                    .build()
-            )
-            .setEndIconStyle(
-                ImageViewStyle.Builder()
-                    .setTintList(ColorStateList.valueOf(theme.altKeyTextColor))
-                    .build()
-            )
-            .build()
-        val styleBundle = UiVersions.newStylesBuilder()
-            .addStyle(style)
-            .build()
-        val spec = InlinePresentationSpec
-            .Builder(Size(0, 0), Size(Int.MAX_VALUE, Int.MAX_VALUE))
-            .setStyle(styleBundle)
-            .build()
-        return InlineSuggestionsRequest.Builder(listOf(spec))
-            .setMaxSuggestionCount(InlineSuggestionsRequest.SUGGESTION_COUNT_UNLIMITED)
-            .build()
+        return InlineSuggestionRequestFactory.create(this, ThemeManager.activeTheme)
     }
 
     @RequiresApi(Build.VERSION_CODES.R)

@@ -5,30 +5,22 @@
 package org.fcitx.fcitx5.android.input.bar
 
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
+import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionPresenter
 
 import android.graphics.Color
 import android.os.Build
-import android.util.Size
 import android.view.KeyEvent
 import android.view.View
-import android.view.ViewGroup
-import android.view.inputmethod.InlineSuggestion
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
 import android.widget.FrameLayout
 import android.widget.ViewAnimator
-import android.widget.inline.InlineContentView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
-import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.suspendCancellableCoroutine
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
@@ -75,8 +67,6 @@ import splitties.views.backgroundColor
 import splitties.views.dsl.core.add
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
-import java.util.concurrent.Executor
-import kotlin.coroutines.resume
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -105,7 +95,6 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val preferredVoiceInput by prefs.keyboard.preferredVoiceInput
 
     private var clipboardTimeoutJob: Job? = null
-    private var inlineSuggestionsJob: Job? = null
     private var inputScopeReady = false
     private val clipboardHistory: ClipboardHistory by manager.must()
     private var clipboardObservation: ClipboardObservation? = null
@@ -411,7 +400,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun onInputScopeDestroyed() {
         if (!inputScopeReady) return
         inputScopeReady = false
-        cancelInlineSuggestions()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) inlinePresenter.dispose()
         clipboardTimeoutJob?.cancel()
         clipboardTimeoutJob = null
         clipboardObservation?.close()
@@ -466,70 +455,24 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         barStateMachine.push(WindowDetached)
     }
 
-    private val suggestionSize by lazy {
-        Size(ViewGroup.LayoutParams.WRAP_CONTENT, context.dp(HEIGHT))
-    }
-
-    private val directExecutor by lazy {
-        Executor { it.run() }
+    private val inlinePresenter by lazy {
+        InlineSuggestionPresenter(context, service.lifecycleScope, context.dp(HEIGHT)) { content ->
+            if (content == null) {
+                idleUi.inlineSuggestionsBar.clear()
+            } else {
+                idleUi.inlineSuggestionsBar.setPinnedView(content.pinned)
+                idleUi.inlineSuggestionsBar.setScrollableViews(content.scrollable)
+            }
+            updateToolbar(ToolbarEvent.InlineSuggestionChanged(content != null))
+        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
-    fun handleInlineSuggestions(response: InlineSuggestionsResponse): Boolean {
-        if (!inputScopeReady) return false
-        cancelInlineSuggestions()
-        val suggestions = response.inlineSuggestions
-        if (suggestions.isEmpty()) {
-            updateToolbar(ToolbarEvent.InlineSuggestionChanged(false))
-            idleUi.inlineSuggestionsBar.clear()
-            return true
-        }
-        var pinned: InlineSuggestion? = null
-        val scrollable = mutableListOf<InlineSuggestion>()
-        var extraPinnedCount = 0
-        suggestions.forEach {
-            if (it.info.isPinned) {
-                if (pinned == null) {
-                    pinned = it
-                } else {
-                    scrollable.add(extraPinnedCount++, it)
-                }
-            } else {
-                scrollable.add(it)
-            }
-        }
-        inlineSuggestionsJob = service.lifecycleScope.launch {
-            val content = coroutineScope {
-                val pinnedView = async { pinned?.let { inflateInlineContentView(it) } }
-                val views = scrollable.map { s -> async { inflateInlineContentView(s) } }
-                pinnedView.await() to views.awaitAll()
-            }
-            ensureActive()
-            if (!inputScopeReady) return@launch
-            idleUi.inlineSuggestionsBar.setPinnedView(content.first)
-            idleUi.inlineSuggestionsBar.setScrollableViews(content.second)
-            updateToolbar(ToolbarEvent.InlineSuggestionChanged(true))
-        }
-        return true
-    }
+    fun handleInlineSuggestions(response: InlineSuggestionsResponse): Boolean =
+        inputScopeReady && inlinePresenter.show(response)
 
     private fun cancelInlineSuggestions() {
-        inlineSuggestionsJob?.cancel()
-        inlineSuggestionsJob = null
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            idleUi.inlineSuggestionsBar.clear()
-        }
-        updateToolbar(ToolbarEvent.InlineSuggestionChanged(false))
-    }
-
-    @RequiresApi(Build.VERSION_CODES.R)
-    private suspend fun inflateInlineContentView(suggestion: InlineSuggestion): InlineContentView? {
-        return suspendCancellableCoroutine { c ->
-            // callback view might be null
-            suggestion.inflate(context, suggestionSize, directExecutor) { v ->
-                c.resume(v)
-            }
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) inlinePresenter.clear()
     }
 
     companion object {
