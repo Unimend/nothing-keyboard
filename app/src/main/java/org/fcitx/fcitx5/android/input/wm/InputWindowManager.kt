@@ -14,6 +14,7 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.mechdancer.dependency.DynamicScope
 import org.mechdancer.dependency.manager.must
@@ -52,7 +53,7 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
         TransitionManager.beginDelayedTransition(view, TransitionSet().apply {
             enterAnimation?.let { addTransition(it) }
             exitAnimation?.let { addTransition(it) }
-            duration = 100
+            duration = NothingDesignTokens.Motion.WindowTransitionMs
         })
     }
 

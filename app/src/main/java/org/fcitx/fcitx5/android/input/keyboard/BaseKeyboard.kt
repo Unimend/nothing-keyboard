@@ -189,8 +189,9 @@ abstract class BaseKeyboard(
                             }
                         }
                         KeyboardGestureAction.OpenEditingPanel -> {
-                            KeyboardFeedback.confirmation(view, theme)
-                            view.postDelayed({ onAction(KeyAction.ShowTextEditingAction) }, 140L)
+                            KeyboardFeedback.afterConfirmation(view, theme) {
+                                onAction(KeyAction.ShowTextEditingAction)
+                            }
                         }
                         else -> Unit
                     }

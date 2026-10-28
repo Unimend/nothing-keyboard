@@ -14,6 +14,7 @@ import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
@@ -33,6 +34,8 @@ import splitties.views.gravityCenter
 import android.view.animation.LinearInterpolator
 
 class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
+
+    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
 
     private val nothingMarkerDrawable = if (theme.isNothingStyle) {
         NothingDotMatrixDrawable(
@@ -96,13 +99,19 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         if (index == 0 && candidate.text.isNotEmpty() && candidate.text != lastPrimaryText) {
             lastPrimaryText = candidate.text
             markerAnimator?.cancel()
-            markerAnimator = ValueAnimator.ofInt(0, 4).apply {
-                duration = NothingDesignTokens.Motion.QuickFeedbackMs
-                interpolator = LinearInterpolator()
-                addUpdateListener {
-                    nothingMarkerDrawable?.setActiveDots(it.animatedValue as Int)
+            if (disableAnimation) {
+                nothingMarkerDrawable?.setActiveDots(NothingDesignTokens.Candidate.MarkerRows)
+            } else {
+                markerAnimator = ValueAnimator.ofInt(
+                    0, NothingDesignTokens.Candidate.MarkerRows
+                ).apply {
+                    duration = NothingDesignTokens.Motion.QuickFeedbackMs
+                    interpolator = LinearInterpolator()
+                    addUpdateListener {
+                        nothingMarkerDrawable?.setActiveDots(it.animatedValue as Int)
+                    }
+                    start()
                 }
-                start()
             }
         } else if (index != 0) {
             markerAnimator?.cancel()
@@ -125,5 +134,12 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
             }
         }
         text.applyNothingTextStyle(theme, NothingTextStyle.Candidate)
+    }
+
+    fun release() {
+        markerAnimator?.cancel()
+        markerAnimator = null
+        nothingMarkerDrawable?.setActiveDots(0)
+        lastPrimaryText = ""
     }
 }

@@ -26,6 +26,8 @@ class CandidateViewHolder(val ui: CandidateItemUi) : RecyclerView.ViewHolder(ui.
     }
 
     fun clear() {
-        update(-1, EngineCandidate.Empty)
+        idx = -1
+        candidate = EngineCandidate.Empty
+        ui.release()
     }
 }

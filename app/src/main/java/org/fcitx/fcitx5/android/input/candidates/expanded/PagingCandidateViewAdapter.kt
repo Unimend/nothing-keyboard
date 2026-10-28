@@ -51,4 +51,9 @@ open class PagingCandidateViewAdapter(val theme: Theme) :
         val item = getItem(position)
         holder.update(item?.engineIndex ?: -1, item?.word ?: EngineCandidate.Empty)
     }
+
+    override fun onViewRecycled(holder: CandidateViewHolder) {
+        holder.clear()
+        super.onViewRecycled(holder)
+    }
 }

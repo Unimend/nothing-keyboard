@@ -27,6 +27,9 @@ object NothingDesignTokens {
         const val InstantFeedbackMs = 100L
         const val QuickFeedbackMs = 120L
         const val DotStepMs = 35L
+        const val WindowTransitionMs = 100L
+        const val CapsFeedbackMs = 110L
+        const val ConfirmationActionDelayMs = 140L
     }
 
     object GestureFeedback {
