@@ -11,8 +11,6 @@ import androidx.transition.TransitionManager
 import androidx.transition.TransitionSet
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcaster
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
@@ -27,12 +25,11 @@ import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import timber.log.Timber
 
-class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(),
-    InputBroadcastReceiver {
+class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>() {
 
     private val context by manager.context()
     private val service by manager.inputMethodService()
-    private val broadcaster: InputBroadcaster by manager.must()
+    private val lifecycle: InputWindowLifecycleDispatcher by manager.must()
     private lateinit var scope: DynamicScope
 
     private val essentialWindows = mutableMapOf<EssentialWindow.Key, Pair<InputWindow, View?>>()
@@ -115,8 +112,14 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
      * [attachWindow] includes the operation done by [addEssentialWindow].
      */
     fun attachWindow(window: InputWindow) {
-        if (window === currentWindow)
+        if (window === currentWindow) {
             Timber.d("Skip attaching $window")
+            // InputView survives across editor sessions, while InputViewFinished resets the
+            // session surface to None. Re-publish the already attached surface without
+            // rebuilding the view or emitting a false lifecycle transition.
+            service.inputSession.dispatch(InputSessionEvent.SurfaceChanged(window.surface))
+            return
+        }
         val newView = if (window is EssentialWindow) {
             // keep the view for essential windows
             essentialWindows[window.key]?.second ?: window.onCreateView()
@@ -140,7 +143,7 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
             // remove the old window from layout
             view.removeView(oldView)
             // broadcast the old window was removed from layout
-            broadcaster.onWindowDetached(oldWindow)
+            lifecycle.detached(oldWindow)
             Timber.d("Detach $oldWindow")
             // finally remove the old window from scope only if it's not an essential window,
             if (oldWindow !is EssentialWindow)
@@ -158,12 +161,12 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
         currentWindow = window
         service.inputSession.dispatch(InputSessionEvent.SurfaceChanged(window.surface))
         // broadcast the new window was added to layout
-        broadcaster.onWindowAttached(window)
+        lifecycle.attached(window)
     }
 
     override val view: FrameLayout by lazy { context.frameLayout(R.id.input_window) }
 
-    override fun onScopeSetupFinished(scope: DynamicScope) {
+    fun bindScope(scope: DynamicScope) {
         this.scope = scope
     }
 

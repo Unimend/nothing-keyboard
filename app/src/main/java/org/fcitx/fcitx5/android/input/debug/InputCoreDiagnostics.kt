@@ -18,7 +18,9 @@ data class InputCoreDiagnosticsSnapshot(
     val engineQueryCount: Long = 0,
     val lastEngineQuery: String = "waiting",
     val navigationCount: Long = 0,
-    val lastNavigation: String = "waiting"
+    val lastNavigation: String = "waiting",
+    val windowLifecycleCount: Long = 0,
+    val lastWindowLifecycle: String = "waiting"
 )
 
 object InputCoreDiagnostics {
@@ -61,6 +63,13 @@ object InputCoreDiagnostics {
         mutableState.value = mutableState.value.copy(
             navigationCount = mutableState.value.navigationCount + 1,
             lastNavigation = name
+        )
+    }
+
+    fun recordWindowLifecycle(name: String) {
+        mutableState.value = mutableState.value.copy(
+            windowLifecycleCount = mutableState.value.windowLifecycleCount + 1,
+            lastWindowLifecycle = name
         )
     }
 }

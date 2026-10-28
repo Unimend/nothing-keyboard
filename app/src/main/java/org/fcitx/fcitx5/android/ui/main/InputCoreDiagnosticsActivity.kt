@@ -82,6 +82,8 @@ class InputCoreDiagnosticsActivity : AppCompatActivity() {
         appendLine("LAST QUERY  ${value.lastEngineQuery}")
         appendLine("NAVIGATION  ${value.navigationCount}")
         appendLine("LAST NAV    ${value.lastNavigation}")
+        appendLine("WINDOWS     ${value.windowLifecycleCount}")
+        appendLine("LAST WINDOW ${value.lastWindowLifecycle}")
         appendLine("REVISION    ${session.revision}")
         appendLine("LIFECYCLE   ${session.lifecycle}")
         appendLine("READY       ${engine.ready}")

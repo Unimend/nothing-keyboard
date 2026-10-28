@@ -11,9 +11,7 @@ import org.fcitx.fcitx5.android.core.FcitxEvent.CandidateListEvent
 import org.fcitx.fcitx5.android.core.FcitxEvent.InputPanelEvent
 import org.fcitx.fcitx5.android.core.FormattedText
 import org.fcitx.fcitx5.android.core.InputMethodEntry
-import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.mechdancer.dependency.Dependent
-import org.mechdancer.dependency.DynamicScope
 import org.mechdancer.dependency.ScopeEvent
 import org.mechdancer.dependency.UniqueComponent
 import java.util.concurrent.ConcurrentLinkedQueue
@@ -64,18 +62,6 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
 
     override fun onSelectionUpdate(start: Int, end: Int) {
         receivers.forEach { it.onSelectionUpdate(start, end) }
-    }
-
-    override fun onWindowAttached(window: InputWindow) {
-        receivers.forEach { it.onWindowAttached(window) }
-    }
-
-    override fun onWindowDetached(window: InputWindow) {
-        receivers.forEach { it.onWindowDetached(window) }
-    }
-
-    override fun onScopeSetupFinished(scope: DynamicScope) {
-        receivers.forEach { it.onScopeSetupFinished(scope) }
     }
 
     override fun onPunctuationUpdate(mapping: Map<String, String>) {

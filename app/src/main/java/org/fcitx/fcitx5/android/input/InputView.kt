@@ -44,6 +44,7 @@ import org.fcitx.fcitx5.android.input.preedit.PreeditComponent
 import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
+import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleDispatcher
 import org.fcitx.fcitx5.android.utils.unset
 import org.fcitx.fcitx5.android.utils.windowManager
 import org.mechdancer.dependency.DynamicScope
@@ -108,6 +109,7 @@ class InputView(
     private val preeditEmptyState = PreeditEmptyStateComponent()
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
+    private val windowLifecycle = InputWindowLifecycleDispatcher()
     private val windowManager = InputWindowManager()
     private val navigator = InputNavigator()
     private val kawaiiBar = KawaiiBarComponent()
@@ -129,11 +131,13 @@ class InputView(
         scope += preeditEmptyState
         scope += preedit
         scope += commonKeyActionListener
+        scope += windowLifecycle
         scope += windowManager
         scope += navigator
         scope += kawaiiBar
         scope += horizontalCandidate
-        broadcaster.onScopeSetupFinished(scope)
+        windowManager.bindScope(scope)
+        kawaiiBar.onInputScopeReady()
     }
 
     private val keyboardPrefs = AppPrefs.getInstance().keyboard
