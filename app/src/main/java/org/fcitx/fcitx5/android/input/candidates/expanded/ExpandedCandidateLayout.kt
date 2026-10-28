@@ -129,11 +129,11 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
         val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val inset = dp(if (landscape) keyVerticalMarginLandscape else keyVerticalMargin)
         tabsContainer.background =
-            singleSideBorderDrawable(dp(1), colors.divider, Gravity.RIGHT, inset)
+            singleSideBorderDrawable(dp(1), colors.divider, Gravity.END, inset)
         if (!keyBorder) {
             backgroundColor = colors.barSurface
             embeddedKeyboard.background =
-                singleSideBorderDrawable(dp(1), colors.divider, Gravity.LEFT, inset)
+                singleSideBorderDrawable(dp(1), colors.divider, Gravity.START, inset)
         }
 
         add(tabsContainer, lParams {

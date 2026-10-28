@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- The APK deliberately ships only the localeFilters declared in build.gradle.kts.
+         Dependency-provided locales must not make app-owned strings look incomplete. -->
+    <issue id="MissingTranslation" severity="ignore" />
+</lint>

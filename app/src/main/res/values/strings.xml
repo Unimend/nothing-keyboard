@@ -172,11 +172,17 @@
     <string name="horizontal_candidate_always_fill">Always fill width</string>
     <string name="inline_suggestions">Show inline autofill suggestions</string>
     <string name="delete_all_except_pinned">Delete all items except pinned ones?</string>
-    <string name="num_items_deleted">%1$d item(s) deleted</string>
+    <plurals name="num_items_deleted">
+        <item quantity="one">%1$d item deleted</item>
+        <item quantity="other">%1$d items deleted</item>
+    </plurals>
     <string name="show_voice_input_button">Show voice input button</string>
     <string name="fcitx_daemon">Fcitx Daemon</string>
     <string name="restarting_fcitx">Restarting Fcitx</string>
-    <string name="removed_n_items">Removed %1$d item(s)</string>
+    <plurals name="removed_n_items">
+        <item quantity="one">Removed %1$d item</item>
+        <item quantity="other">Removed %1$d items</item>
+    </plurals>
     <string name="whether_reset_switch_preference">Would you like to reset this preference to default?</string>
     <string name="enabled">Enabled</string>
     <string name="following_system_settings">Follow system settings</string>
@@ -243,7 +249,7 @@
     <string name="emoji_and_symbols">Emoji &amp; Symbols</string>
     <string name="default_emoji_skin_tone">Default emoji skin tone modifier</string>
     <string name="emoji_skin_tone_none">No modifier</string>
-    <string name="emoji_skin_tone_type_1_2">🏻 Type-1-2</string>
+    <string name="emoji_skin_tone_type_1_2">🏻 Type–1–2</string>
     <string name="emoji_skin_tone_type_3">🏼 Type-3</string>
     <string name="emoji_skin_tone_type_4">🏽 Type-4</string>
     <string name="emoji_skin_tone_type_5">🏾 Type-5</string>

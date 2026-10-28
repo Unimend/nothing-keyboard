@@ -69,7 +69,7 @@ object KeyboardFeedback {
             rows = tokens.Rows,
             dotDiameter = view.dp(tokens.DotDiameterDp),
             dotGap = view.dp(tokens.DotGapDp),
-            gravity = Gravity.LEFT or Gravity.CENTER_VERTICAL,
+            gravity = Gravity.START or Gravity.CENTER_VERTICAL,
             horizontalPadding = view.dp(tokens.EdgePaddingDp),
             initialActiveDots = 0,
             inactiveAlpha = tokens.InactiveAlpha

@@ -3,6 +3,7 @@
  */
 package org.fcitx.fcitx5.android.input.session
 
+import android.os.Build
 import android.view.inputmethod.EditorInfo
 import android.text.InputType
 import splitties.bitflags.hasFlag
@@ -30,5 +31,6 @@ fun EditorInfo.toEditorSnapshot() = EditorSnapshot(
         EditorInfo.IME_ACTION_PREVIOUS -> EditorAction.Previous
         else -> EditorAction.Return
     },
-    privateMode = imeOptions.hasFlag(EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING)
+    privateMode = Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
+        imeOptions.hasFlag(EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING)
 )

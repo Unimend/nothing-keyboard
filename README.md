@@ -55,7 +55,7 @@ documented under [`docs/`](docs/).
 First, clone this repository and fetch all submodules:
 
 ```shell
-git clone git@github.com:fcitx5-android/fcitx5-android.git
+git clone https://github.com/Unimend/nothing-keyboard.git
 git submodule update --init --recursive
 ```
 

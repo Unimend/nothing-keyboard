@@ -157,7 +157,7 @@ abstract class BaseDynamicListUi<T>(
 
             override fun onItemRemovedBatch(indexed: List<Pair<Int, T>>) {
                 updateFAB()
-                showSnackbar(ctx.getString(R.string.removed_n_items, indexed.size)) {
+                showSnackbar(ctx.resources.getQuantityString(R.plurals.removed_n_items, indexed.size, indexed.size)) {
                     indexed.sortedBy { it.first }.forEach {
                         addItem(it.first, it.second)
                     }

@@ -36,8 +36,8 @@ class NothingDotMatrixDrawable(
         val gridWidth = columns * dotDiameter + (columns - 1) * dotGap
         val gridHeight = rows * dotDiameter + (rows - 1) * dotGap
         val startX = when {
-            gravity and Gravity.RIGHT == Gravity.RIGHT -> bounds.right - horizontalPadding - gridWidth
-            gravity and Gravity.LEFT == Gravity.LEFT -> bounds.left + horizontalPadding
+            gravity and Gravity.END == Gravity.END -> bounds.right - horizontalPadding - gridWidth
+            gravity and Gravity.START == Gravity.START -> bounds.left + horizontalPadding
             else -> bounds.exactCenterX() - gridWidth / 2f
         }
         val startY = when {

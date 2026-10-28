@@ -172,11 +172,15 @@
     <string name="horizontal_candidate_always_fill">总是填充宽度</string>
     <string name="inline_suggestions">显示内嵌自动填充建议</string>
     <string name="delete_all_except_pinned">要删除所有未置顶条目吗？</string>
-    <string name="num_items_deleted">已删除 %1$d 项</string>
+    <plurals name="num_items_deleted">
+        <item quantity="other">已删除 %1$d 项</item>
+    </plurals>
     <string name="show_voice_input_button">显示语音输入按钮</string>
     <string name="fcitx_daemon">Fcitx 守护程序</string>
     <string name="restarting_fcitx">正在重新启动 Fcitx</string>
-    <string name="removed_n_items">已移除 %1$d 个项目</string>
+    <plurals name="removed_n_items">
+        <item quantity="other">已移除 %1$d 个项目</item>
+    </plurals>
     <string name="whether_reset_switch_preference">是否要将此设置重置为默认值？</string>
     <string name="enabled">启用</string>
     <string name="following_system_settings">跟随系统设置</string>
@@ -243,7 +247,7 @@
     <string name="emoji_and_symbols">表情和符号</string>
     <string name="default_emoji_skin_tone">默认表情肤色</string>
     <string name="emoji_skin_tone_none">无</string>
-    <string name="emoji_skin_tone_type_1_2">🏻 浅肤色 (Type-1-2)</string>
+    <string name="emoji_skin_tone_type_1_2">🏻 浅肤色 (Type–1–2)</string>
     <string name="emoji_skin_tone_type_3">🏼 中等浅肤色 (Type-3)</string>
     <string name="emoji_skin_tone_type_4">🏽 中等肤色 (Type-4)</string>
     <string name="emoji_skin_tone_type_5">🏾 中等深肤色 (Type-5)</string>

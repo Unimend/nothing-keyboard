@@ -203,7 +203,11 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     private fun showUndoSnackbar() {
         val pendingCount = interaction.state.pendingDeleteIds.size
         if (pendingCount == 0) return
-        val str = context.resources.getString(R.string.num_items_deleted, pendingCount)
+        val str = context.resources.getQuantityString(
+            R.plurals.num_items_deleted,
+            pendingCount,
+            pendingCount
+        )
         snackbarInstance = Snackbar.make(snackbarCtx, ui.root, str, Snackbar.LENGTH_LONG)
             .setBackgroundTint(theme.toInputColorScheme().popupContainer)
             .setTextColor(theme.toInputColorScheme().popupContent)
