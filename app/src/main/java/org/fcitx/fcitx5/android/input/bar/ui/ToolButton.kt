@@ -15,6 +15,8 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.utils.borderlessRippleDrawable
 import org.fcitx.fcitx5.android.utils.circlePressHighlightDrawable
@@ -41,6 +43,8 @@ class ToolButton(context: Context) : CustomGestureView(context) {
         scaleType = ImageView.ScaleType.CENTER_INSIDE
     }
 
+    private var glyphTheme: Theme? = null
+
     private val label = textView {
         isClickable = false
         isFocusable = false
@@ -58,6 +62,7 @@ class ToolButton(context: Context) : CustomGestureView(context) {
         }
 
     constructor(context: Context, @DrawableRes icon: Int, theme: Theme) : this(context) {
+        glyphTheme = theme
         image.imageTintList = ColorStateList.valueOf(theme.altKeyTextColor)
         setIcon(icon)
         setPressHighlightColor(theme.keyPressHighlightColor)
@@ -70,7 +75,10 @@ class ToolButton(context: Context) : CustomGestureView(context) {
     fun setIcon(@DrawableRes icon: Int) {
         label.visibility = View.GONE
         image.visibility = View.VISIBLE
-        image.imageResource = icon
+        val resolved = if (glyphTheme?.isNothingStyle == true) {
+            NothingGlyphRegistry.resolve(icon)
+        } else icon
+        image.imageResource = resolved
     }
 
     fun setText(value: CharSequence, theme: Theme) {

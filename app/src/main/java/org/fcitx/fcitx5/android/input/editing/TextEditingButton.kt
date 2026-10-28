@@ -13,7 +13,9 @@ import android.graphics.drawable.StateListDrawable
 import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.shadowedKeyBackgroundDrawable
 import org.fcitx.fcitx5.android.input.keyboard.insetRadiusDrawable
@@ -97,7 +99,9 @@ class TextEditingButton(
     }
 
     fun setIcon(@DrawableRes icon: Int) {
-        imageView.imageResource = icon
+        imageView.imageResource = if (theme.isNothingStyle) {
+            NothingGlyphRegistry.resolve(icon)
+        } else icon
         removeView(textView)
         add(imageView, lParams(wrapContent, wrapContent, gravityCenter))
     }
