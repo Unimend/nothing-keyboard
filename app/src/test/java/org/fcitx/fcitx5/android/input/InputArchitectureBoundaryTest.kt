@@ -173,6 +173,17 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `input surfaces cannot launch work in service lifetime`() {
+        val violations = inputSources().filter {
+            it.name != "FcitxInputMethodService.kt" && "service.lifecycleScope" in it.readText()
+        }
+        assertTrue("Surface work escaped into service lifetime: $violations", violations.isEmpty())
+        val base = sourceRoot.resolve("org/fcitx/fcitx5/android/input/BaseInputView.kt").readText()
+        assertTrue("InputSurfaceLifetime()" in base)
+        assertTrue("surfaceLifetime.close()" in base)
+    }
+
+    @Test
     fun `popup requests cannot contain mutable output slots`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/popup/PopupAction.kt"

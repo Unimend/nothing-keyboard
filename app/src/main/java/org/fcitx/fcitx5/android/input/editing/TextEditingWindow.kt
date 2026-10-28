@@ -6,7 +6,6 @@ package org.fcitx.fcitx5.android.input.editing
 
 import android.view.KeyEvent
 import android.view.View
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -17,6 +16,7 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
@@ -34,6 +34,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
     override val surface = InputSurface.Editing
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
+    private val inputView by manager.inputView()
     private val theme by manager.theme()
 
     private val hapticOnRepeat by AppPrefs.getInstance().keyboard.hapticOnRepeat
@@ -132,7 +133,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
         service.inputSession.current.editorSessionOrNull()?.let {
             updateEditorSelection(it)
         }
-        selectionJob = service.lifecycleScope.launch {
+        selectionJob = inputView.surfaceScope.launch {
             service.inputSession.state.map { it.selection }.distinctUntilChanged().collect {
                 service.inputSession.current.editorSessionOrNull()?.let(::updateEditorSelection)
             }

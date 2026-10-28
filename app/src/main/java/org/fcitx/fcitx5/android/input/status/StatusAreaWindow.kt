@@ -10,7 +10,6 @@ import android.widget.PopupMenu
 import android.widget.Toast
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -22,6 +21,7 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
@@ -51,6 +51,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     override val surface = InputSurface.Status
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
+    private val inputView by manager.inputView()
     private val theme by manager.theme()
     private val navigator: InputNavigator by manager.must()
 
@@ -144,7 +145,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
                             service.engineCommands.submit(EngineCommand.ReloadConfiguration)
                                 .invokeOnCompletion { failure ->
                                     if (failure != null) return@invokeOnCompletion
-                                    service.lifecycleScope.launch {
+                                    inputView.surfaceScope.launch {
                                         service.platformInputMethods.synchronize()
                                         Toast.makeText(
                                             service,
@@ -214,7 +215,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
 
     override fun onAttached() {
         renderStatusActions(service.inputSession.current.engine.statusActions)
-        statusJob = service.lifecycleScope.launch {
+        statusJob = inputView.surfaceScope.launch {
             service.inputSession.state.map { it.engine.statusActions }.distinctUntilChanged()
                 .collect(::renderStatusActions)
         }

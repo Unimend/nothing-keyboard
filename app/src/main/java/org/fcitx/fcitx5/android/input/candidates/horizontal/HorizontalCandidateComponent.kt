@@ -8,7 +8,6 @@ package org.fcitx.fcitx5.android.input.candidates.horizontal
 import android.content.res.Configuration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
@@ -58,7 +57,7 @@ class HorizontalCandidateComponent :
         val request = candidateInteraction.beginLoadMore() ?: return
         pendingRequest = request
         val pageSize = 32
-        loadMoreJob = inputView.service.lifecycleScope.launch {
+        loadMoreJob = inputView.surfaceScope.launch {
             try {
                 val next = inputView.service.engineQueries.candidates(request.offset, pageSize)
                 ensureActive()

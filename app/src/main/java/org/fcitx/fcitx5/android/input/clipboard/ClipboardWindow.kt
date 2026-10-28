@@ -17,7 +17,6 @@ import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import androidx.core.view.updateLayoutParams
-import androidx.lifecycle.lifecycleScope
 import androidx.paging.CombinedLoadStates
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -34,6 +33,7 @@ import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
@@ -53,6 +53,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     override val surface = InputSurface.Clipboard
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
+    private val inputView by manager.inputView()
     private val theme by manager.theme()
     private val navigator: InputNavigator by manager.must()
     private val interaction: ClipboardInteractionController by manager.must()
@@ -67,7 +68,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
 
     private fun <T> launchAttachedResult(operation: suspend () -> T, render: (T) -> Unit) {
         val token = attachment.capture() ?: return
-        service.lifecycleScope.launch {
+        inputView.surfaceScope.launch {
             val result = operation()
             if (attachment.accepts(token)) render(result)
         }
@@ -97,11 +98,11 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             clipboardMaskSensitive
         ) {
             override fun onPin(id: Int) {
-                service.lifecycleScope.launch { interaction.pin(id) }
+                inputView.surfaceScope.launch { interaction.pin(id) }
             }
 
             override fun onUnpin(id: Int) {
-                service.lifecycleScope.launch { interaction.unpin(id) }
+                inputView.surfaceScope.launch { interaction.unpin(id) }
             }
 
             override fun onEdit(id: Int) {
@@ -205,7 +206,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             .setTextColor(theme.popupTextColor)
             .setActionTextColor(theme.genericActiveBackgroundColor)
             .setAction(R.string.undo) {
-                service.lifecycleScope.launch {
+                inputView.surfaceScope.launch {
                     interaction.undoPendingDeletes()
                 }
             }
@@ -218,7 +219,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
                         BaseCallback.DISMISS_EVENT_SWIPE,
                         BaseCallback.DISMISS_EVENT_MANUAL,
                         BaseCallback.DISMISS_EVENT_TIMEOUT -> {
-                            service.lifecycleScope.launch {
+                            inputView.surfaceScope.launch {
                                 interaction.finalizePendingDeletes()
                             }
                         }
@@ -253,7 +254,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
         interaction.setContentEmpty(isEmpty)
         renderViewMode()
         adapter.addLoadStateListener(loadStateListener)
-        adapterSubmitJob = service.lifecycleScope.launch {
+        adapterSubmitJob = inputView.surfaceScope.launch {
             clipboardPages.collect {
                 adapter.submitData(it)
             }
@@ -272,7 +273,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             snackbarInstance = null
             it.dismiss()
         }
-        service.lifecycleScope.launch { interaction.finalizePendingDeletes() }
+        inputView.surfaceScope.launch { interaction.finalizePendingDeletes() }
     }
 
     private val loadStateListener: (CombinedLoadStates) -> Unit = {

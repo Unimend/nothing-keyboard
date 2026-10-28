@@ -302,3 +302,19 @@ matrix transform. The controller owns measurement retries, decor offsets and bot
 The service now forwards cursor information and invalidates geometry only at lifecycle boundaries.
 Pure geometry and architecture tests pass; physical-keyboard floating placement still requires a
 connected hardware keyboard for a full visual device check.
+
+## Input-surface coroutine lifetime
+
+Input surfaces no longer launch collectors, delayed feedback or UI delivery in the service-wide
+`lifecycleScope`. `InputSurfaceLifetime` is a single-use supervisor owned by each `BaseInputView`;
+detaching the view closes it and cancels all child work. Keyboard state collection, candidate action
+menus, punctuation queries, toolbar timeouts, inline suggestions, horizontal and expanded paging,
+editing selection, clipboard work, status collection and popup dismissal now use that lifetime.
+Window-specific jobs still stop on window detach, while the surface lifetime is the final safety net
+when the whole input view is replaced.
+
+Tests prove child cancellation and idempotent close. An architecture guard rejects any future
+`service.lifecycleScope` use outside the service. On device, Keyboard → Editing → Keyboard → Emoji
+worked before rotation; landscape/portrait recreation closed the old view, and refocusing created a
+ready Keyboard surface. The crash buffer remained empty and the original free-rotation mode was
+restored.

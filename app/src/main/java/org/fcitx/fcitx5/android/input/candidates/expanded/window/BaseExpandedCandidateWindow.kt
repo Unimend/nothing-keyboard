@@ -8,7 +8,6 @@ package org.fcitx.fcitx5.android.input.candidates.expanded.window
 import android.graphics.drawable.ShapeDrawable
 import android.graphics.drawable.shapes.RectShape
 import android.view.View
-import androidx.lifecycle.lifecycleScope
 import androidx.paging.Pager
 import androidx.paging.PagingConfig
 import androidx.recyclerview.widget.RecyclerView
@@ -162,7 +161,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             it.keyActionListener = keyActionListener
         }
         updateTabs(service.inputSession.current.engine.inputPanel.tabs)
-        offsetJob = service.lifecycleScope.launch {
+        offsetJob = inputView.surfaceScope.launch {
             candidateInteraction.expandedOffset.collect {
                 if (it <= 0) {
                     navigator.navigate(InputNavigationCommand.ShowKeyboard())
@@ -172,12 +171,12 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
                 }
             }
         }
-        candidatesSubmitJob = service.lifecycleScope.launch {
+        candidatesSubmitJob = inputView.surfaceScope.launch {
             candidatesPager.flow.collectLatest {
                 adapter.submitData(it)
             }
         }
-        sessionJob = service.lifecycleScope.launch {
+        sessionJob = inputView.surfaceScope.launch {
             service.inputSession.state.drop(1).collect { snapshot ->
                 val presentation = InputPresentationReducer.reduce(snapshot.engine)
                 if (presentation.preeditEmpty) {

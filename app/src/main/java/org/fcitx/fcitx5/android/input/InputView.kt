@@ -16,7 +16,6 @@ import android.widget.ImageView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.view.updateLayoutParams
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -122,7 +121,7 @@ class InputView(
     private val scope = DynamicScope()
     private val popup = PopupComponent()
     private val punctuation = PunctuationController(
-        punctuationSink, service.inputSession, service.engineQueries, service.lifecycleScope
+        punctuationSink, service.inputSession, service.engineQueries, surfaceScope
     )
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
@@ -318,7 +317,7 @@ class InputView(
     private var sessionStateJob: Job? = null
 
     private fun observeSessionDerivedState() {
-        sessionStateJob = service.lifecycleScope.launch {
+        sessionStateJob = surfaceScope.launch {
             service.inputSession.state
                 .map { it.punctuationMapping }
                 .distinctUntilChanged()

@@ -13,7 +13,6 @@ import androidx.core.text.bold
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
@@ -23,6 +22,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs
 import org.fcitx.fcitx5.android.input.candidates.interaction.triggerCandidateAction
+import org.fcitx.fcitx5.android.input.lifecycle.InputSurfaceLifetime
 import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.utils.item
 import org.fcitx.fcitx5.android.utils.navbarFrameHeight
@@ -35,12 +35,15 @@ abstract class BaseInputView(
     val theme: Theme
 ) : ConstraintLayout(service) {
 
+    private val surfaceLifetime = InputSurfaceLifetime()
+    val surfaceScope get() = surfaceLifetime.scope
+
     protected abstract fun handleEngineState(state: EngineState)
 
     private var eventHandlerJob: Job? = null
 
     private fun setupEngineStateCollector() {
-        eventHandlerJob = service.lifecycleScope.launch {
+        eventHandlerJob = surfaceScope.launch {
             service.inputSession.state.collect { handleEngineState(it.engine) }
         }
     }
@@ -69,7 +72,7 @@ abstract class BaseInputView(
     fun showCandidateActionMenu(idx: Int, text: String, view: View) {
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
-        service.lifecycleScope.launch {
+        surfaceScope.launch {
             val actions = service.engineQueries.candidateActions(idx)
             if (actions.isEmpty()) return@launch
             InputFeedbacks.hapticFeedback(view, longPress = true)
@@ -140,6 +143,9 @@ abstract class BaseInputView(
 
     override fun onDetachedFromWindow() {
         handleEvents = false
+        candidateActionMenu?.dismiss()
+        candidateActionMenu = null
+        surfaceLifetime.close()
         super.onDetachedFromWindow()
     }
 }

@@ -17,7 +17,6 @@ import android.widget.FrameLayout
 import android.widget.ViewAnimator
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -54,6 +53,7 @@ import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEve
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
@@ -85,6 +85,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val context by manager.context()
     private val theme by manager.theme()
     private val service by manager.inputMethodService()
+    private val inputView by manager.inputView()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
@@ -113,7 +114,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val onClipboardUpdateListener =
         ClipboardUpdateListener {
             if (!clipboardSuggestion.getValue()) return@ClipboardUpdateListener
-            service.lifecycleScope.launch {
+            inputView.surfaceScope.launch {
                 if (!inputScopeReady) return@launch
                 if (it.text.isEmpty()) {
                     updateToolbar(ToolbarEvent.ClipboardChanged(false))
@@ -156,7 +157,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         val timeout = clipboardItemTimeout.getValue() * 1000L
         // never transition to ClipboardTimedOut state when timeout < 0
         if (timeout < 0L) return
-        clipboardTimeoutJob = service.lifecycleScope.launch {
+        clipboardTimeoutJob = inputView.surfaceScope.launch {
             delay(timeout)
             updateToolbar(ToolbarEvent.ClipboardChanged(false))
             clipboardTimeoutJob = null
@@ -393,7 +394,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun onInputScopeReady() {
         if (inputScopeReady) return
         inputScopeReady = true
-        candidateStateJob = service.lifecycleScope.launch {
+        candidateStateJob = inputView.surfaceScope.launch {
             candidateInteraction.snapshots.collect {
                 expandButtonStateMachine.push(ExpandedCandidatesUpdated, ExpandedCandidatesEmpty to !it.canExpand)
             }
@@ -478,7 +479,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     private val inlinePresenter by lazy {
-        InlineSuggestionPresenter(context, service.lifecycleScope, context.dp(HEIGHT)) { content ->
+        InlineSuggestionPresenter(context, inputView.surfaceScope, context.dp(HEIGHT)) { content ->
             if (content == null) {
                 idleUi.inlineSuggestionsBar.clear()
             } else {

@@ -5,13 +5,13 @@
 
 package org.fcitx.fcitx5.android.input.keyboard
 
-import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
@@ -45,6 +45,7 @@ class CommonKeyActionListener :
 
     private val context by manager.context()
     private val service by manager.inputMethodService()
+    private val inputView by manager.inputView()
 
     private val kbdPrefs = AppPrefs.getInstance().keyboard
 
@@ -74,7 +75,7 @@ class CommonKeyActionListener :
     }
 
     private fun showInputMethodPicker() {
-        service.lifecycleScope.launch {
+        inputView.surfaceScope.launch {
             service.showDialog(InputMethodPickerDialog.build(service, context))
         }
     }
@@ -102,7 +103,7 @@ class CommonKeyActionListener :
                 is CommitAction -> {
                     commitAndReset().invokeOnCompletion { failure ->
                         if (failure == null) {
-                            service.lifecycleScope.launch { service.editingCommands.execute(EditingCommand.CommitText(action.text)) }
+                            inputView.surfaceScope.launch { service.editingCommands.execute(EditingCommand.CommitText(action.text)) }
                         }
                     }
                 }
@@ -117,7 +118,7 @@ class CommonKeyActionListener :
                 is LangSwitchAction -> {
                     when (langSwitchKeyBehavior) {
                         LangSwitchBehavior.Enumerate -> {
-                            service.lifecycleScope.launch {
+                            inputView.surfaceScope.launch {
                                 if (service.engineQueries.enabledInputMethods().size < 2) {
                                     service.showDialog(AddMoreInputMethodsPrompt.build(context))
                                 } else {
