@@ -237,3 +237,15 @@ Latest APK device checks: portrait English `abc` input succeeded; hiding the key
 diagnostic editor from [0,1831][1440,2058] to [0,2837][1440,3064]. Landscape recreation reported
 READY=true and Keyboard surface at rotation=1. Portrait and the original free-rotation setting were
 restored; crash buffer remained empty. Physical keyboard/floating-candidate geometry is still untested.
+
+## Shared gesture-view lifetime
+
+`CustomGestureView` now cancels long-press/repeat jobs and shared feedback when detached, hidden or
+disabled. Cancellation emits a semantic Cancel only for an active touch, so detaching an idle delete
+button cannot collapse a user's unrelated selection. Job cleanup no longer depends on feature flags
+that may have changed during the touch. Double-tap timing uses monotonic uptime.
+
+Device: after entering `abc`, injected DOWN on the Editing backspace followed immediately by hiding
+the keyboard. More than the repeat delay elapsed during the UI dump; text remained `abc`. Reopening
+reported READY=true, Keyboard and collapsed selection 3..3. This verifies hidden-window cancellation;
+full multi-pointer and hardware-device interruption tests remain separate.

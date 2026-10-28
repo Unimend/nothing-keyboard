@@ -11,6 +11,23 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `every gesture view cancels delayed actions on detach and hide`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/keyboard/CustomGestureView.kt"
+        ).readText()
+        val detached = source.substringAfter("override fun onDetachedFromWindow()")
+            .substringBefore("override fun onWindowVisibilityChanged")
+        assertTrue("cancelGestures()" in detached)
+        assertTrue("KeyboardFeedback.cancel(this)" in detached)
+        val hidden = source.substringAfter("override fun onWindowVisibilityChanged")
+            .substringBefore("@SuppressLint")
+        assertTrue("cancelGestures()" in hidden)
+        val cancel = source.substringAfter("fun cancelGestures()").substringBefore("isPressed = false")
+        assertTrue("if (touchActive)" in cancel)
+        assertFalse("System.currentTimeMillis()" in source)
+    }
+
+    @Test
     fun `service delegates content and touch insets to window adapter`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"

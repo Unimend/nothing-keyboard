@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.gesture.SwipeTracker
+import org.fcitx.fcitx5.android.input.feedback.KeyboardFeedback
 
 open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
 
@@ -72,6 +73,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     private var swipeRepeatTriggered = false
     private val swipeTracker = SwipeTracker()
     private var gestureConsumed = false
+    private var touchActive = false
 
     var doubleTapEnabled = false
     private var lastClickTime = 0L
@@ -94,7 +96,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     override fun setEnabled(enabled: Boolean) {
         super.setEnabled(enabled)
         if (!enabled) {
-            isPressed = false
+            cancelGestures()
         }
     }
 
@@ -106,36 +108,47 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     }
 
     private fun resetState() {
+        touchActive = false
         touchMovedOutside = false
-        if (longPressEnabled) {
-            longPressTriggered = false
-            longPressJob?.cancel()
-            longPressJob = null
-        }
-        if (repeatEnabled) {
-            repeatStarted = false
-            repeatJob?.cancel()
-            repeatJob = null
-        }
-        if (swipeEnabled) {
-            if (swipeRepeatEnabled) {
-                swipeRepeatTriggered = false
-            }
-            swipeTracker.reset()
-            gestureConsumed = false
-        }
+        // Flags can change while a touch is active; jobs must still be cancelled.
+        longPressJob?.cancel()
+        longPressJob = null
+        repeatJob?.cancel()
+        repeatJob = null
+        longPressTriggered = false
+        repeatStarted = false
+        swipeRepeatTriggered = false
+        swipeTracker.reset()
+        gestureConsumed = false
         // double tap state should be preserved on touch up
     }
 
     fun cancelGestures() {
         // Both Android cancellation and keyboard teardown use this cleanup path.
-        dispatchGestureEvent(GestureType.Cancel, 0f, 0f)
+        if (touchActive) {
+            touchActive = false
+            dispatchGestureEvent(GestureType.Cancel, 0f, 0f)
+        }
         isPressed = false
         resetState()
         // reset double tap state on cancel
         if (doubleTapEnabled) {
             maybeDoubleTap = false
             lastClickTime = 0
+        }
+    }
+
+    override fun onDetachedFromWindow() {
+        cancelGestures()
+        KeyboardFeedback.cancel(this)
+        super.onDetachedFromWindow()
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        if (visibility != View.VISIBLE) {
+            cancelGestures()
+            KeyboardFeedback.cancel(this)
         }
     }
 
@@ -146,6 +159,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
                 if (!isEnabled) return false
+                touchActive = true
                 drawableHotspotChanged(x, y)
                 isPressed = true
                 InputFeedbacks.hapticFeedback(this)
@@ -191,7 +205,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                 resetState()
                 if (shouldPerformClick) {
                     if (doubleTapEnabled) {
-                        val now = System.currentTimeMillis()
+                        val now = SystemClock.uptimeMillis()
                         if (maybeDoubleTap && now - lastClickTime <= longPressDelay) {
                             maybeDoubleTap = false
                             onDoubleTapListener?.invoke(this)
