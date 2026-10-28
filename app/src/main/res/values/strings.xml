@@ -46,7 +46,6 @@
     <string name="no_more_input_methods">No more input methods to switch</string>
     <string name="add_more_input_methods">Would you like to add more input methods?</string>
     <string name="about">About</string>
-    <string name="faq">FAQ</string>
     <string name="current_version">Current version</string>
     <string name="developer">Developer</string>
     <string name="pin">Pin</string>
@@ -60,7 +59,6 @@
     <string name="build_time">Build time</string>
     <string name="build_git_hash">Build Git hash</string>
     <string name="source_code">Source code</string>
-    <string name="privacy_policy">Privacy policy</string>
     <string name="license">License</string>
     <string name="open_source_licenses">Open source licenses</string>
     <string name="licenses_of_third_party_libraries">Licenses of third-party libraries</string>
