@@ -318,3 +318,15 @@ Tests prove child cancellation and idempotent close. An architecture guard rejec
 worked before rotation; landscape/portrait recreation closed the old view, and refocusing created a
 ready Keyboard surface. The crash buffer remained empty and the original free-rotation mode was
 restored.
+
+## Attached-dialog and input-method picker ownership
+
+The service no longer implements attached-dialog replacement, token wiring or dim-window flags.
+`ImeDialogController` owns the single visible IME dialog and closes it at input-view finish and
+service destruction. The controller is injected into the input surface rather than reached through
+a public service helper.
+
+Input-method picker UI now receives resolved entries, current selection and an `onSelected` intent.
+It cannot read engine state or submit commands. `InputMethodPickerController` coordinates the query,
+engine activation and Android IME switching at the system boundary. Architecture tests prevent the
+concrete service, session and command dispatcher from returning to the dialog renderer.

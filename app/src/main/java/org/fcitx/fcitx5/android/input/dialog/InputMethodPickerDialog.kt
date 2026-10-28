@@ -8,8 +8,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.view.ViewGroup
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
-import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.utils.AppUtil
 import splitties.dimensions.dp
 import splitties.resources.styledDrawable
@@ -20,13 +18,13 @@ import splitties.views.recyclerview.verticalLayoutManager
 import splitties.views.topPadding
 
 object InputMethodPickerDialog {
-    suspend fun build(
-        service: FcitxInputMethodService,
-        context: Context
+    fun build(
+        context: Context,
+        entries: List<InputMethodData>,
+        enabledInputMethod: String?,
+        onSelected: (InputMethodData) -> Unit
     ): AlertDialog {
-        val entries = InputMethodData.resolve(service.engineQueries, service)
-        val enabledIM = service.inputSession.current.engine.inputMethod?.uniqueName
-        val enabledIndex = entries.indexOfFirst { it.uniqueName == enabledIM }
+        val enabledIndex = entries.indexOfFirst { it.uniqueName == enabledInputMethod }
         val dividerIndex = entries.indexOfFirst { it.ime }
         lateinit var dialog: AlertDialog
         dialog = AlertDialog.Builder(context)
@@ -39,9 +37,7 @@ object InputMethodPickerDialog {
                 topPadding = dp(8) // android.R.dimen.dialog_title_divider_material
                 layoutManager = verticalLayoutManager()
                 adapter = InputMethodListAdapter(entries, enabledIndex) {
-                    val (uniqueName, _, ime) = it
-                    if (ime) service.switchInputMethod(uniqueName)
-                    else service.engineCommands.submit(EngineCommand.ActivateInputMethod(uniqueName))
+                    onSelected(it)
                     dialog.dismiss()
                 }
                 styledDrawable(android.R.attr.dividerHorizontal)?.let {

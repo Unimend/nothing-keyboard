@@ -6,7 +6,6 @@
 package org.fcitx.fcitx5.android.input
 
 import android.annotation.SuppressLint
-import android.app.Dialog
 import android.content.pm.ActivityInfo
 import android.content.res.Configuration
 import android.graphics.Color
@@ -19,7 +18,6 @@ import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.Window
-import android.view.WindowManager
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InlineSuggestionsRequest
@@ -52,6 +50,8 @@ import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionRequestFactory
 import org.fcitx.fcitx5.android.input.wm.AndroidImeWindowLayout
 import org.fcitx.fcitx5.android.input.wm.AndroidCandidateAnchorController
+import org.fcitx.fcitx5.android.input.platform.ImeDialogController
+import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerController
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
@@ -97,6 +97,18 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private lateinit var contentView: FrameLayout
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
+    val dialogs = ImeDialogController(
+        windowToken = { decorView.windowToken },
+        dimAmount = { styledFloat(android.R.attr.backgroundDimAmount) }
+    )
+    val inputMethodPicker = InputMethodPickerController(
+        queries = { engineQueries },
+        currentInputMethod = { inputSession.current.engine.inputMethod?.uniqueName },
+        activateEngineInputMethod = {
+            engineCommands.submit(EngineCommand.ActivateInputMethod(it))
+        },
+        activatePlatformInputMethod = { switchInputMethod(it) }
+    )
     private val candidateAnchor = AndroidCandidateAnchorController(
         contentView = { contentView },
         decorView = { decorView },
@@ -458,7 +470,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         currentInputConnection?.monitorCursorAnchor(false)
         submitEngineCommand(EngineCommand.FocusOutIn)
         hideStatusIcon()
-        showingDialog?.dismiss()
+        dialogs.dismiss()
     }
 
     override fun onFinishInput() {
@@ -482,30 +494,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         }
         prefs.candidates.unregisterOnChangeListener(recreateCandidatesViewListener)
         ThemeManager.removeOnChangedListener(onThemeChangeListener)
+        dialogs.dismiss()
         super.onDestroy()
         // Fcitx might be used in super.onDestroy()
         FcitxDaemon.disconnect(javaClass.name)
-    }
-
-    private var showingDialog: Dialog? = null
-
-    fun showDialog(dialog: Dialog) {
-        showingDialog?.dismiss()
-        dialog.window?.also {
-            it.attributes.apply {
-                token = decorView.windowToken
-                type = WindowManager.LayoutParams.TYPE_APPLICATION_ATTACHED_DIALOG
-            }
-            it.addFlags(
-                WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM or WindowManager.LayoutParams.FLAG_DIM_BEHIND
-            )
-            it.setDimAmount(styledFloat(android.R.attr.backgroundDimAmount))
-        }
-        dialog.setOnDismissListener {
-            showingDialog = null
-        }
-        dialog.show()
-        showingDialog = dialog
     }
 
     @Suppress("ConstPropertyName")

@@ -78,6 +78,28 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `service delegates attached dialog ownership to platform controller`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("ImeDialogController(" in source)
+        assertFalse("showingDialog" in source)
+        assertFalse("fun showDialog(" in source)
+        assertFalse("TYPE_APPLICATION_ATTACHED_DIALOG" in source)
+    }
+
+    @Test
+    fun `input method dialog cannot depend on concrete service`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/dialog/InputMethodPickerDialog.kt"
+        ).readText()
+        assertFalse("FcitxInputMethodService" in source)
+        assertFalse("engineCommands" in source)
+        assertFalse("inputSession" in source)
+        assertTrue("onSelected: (InputMethodData) -> Unit" in source)
+    }
+
+    @Test
     fun `input device policy cannot depend on concrete input method service`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/InputDeviceManager.kt"

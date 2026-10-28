@@ -143,6 +143,8 @@ class InputView(
     private fun setupScope() {
         scope += this@InputView.wrapToUniqueComponent()
         scope += service.wrapToUniqueComponent()
+        scope += service.dialogs
+        scope += service.inputMethodPicker
         scope += theme.wrapToUniqueComponent()
         scope += themedContext.wrapToUniqueComponent()
         scope += popup
