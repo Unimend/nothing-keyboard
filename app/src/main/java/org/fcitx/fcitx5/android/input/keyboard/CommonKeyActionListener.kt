@@ -6,8 +6,8 @@
 package org.fcitx.fcitx5.android.input.keyboard
 
 import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -20,6 +20,7 @@ import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
 import org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
+import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.BackspaceSwipeState.Reset
@@ -70,22 +71,23 @@ class CommonKeyActionListener :
     private val editingCommands by lazy { AndroidEditingCommandExecutor(service) }
     private val navigator by lazy { InputNavigator(service, windowManager) }
 
-    // there should be a new fcitx API for this
-    private fun FcitxAPI.hasPreedit(): Boolean =
-        clientPreeditCached.isNotEmpty() || inputPanelCached.preedit.isNotEmpty()
+    private fun hasPreedit(): Boolean = service.inputSession.current.engine.let {
+        !it.clientPreedit.isEmpty || !it.inputPanel.preedit.isEmpty
+    }
 
-    private suspend fun FcitxAPI.commitAndReset() {
-        if (inputMethodEntryCached.languageCode.startsWith("zh")) {
+    private fun commitAndReset(): Job {
+        val engine = service.inputSession.current.engine
+        if (engine.inputMethod?.languageCode?.startsWith("zh") == true) {
             // Chinese: select 1st candidate, except prediction candidates
             if (hasPreedit()) {
                 // preedit not empty, maybe there are candidates to select ...
-                select(0)
+                service.submitEngineCommand(EngineCommand.SelectCandidate(0))
             }
         } else {
             // Other languages: commit preedit as-is
             service.finishComposing()
         }
-        reset()
+        return service.submitEngineCommand(EngineCommand.Reset)
     }
 
     private fun showInputMethodPicker() {
@@ -99,10 +101,10 @@ class CommonKeyActionListener :
     val listener by lazy {
         KeyActionListener { action, _ ->
             when (action) {
-                is FcitxKeyAction -> service.postFcitxJob {
-                    sendKey(action.act, action.states.states, action.code)
-                }
-                is SymAction -> service.postFcitxJob {
+                is FcitxKeyAction -> service.submitEngineCommand(
+                    EngineCommand.SendKeyText(action.act, action.states.states, action.code)
+                )
+                is SymAction -> {
                     if (
                         action.sym.sym == FcitxKeyMapping.FcitxKey_Return &&
                         hasPreedit()
@@ -111,20 +113,25 @@ class CommonKeyActionListener :
                         // newline: Chinese selects candidate 0; other languages commit raw text.
                         commitAndReset()
                     } else {
-                        sendKey(action.sym, action.states)
+                        service.submitEngineCommand(
+                            EngineCommand.SendKey(action.sym.sym, action.states.states)
+                        )
                     }
                 }
-                is CommitAction -> service.postFcitxJob {
-                    commitAndReset()
-                    service.lifecycleScope.launch { service.commitText(action.text) }
+                is CommitAction -> {
+                    commitAndReset().invokeOnCompletion { failure ->
+                        if (failure == null) {
+                            service.lifecycleScope.launch { service.commitText(action.text) }
+                        }
+                    }
                 }
-                is QuickPhraseAction -> service.postFcitxJob {
+                is QuickPhraseAction -> {
                     commitAndReset()
-                    triggerQuickPhrase()
+                    service.submitEngineCommand(EngineCommand.TriggerQuickPhrase)
                 }
-                is UnicodeAction -> service.postFcitxJob {
+                is UnicodeAction -> {
                     commitAndReset()
-                    triggerUnicode()
+                    service.submitEngineCommand(EngineCommand.TriggerUnicode)
                 }
                 is LangSwitchAction -> {
                     when (langSwitchKeyBehavior) {
@@ -135,14 +142,14 @@ class CommonKeyActionListener :
                                         service.showDialog(AddMoreInputMethodsPrompt.build(context))
                                     }
                                 } else {
-                                    enumerateIme()
+                                    service.submitEngineCommand(
+                                        EngineCommand.EnumerateInputMethod()
+                                    )
                                 }
                             }
                         }
                         LangSwitchBehavior.ToggleActivate -> {
-                            service.postFcitxJob {
-                                toggleIme()
-                            }
+                            service.submitEngineCommand(EngineCommand.ToggleInputMethod)
                         }
                         LangSwitchBehavior.NextInputMethodApp -> {
                             service.switchToNextIME()
@@ -174,7 +181,7 @@ class CommonKeyActionListener :
                         Stopped -> {}
                         Selection -> editingCommands.execute(EditingCommand.DeleteSelection)
                         Reset -> if (action.totalCnt != 0) {
-                            service.postFcitxJob { reset() }
+                            service.submitEngineCommand(EngineCommand.Reset)
                         }
                     }
                     backspaceSwipeState = Stopped
@@ -187,12 +194,11 @@ class CommonKeyActionListener :
                 is SpaceLongPressAction -> {
                     when (spaceKeyLongPressBehavior) {
                         SpaceLongPressBehavior.None -> {}
-                        SpaceLongPressBehavior.Enumerate -> service.postFcitxJob {
-                            enumerateIme()
-                        }
-                        SpaceLongPressBehavior.ToggleActivate -> service.postFcitxJob {
-                            toggleIme()
-                        }
+                        SpaceLongPressBehavior.Enumerate -> service.submitEngineCommand(
+                            EngineCommand.EnumerateInputMethod()
+                        )
+                        SpaceLongPressBehavior.ToggleActivate ->
+                            service.submitEngineCommand(EngineCommand.ToggleInputMethod)
                         SpaceLongPressBehavior.ShowPicker -> showInputMethodPicker()
                     }
                 }

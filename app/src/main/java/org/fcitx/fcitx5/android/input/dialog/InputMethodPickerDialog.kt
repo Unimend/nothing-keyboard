@@ -7,11 +7,10 @@ package org.fcitx.fcitx5.android.input.dialog
 import android.app.AlertDialog
 import android.content.Context
 import android.view.ViewGroup
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
+import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.utils.AppUtil
 import splitties.dimensions.dp
 import splitties.resources.styledDrawable
@@ -44,7 +43,7 @@ object InputMethodPickerDialog {
                 adapter = InputMethodListAdapter(entries, enabledIndex) {
                     val (uniqueName, _, ime) = it
                     if (ime) service.switchInputMethod(uniqueName)
-                    else service.lifecycleScope.launch { fcitx.activateIme(uniqueName) }
+                    else service.submitEngineCommand(EngineCommand.ActivateInputMethod(uniqueName))
                     dialog.dismiss()
                 }
                 styledDrawable(android.R.attr.dividerHorizontal)?.let {

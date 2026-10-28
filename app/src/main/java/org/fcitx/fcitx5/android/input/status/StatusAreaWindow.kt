@@ -26,6 +26,7 @@ import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
+import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.InputMethod
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.Keyboard
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ReloadConfig
@@ -84,9 +85,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
     }
 
     private fun activateAction(action: Action) {
-        fcitx.launchOnReady {
-            it.activateAction(action.id)
-        }
+        service.submitEngineCommand(EngineCommand.ActivateStatusAction(action.id))
     }
 
     var popupMenu: PopupMenu? = null
@@ -144,14 +143,23 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
                                 context, it.uniqueName, it.displayName
                             )
                         }
-                        ReloadConfig -> fcitx.launchOnReady { f ->
-                            f.reloadConfig()
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                                SubtypeManager.syncWith(f.enabledIme())
-                            }
-                            service.lifecycleScope.launch {
-                                Toast.makeText(service, R.string.done, Toast.LENGTH_SHORT).show()
-                            }
+                        ReloadConfig -> {
+                            service.submitEngineCommand(EngineCommand.ReloadConfiguration)
+                                .invokeOnCompletion { failure ->
+                                    if (failure != null) return@invokeOnCompletion
+                                    service.lifecycleScope.launch {
+                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                                            SubtypeManager.syncWith(
+                                                fcitx.runOnReady { enabledIme() }
+                                            )
+                                        }
+                                        Toast.makeText(
+                                            service,
+                                            R.string.done,
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
                         }
                         Keyboard -> AppUtil.launchMainToKeyboard(context)
                         ThemeList -> AppUtil.launchMainToThemeList(context)

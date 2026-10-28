@@ -35,6 +35,7 @@ import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
+import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
@@ -110,7 +111,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     val tabsAdapter by lazy {
         object : CandidateTabActionsAdapter(theme, false) {
             override fun onTriggerTabAction(id: Int) {
-                fcitx.launchOnReady { it.triggerCandidateListTabAction(id) }
+                service.submitEngineCommand(EngineCommand.TriggerCandidateTabAction(id))
             }
         }
     }
@@ -118,7 +119,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     val pinnedTabsAdapter by lazy {
         object : CandidateTabActionsAdapter(theme, true) {
             override fun onTriggerTabAction(id: Int) {
-                fcitx.launchOnReady { it.triggerCandidateListTabAction(id) }
+                service.submitEngineCommand(EngineCommand.TriggerCandidateTabAction(id))
             }
         }
     }
@@ -188,7 +189,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             // RecyclerView position: paging may refresh between layout and click dispatch.
             val candidateIndex = holder.idx
             if (candidateIndex >= 0) {
-                fcitx.launchOnReady { it.select(candidateIndex) }
+                service.submitEngineCommand(EngineCommand.SelectCandidate(candidateIndex))
             }
         }
         holder.itemView.setOnLongClickListener {

@@ -70,9 +70,12 @@ import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
+import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
+import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
+import org.fcitx.fcitx5.android.input.engine.FcitxEngineCommandAdapter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
@@ -92,7 +95,7 @@ import splitties.resources.styledColor
 import timber.log.Timber
 import kotlin.math.max
 
-class FcitxInputMethodService : LifecycleInputMethodService() {
+class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort {
 
     val inputSession = InputSessionStore()
 
@@ -119,9 +122,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private val navbarMgr = NavigationBarManager()
     private val inputDeviceMgr = InputDeviceManager { isVirtualKeyboard ->
-        postFcitxJob {
-            setCandidatePagingMode(if (isVirtualKeyboard) 0 else 1)
-        }
+        submitEngineCommand(
+            EngineCommand.SetCandidatePagingMode(if (isVirtualKeyboard) 0 else 1)
+        )
         currentInputConnection?.monitorCursorAnchor(!isVirtualKeyboard)
         if (isVirtualKeyboard) {
             hideStatusIcon()
@@ -169,7 +172,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             override fun sendBackspaceKey() = sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
 
             override fun resetInputEngine() {
-                postFcitxJob { reset() }
+                submitEngineCommand(EngineCommand.Reset)
             }
         }
     )
@@ -247,6 +250,21 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         jobs.trySend(job)
         return job
     }
+
+    /** Serializes project-owned commands on the same queue as remaining legacy operations. */
+    override fun submit(command: EngineCommand): Job = postFcitxJob {
+        InputCoreDiagnostics.recordEngineCommand(command::class.simpleName ?: "EngineCommand")
+        FcitxEngineCommandAdapter.execute(this, command)
+    }
+
+    fun submitEngineCommand(command: EngineCommand): Job = submit(command)
+
+    private fun submitEngineCommand(command: EngineCommand, guard: () -> Boolean): Job =
+        postFcitxJob {
+            if (!guard()) return@postFcitxJob
+            InputCoreDiagnostics.recordEngineCommand(command::class.simpleName ?: "EngineCommand")
+            FcitxEngineCommandAdapter.execute(this, command)
+        }
 
     override fun onCreate() {
         fcitx = FcitxDaemon.connect(javaClass.name)
@@ -548,7 +566,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private lateinit var lastKnownConfig: Configuration
 
     override fun onConfigurationChanged(newConfig: Configuration) {
-        postFcitxJob { reset() }
+        submitEngineCommand(EngineCommand.Reset)
         /**
          * skip keyboard|keyboardHidden changes, because we have [inputDeviceMgr]
          * skip uiMode (system light/dark mode) changes, because we have [onThemeChangeListener]
@@ -646,9 +664,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         if (sym != null) {
             val states = KeyStates.fromKeyEvent(event)
             val up = event.action == KeyEvent.ACTION_UP
-            postFcitxJob {
-                sendKey(sym, states, event.scanCode, up, timestamp)
-            }
+            submitEngineCommand(
+                EngineCommand.SendKey(sym.sym, states.states, event.scanCode, up, timestamp)
+            )
             return true
         }
         Timber.d("Skipped KeyEvent: $event")
@@ -658,9 +676,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         // request to show floating CandidatesView when pressing physical keyboard
         if (inputDeviceMgr.evaluateOnKeyDown(event, this)) {
-            postFcitxJob {
-                focus(true)
-            }
+            submitEngineCommand(EngineCommand.Focus(true))
             forceShowSelf()
         }
         return forwardKeyEvent(event) || super.onKeyDown(keyCode, event)
@@ -690,10 +706,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         val uid = currentInputBinding.uid
         val pkgName = pkgNameCache.forUid(uid)
         Timber.d("onBindInput: uid=$uid pkg=$pkgName")
-        postFcitxJob {
-            // ensure InputContext has been created before focusing it
-            activate(uid, pkgName)
-        }
+        // ensure InputContext has been created before focusing it
+        submitEngineCommand(EngineCommand.ActivateContext(uid, pkgName))
         if (firstBindInput) {
             firstBindInput = false
             // only use input method from subtype for the first `onBindInput`, because
@@ -704,9 +718,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 val subtype = inputMethodManager.currentInputMethodSubtype ?: return
                 val im = SubtypeManager.inputMethodOf(subtype)
-                postFcitxJob {
-                    activateIme(im)
-                }
+                submitEngineCommand(EngineCommand.ActivateInputMethod(im))
             }
         }
     }
@@ -731,9 +743,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
                 skipNextSubtypeChange = null
                 return
             }
-            postFcitxJob {
-                activateIme(im)
-            }
+            submitEngineCommand(EngineCommand.ActivateInputMethod(im))
         }
     }
 
@@ -753,22 +763,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         inputDeviceMgr.notifyOnStartInput(attribute)
         Timber.d("onStartInput: initialSel=${selection.current}, restarting=$restarting")
         val isNullType = attribute.isTypeNull()
-        // wait until InputContext created/activated
-        postFcitxJob {
-            if (restarting) {
-                // when input restarts in the same editor, focus out to clear previous state
-                focus(false)
-                // try focus out before changing CapabilityFlags,
-                // to avoid confusing state of different text fields
-            }
-            // EditorInfo can be different in onStartInput and onStartInputView,
-            // especially in browsers
-            setCapFlags(flags)
-            // for hardware keyboard, focus to allow switching input methods before onStartInputView
-            if (!isNullType) {
-                focus(true)
-            }
-        }
+        // Commands share one serial queue, preserving focus -> capability -> focus ordering.
+        if (restarting) submitEngineCommand(EngineCommand.Focus(false))
+        submitEngineCommand(EngineCommand.SetCapabilities(flags.flags))
+        if (!isNullType) submitEngineCommand(EngineCommand.Focus(true))
     }
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
@@ -776,9 +774,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         inputSession.dispatch(
             InputSessionEvent.InputViewStarted(info.toEditorSnapshot(), restarting)
         )
-        postFcitxJob {
-            focus(true)
-        }
+        submitEngineCommand(EngineCommand.Focus(true))
         if (inputDeviceMgr.evaluateOnStartInputView(info, this)) {
             // because onStartInputView will always be called after onStartInput,
             // editorInfo and capFlags should be up-to-date
@@ -898,12 +894,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         if (newSelStart != newSelEnd) return
         // do reset if composing is empty && input panel is not empty
         if (composing.isEmpty()) {
-            postFcitxJob {
-                if (!isEmpty()) {
-                    Timber.d("handleCursorUpdate: reset")
-                    reset()
-                }
-            }
+            Timber.d("handleCursorUpdate: reset if engine is not empty")
+            submitEngineCommand(EngineCommand.ResetIfNotEmpty)
             return
         }
         // check if cursor inside composing text
@@ -915,11 +907,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             if (position != composingText.cursor) {
                 // cursor in InvokeActionEvent counts by "UTF-8 characters"
                 val codePointPosition = composingText.codePointCountUntil(position)
-                postFcitxJob {
-                    if (updateIndex != cursorUpdateIndex) return@postFcitxJob
-                    Timber.d("handleCursorUpdate: move fcitx cursor to $codePointPosition")
-                    moveCursor(codePointPosition)
-                }
+                submitEngineCommand(
+                    EngineCommand.MoveCursor(codePointPosition),
+                    guard = { updateIndex == cursorUpdateIndex }
+                )
             }
         } else {
             Timber.d("handleCursorUpdate: focus out/in")
@@ -928,9 +919,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             currentInputConnection?.finishComposingText()
             // `fcitx.reset()` here would commit preedit after new cursor position
             // since we have `ClientUnfocusCommit`, focus out and in would do the trick
-            postFcitxJob {
-                focusOutIn()
-            }
+            submitEngineCommand(EngineCommand.FocusOutIn)
         }
     }
 
@@ -1077,9 +1066,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             monitorCursorAnchor(false)
         }
         resetComposingState()
-        postFcitxJob {
-            focusOutIn()
-        }
+        submitEngineCommand(EngineCommand.FocusOutIn)
         hideStatusIcon()
         showingDialog?.dismiss()
     }
@@ -1087,9 +1074,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     override fun onFinishInput() {
         Timber.d("onFinishInput")
         inputSession.dispatch(InputSessionEvent.InputFinished)
-        postFcitxJob {
-            focus(false)
-        }
+        submitEngineCommand(EngineCommand.Focus(false))
         capabilityFlags = CapabilityFlags.DefaultFlags
     }
 
@@ -1100,9 +1085,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         // currentInputBinding can be null on some devices under some special Multi-screen mode
         val uid = currentInputBinding?.uid ?: return
         Timber.d("onUnbindInput: uid=$uid")
-        postFcitxJob {
-            deactivate(uid)
-        }
+        submitEngineCommand(EngineCommand.DeactivateContext(uid))
     }
 
     override fun onDestroy() {

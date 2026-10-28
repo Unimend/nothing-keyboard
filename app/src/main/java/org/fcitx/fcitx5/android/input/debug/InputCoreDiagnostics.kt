@@ -12,7 +12,9 @@ data class InputCoreDiagnosticsSnapshot(
     val engineEventCount: Long = 0,
     val lastEngineEvent: String = "waiting",
     val engineEffectCount: Long = 0,
-    val lastEngineEffect: String = "waiting"
+    val lastEngineEffect: String = "waiting",
+    val engineCommandCount: Long = 0,
+    val lastEngineCommand: String = "waiting"
 )
 
 object InputCoreDiagnostics {
@@ -34,6 +36,13 @@ object InputCoreDiagnostics {
         mutableState.value = mutableState.value.copy(
             engineEffectCount = mutableState.value.engineEffectCount + 1,
             lastEngineEffect = name
+        )
+    }
+
+    fun recordEngineCommand(name: String) {
+        mutableState.value = mutableState.value.copy(
+            engineCommandCount = mutableState.value.engineCommandCount + 1,
+            lastEngineCommand = name
         )
     }
 }

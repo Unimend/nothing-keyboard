@@ -27,6 +27,7 @@ import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
+import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
 
@@ -106,7 +107,9 @@ class HorizontalCandidateComponent :
                 holder.itemView.setOnClickListener {
                     val candidateIndex = holder.idx
                     if (candidateIndex >= 0) {
-                        fcitx.launchOnReady { it.select(candidateIndex) }
+                        inputView.service.submitEngineCommand(
+                            EngineCommand.SelectCandidate(candidateIndex)
+                        )
                     }
                 }
                 holder.itemView.setOnLongClickListener {
