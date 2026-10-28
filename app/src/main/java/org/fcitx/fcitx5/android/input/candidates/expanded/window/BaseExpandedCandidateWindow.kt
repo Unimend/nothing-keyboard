@@ -16,18 +16,12 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
-import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.BooleanKey.ExpandedCandidatesEmpty
-import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesAttached
-import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesDetached
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.expanded.CandidateTabActionsAdapter
 import org.fcitx.fcitx5.android.input.candidates.expanded.CandidatesPagingSource
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateLayout
 import org.fcitx.fcitx5.android.input.candidates.expanded.PagingCandidateViewAdapter
-import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
@@ -59,8 +53,6 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     protected val theme by manager.theme()
     protected val inputView by manager.inputView()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
-    private val bar: KawaiiBarComponent by manager.must()
-    private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val candidateInteraction: CandidateInteractionController by manager.must()
     private val navigator: InputNavigator by manager.must()
 
@@ -146,7 +138,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             pagingSourceFactory = {
                 CandidatesPagingSource(
                     service.engineQueries,
-                    total = horizontalCandidate.adapter.total,
+                    total = candidateInteraction.state.total,
                     offset = adapter.offset
                 )
             }
@@ -160,7 +152,6 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     abstract fun nextPage()
 
     override fun onAttached() {
-        bar.expandButtonStateMachine.push(ExpandedCandidatesAttached)
         candidateLayout.embeddedKeyboard.also {
             val snapshot = service.inputSession.current
             it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
@@ -221,10 +212,6 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     }
 
     override fun onDetached() {
-        bar.expandButtonStateMachine.push(
-            ExpandedCandidatesDetached,
-            ExpandedCandidatesEmpty to candidateInteraction.state.reachedEnd
-        )
         candidatesSubmitJob?.cancel()
         offsetJob?.cancel()
         sessionJob?.cancel()

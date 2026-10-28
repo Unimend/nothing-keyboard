@@ -6,6 +6,8 @@ package org.fcitx.fcitx5.android.input.candidates.interaction
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.mechdancer.dependency.UniqueComponent
 
@@ -13,8 +15,11 @@ import org.mechdancer.dependency.UniqueComponent
 class CandidateInteractionController(private val commands: EngineCommandPort) :
     UniqueComponent<CandidateInteractionController>() {
 
-    var state = CandidateInteractionState()
-        private set
+    private val mutableState = MutableStateFlow(CandidateInteractionState())
+    val snapshots = mutableState.asStateFlow()
+    val state get() = mutableState.value
+    private var requestSequence = 0L
+    private var activeRequest: CandidateLoadRequest? = null
 
     private val _expandedOffset = MutableSharedFlow<Int>(
         replay = 1,
@@ -23,6 +28,7 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
     val expandedOffset = _expandedOffset.asSharedFlow()
 
     fun replaceCandidates(loadedCount: Int, total: Int) {
+        activeRequest = null
         update(CandidateInteractionEvent.CandidatesReplaced(loadedCount, total))
         publishExpandedOffset()
     }
@@ -31,11 +37,13 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
         val before = state
         update(CandidateInteractionEvent.LoadMoreStarted(before.generation, before.loadedCount))
         return if (!before.loadMoreInFlight && state.loadMoreInFlight) {
-            CandidateLoadRequest(before.generation, before.loadedCount)
+            CandidateLoadRequest(before.generation, before.loadedCount, ++requestSequence)
+                .also { activeRequest = it }
         } else null
     }
 
     fun completeLoadMore(request: CandidateLoadRequest, receivedCount: Int, pageSize: Int): Boolean {
+        if (request != activeRequest) return false
         val before = state
         update(
             CandidateInteractionEvent.LoadMoreCompleted(
@@ -46,11 +54,16 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
             )
         )
         val accepted = state !== before && state.generation == request.generation
-        if (accepted) publishExpandedOffset()
+        if (accepted) {
+            activeRequest = null
+            publishExpandedOffset()
+        }
         return accepted
     }
 
     fun failLoadMore(request: CandidateLoadRequest) {
+        if (request != activeRequest) return
+        activeRequest = null
         update(CandidateInteractionEvent.LoadMoreFailed(request.generation))
     }
 
@@ -67,8 +80,8 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
     }
 
     private fun update(event: CandidateInteractionEvent) {
-        state = CandidateInteractionReducer.reduce(state, event)
+        mutableState.value = CandidateInteractionReducer.reduce(state, event)
     }
 }
 
-data class CandidateLoadRequest(val generation: Int, val offset: Int)
+data class CandidateLoadRequest(val generation: Int, val offset: Int, val requestId: Long)

@@ -45,6 +45,12 @@ import org.fcitx.fcitx5.android.input.bar.ui.TitleUi
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateStyle
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
+import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
+import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.BooleanKey.ExpandedCandidatesEmpty
+import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesUpdated
+import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesAttached
+import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesDetached
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
@@ -96,6 +102,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private var clipboardTimeoutJob: Job? = null
     private var inputScopeReady = false
+    private val candidateInteraction: CandidateInteractionController by manager.must()
+    private var candidateStateJob: Job? = null
     private val clipboardHistory: ClipboardHistory by manager.must()
     private var clipboardObservation: ClipboardObservation? = null
 
@@ -310,7 +318,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         switchUiByState(it)
     }
 
-    val expandButtonStateMachine = ExpandButtonStateMachine.new {
+    private val expandButtonStateMachine = ExpandButtonStateMachine.new {
         when (it) {
             ClickToAttachWindow -> {
                 setExpandButtonToAttach()
@@ -385,6 +393,11 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun onInputScopeReady() {
         if (inputScopeReady) return
         inputScopeReady = true
+        candidateStateJob = service.lifecycleScope.launch {
+            candidateInteraction.snapshots.collect {
+                expandButtonStateMachine.push(ExpandedCandidatesUpdated, ExpandedCandidatesEmpty to !it.canExpand)
+            }
+        }
         clipboardHistory.lastItem?.let {
             val now = System.currentTimeMillis()
             val clipboardTimeout = clipboardItemTimeout.getValue() * 1000L
@@ -400,6 +413,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     fun onInputScopeDestroyed() {
         if (!inputScopeReady) return
         inputScopeReady = false
+        candidateStateJob?.cancel()
+        candidateStateJob = null
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) inlinePresenter.dispose()
         clipboardTimeoutJob?.cancel()
         clipboardTimeoutJob = null
@@ -433,6 +448,9 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     override fun onWindowAttached(window: InputWindow) {
+        if (window.surface == InputSurface.ExpandedCandidates) {
+            expandButtonStateMachine.push(ExpandedCandidatesAttached)
+        }
         if (window is TextEditingWindow) {
             titleUi.showBlank()
             barStateMachine.push(ExtendedWindowAttached)
@@ -452,6 +470,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     override fun onWindowDetached(window: InputWindow) {
+        if (window.surface == InputSurface.ExpandedCandidates) {
+            expandButtonStateMachine.push(ExpandedCandidatesDetached,
+                ExpandedCandidatesEmpty to !candidateInteraction.state.canExpand)
+        }
         barStateMachine.push(WindowDetached)
     }
 

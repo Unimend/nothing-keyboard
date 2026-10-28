@@ -12,6 +12,8 @@ data class CandidateInteractionState(
 ) {
     val expandedOffset: Int
         get() = loadedCount
+    val canExpand: Boolean
+        get() = loadedCount > 0 && !reachedEnd
 }
 
 sealed interface CandidateInteractionEvent {

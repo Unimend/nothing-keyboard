@@ -11,6 +11,20 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `candidate surfaces cannot manipulate toolbar private state or other adapters`() {
+        val paths = listOf("candidates/horizontal/HorizontalCandidateComponent.kt",
+            "candidates/expanded/window/BaseExpandedCandidateWindow.kt")
+        paths.forEach { name ->
+            val source = sourceRoot.resolve("org/fcitx/fcitx5/android/input/$name").readText()
+            assertFalse(name, "expandButtonStateMachine" in source)
+            assertFalse(name, "horizontalCandidate.adapter" in source)
+        }
+        val bar = sourceRoot.resolve("org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt").readText()
+        assertTrue("private val expandButtonStateMachine" in bar)
+        assertTrue("candidateInteraction.snapshots.collect" in bar)
+    }
+
+    @Test
     fun `key routing cannot inspect candidate renderer or own deletion gesture state`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/keyboard/CommonKeyActionListener.kt"

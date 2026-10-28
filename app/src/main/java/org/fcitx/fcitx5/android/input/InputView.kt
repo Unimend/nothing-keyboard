@@ -431,6 +431,7 @@ class InputView(
         windowManager.dispose()
         advancedPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
         keyboardPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
+        horizontalCandidate.dispose()
         kawaiiBar.onInputScopeDestroyed()
         popup.dismissAll()
         punctuation.dispose()

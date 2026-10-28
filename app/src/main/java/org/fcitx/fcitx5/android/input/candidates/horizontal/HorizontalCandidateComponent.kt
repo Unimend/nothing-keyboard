@@ -10,12 +10,13 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ensureActive
+import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateLoadRequest
+import timber.log.Timber
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
-import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.BooleanKey.ExpandedCandidatesEmpty
-import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesUpdated
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AutoFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
@@ -34,7 +35,6 @@ class HorizontalCandidateComponent :
     private val context by manager.context()
     private val theme by manager.theme()
     private val inputView by manager.inputView()
-    private val bar: KawaiiBarComponent by manager.must()
     private val candidateInteraction: CandidateInteractionController by manager.must()
 
     private val fillStyle by AppPrefs.getInstance().keyboard.horizontalCandidateStyle
@@ -48,29 +48,60 @@ class HorizontalCandidateComponent :
     }
 
     private var layoutMinWidth = 0
+    private var disposed = false
+    private var loadMoreJob: Job? = null
+    private var pendingDelivery: Runnable? = null
+    private var pendingRequest: CandidateLoadRequest? = null
 
     private fun loadMoreCandidates() {
+        if (disposed) return
         val request = candidateInteraction.beginLoadMore() ?: return
+        pendingRequest = request
         val pageSize = 32
-        inputView.service.lifecycleScope.launch {
-            val next = inputView.service.engineQueries.candidates(request.offset, pageSize)
-            view.post {
-                if (candidateInteraction.completeLoadMore(request, next.size, pageSize)) {
-                    adapter.appendCandidates(next, candidateInteraction.state.total)
-                    refreshExpanded()
+        loadMoreJob = inputView.service.lifecycleScope.launch {
+            try {
+                val next = inputView.service.engineQueries.candidates(request.offset, pageSize)
+                ensureActive()
+                val delivery = Runnable {
+                    pendingDelivery = null
+                    if (disposed) return@Runnable
+                    if (pendingRequest == request) pendingRequest = null
+                    if (candidateInteraction.completeLoadMore(request, next.size, pageSize)) {
+                        adapter.appendCandidates(next, candidateInteraction.state.total)
+                        refreshExpanded()
+                    }
                 }
+                pendingDelivery = delivery
+                view.post(delivery)
+            } catch (cancelled: CancellationException) {
+                candidateInteraction.failLoadMore(request)
+                throw cancelled
+            } catch (failure: Exception) {
+                candidateInteraction.failLoadMore(request)
+                if (pendingRequest == request) pendingRequest = null
+                Timber.w(failure, "Candidate page query failed")
             }
         }
+    }
+
+    private fun cancelPendingLoad() {
+        loadMoreJob?.cancel()
+        loadMoreJob = null
+        pendingDelivery?.let(view::removeCallbacks)
+        pendingDelivery = null
+        pendingRequest?.let(candidateInteraction::failLoadMore)
+        pendingRequest = null
+    }
+
+    fun dispose() {
+        disposed = true
+        cancelPendingLoad()
     }
 
     // Since expanded candidate window is created once the expand button was clicked,
     // we need to replay the last offset
     private fun refreshExpanded() {
         candidateInteraction.publishExpandedOffset()
-        bar.expandButtonStateMachine.push(
-            ExpandedCandidatesUpdated,
-            ExpandedCandidatesEmpty to candidateInteraction.state.reachedEnd
-        )
     }
 
     val adapter: HorizontalCandidateViewAdapter by lazy {
@@ -134,6 +165,8 @@ class HorizontalCandidateComponent :
     }
 
     fun onCandidateUpdate(data: EngineCandidateList) {
+        if (disposed) return
+        cancelPendingLoad()
         // A new composition starts a new search, so its candidate rail must start at the primary
         // candidate. Subsequent user drags remain untouched until the candidate data changes.
         val previousCandidates = adapter.candidates

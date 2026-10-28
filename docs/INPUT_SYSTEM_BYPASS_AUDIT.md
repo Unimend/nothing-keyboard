@@ -265,3 +265,24 @@ cancellation, zero displacement and state reset. Device verification checked act
 deletion on Editing and Emoji, then restoration to `abc` at 3..3 and `abc😀` at 5..5. In Pinyin,
 `abc😀ni` followed by horizontal deletion became `abc😀`, with empty preedit and cursor 5..5;
 committed text was not selected or deleted. Main-keyboard delete/undo also restored `abc`.
+
+## Candidate paging and toolbar ownership
+
+Candidate paging now has one owner, `CandidateInteractionController`. Its mutable flow is private;
+surfaces can only observe immutable snapshots and submit candidate intents. Every page request has a
+unique identity in addition to its generation and offset, so a cancelled request, late failure or
+same-offset retry cannot finish or cancel a newer request. Replacing the composition invalidates the
+outstanding request before publishing the new candidate state.
+
+`HorizontalCandidateComponent` owns its query job and posted delivery callback for exactly its own
+lifetime. Candidate replacement and component disposal cancel both paths. The expanded window no
+longer reads the horizontal adapter or reaches into the toolbar. `KawaiiBarComponent` independently
+derives its expand-button presentation from candidate snapshots and the attached semantic surface;
+candidate views cannot push toolbar state-machine events.
+
+Tests cover stale completion/failure, same-offset retry, candidate replacement, successive full
+pages followed by a terminal short page, and empty/exhausted expand state. A source boundary rejects
+candidate-to-toolbar mutation and peer-adapter inspection. The Android 12 diagnostic host verified
+expanded `nihao`, selecting the visible `比`, and Return committing `比好`. Continuous horizontal
+multi-page dragging remains part of the final device regression matrix rather than a new ownership
+exception.
