@@ -56,4 +56,17 @@ class EditingSessionTest {
         assertFalse(session.userSelection)
         assertFalse(session.selectionActive)
     }
+
+    @Test
+    fun `delete selection immediately collapses local selection state`() {
+        val session = EditingSession()
+        session.updateSelection(1, 5)
+        session.toggleSelection()
+
+        assertEquals(EditingCommand.DeleteSelection, session.deleteSelection())
+        assertFalse(session.hasSelection)
+        assertFalse(session.userSelection)
+        assertFalse(session.selectionActive)
+    }
+
 }

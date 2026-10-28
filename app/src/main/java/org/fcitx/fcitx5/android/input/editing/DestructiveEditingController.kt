@@ -49,6 +49,7 @@ class DestructiveEditingController(
 
         if (host.shouldSimulateBackspaceKey) {
             host.sendBackspaceKey()
+            if (start != end) collapseSelection(connection, start)
             return
         }
         if (start == end) {
@@ -60,7 +61,11 @@ class DestructiveEditingController(
                 connection.deleteSurroundingText(1, 0)
             }
         } else {
-            connection.commitText("", 0)
+            connection.withBatchEdit {
+                commitText("", 0)
+                setSelection(start, start)
+            }
+            host.resetEditingSelection(start)
         }
     }
 
@@ -70,7 +75,11 @@ class DestructiveEditingController(
         if (selection.isEmpty()) return
         recordSelectedText(connection, selection.start, selection.end)
         host.predictEditingSelection(selection.start)
-        connection.commitText("", 1)
+        connection.withBatchEdit {
+            commitText("", 1)
+            setSelection(selection.start, selection.start)
+        }
+        host.resetEditingSelection(selection.start)
     }
 
     fun clearAll() {
@@ -106,6 +115,11 @@ class DestructiveEditingController(
     }
 
     fun invalidateUndo() = history.clear()
+
+    private fun collapseSelection(connection: InputConnection, position: Int) {
+        connection.setSelection(position, position)
+        host.resetEditingSelection(position)
+    }
 
     private fun recordSelectedText(connection: InputConnection, start: Int, end: Int) {
         history.record(

@@ -96,7 +96,10 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
                         commandExecutor.execute(EditingCommand.ExtendSelection(it))
                     },
                     deleteSelection = {
-                        if (it != 0) commandExecutor.execute(EditingCommand.DeleteSelection)
+                        if (it != 0) {
+                            commandExecutor.execute(session.deleteSelection())
+                            updateSelection(session.hasSelection, session.userSelection)
+                        }
                     },
                     clearAll = {
                         commandExecutor.execute(session.clearAll())

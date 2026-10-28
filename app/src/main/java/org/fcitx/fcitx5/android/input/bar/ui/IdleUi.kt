@@ -65,15 +65,8 @@ class IdleUi(
         if (ctx.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_LTR) 1f else -1f
     }
 
-    private val menuButtonRotation
-        get() = when {
-            inPrivate -> 0f
-            currentState == State.Toolbar -> 90f * translateDirection
-            else -> -90f * translateDirection
-        }
-
     val menuButton = ToolButton(ctx, R.drawable.ic_baseline_expand_more_24, theme).apply {
-        iconRotation = menuButtonRotation
+        setText(expandLabel(), theme)
     }
 
     val hideKeyboardButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_drop_down_24, theme)
@@ -145,10 +138,8 @@ class IdleUi(
     }
 
     private fun updateMenuButtonIcon() {
-        menuButton.setIcon(
-            if (inPrivate) R.drawable.ic_view_private
-            else R.drawable.ic_baseline_expand_more_24
-        )
+        if (inPrivate) menuButton.setIcon(R.drawable.ic_view_private)
+        else menuButton.setText(expandLabel(), theme)
     }
 
     private fun updateMenuButtonContentDescription() {
@@ -159,17 +150,16 @@ class IdleUi(
         }
     }
 
-    private fun updateMenuButtonRotation(instant: Boolean = false) {
-        val targetRotation = menuButtonRotation
-        menuButton.apply {
-            if (targetRotation == iconRotation) return
-            iconAnimate().cancel()
-            if (!instant && !disableAnimation) {
-                iconAnimate().setDuration(NothingDesignTokens.Motion.QuickFeedbackMs).rotation(targetRotation)
-            } else {
-                iconRotation = targetRotation
-            }
-        }
+    private fun updateMenuButtonRotation(@Suppress("UNUSED_PARAMETER") instant: Boolean = false) {
+        menuButton.iconAnimate().cancel()
+        menuButton.iconRotation = 0f
+        updateMenuButtonIcon()
+    }
+
+    private fun expandLabel(): String {
+        val expanded = currentState == State.Toolbar
+        val pointsRight = if (translateDirection > 0) !expanded else expanded
+        return if (pointsRight) ">" else "<"
     }
 
     fun setHideKeyboardIsVoiceInput(isVoiceInput: Boolean, callback: View.OnClickListener) {
