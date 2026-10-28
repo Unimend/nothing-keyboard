@@ -167,7 +167,6 @@ class InputView(
 
     private fun setupScope() {
         scope += this@InputView.wrapToUniqueComponent()
-        scope += service.wrapToUniqueComponent()
         scope += sessionAccess
         scope += engineAccess
         scope += editingAccess

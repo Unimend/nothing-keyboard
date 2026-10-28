@@ -104,8 +104,7 @@ class InputArchitectureBoundaryTest {
         val allowed = setOf(
             "FcitxInputMethodService.kt",
             "InputView.kt",
-            "CandidatesView.kt",
-            "dependency/Functions.kt"
+            "CandidatesView.kt"
         )
         val root = sourceRoot.resolve("org/fcitx/fcitx5/android/input")
         val violations = inputSources().filter { file ->

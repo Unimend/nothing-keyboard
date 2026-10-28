@@ -341,7 +341,8 @@ service and then choose arbitrary members from it. The platform voice-input swit
 and next-IME actions are explicit intents on the platform port.
 
 `BaseInputView` now accepts Context plus session/engine ports instead of a service object. Only the
-Android composition roots (`FcitxInputMethodService`, `InputView`, `CandidatesView` and the legacy
-dependency binding helper) may mention the concrete service, enforced by a source boundary test.
+Android composition roots (`FcitxInputMethodService`, `InputView` and `CandidatesView`) may mention
+the concrete service, enforced by a source boundary test. The obsolete service dependency binding
+was deleted, so feature components cannot request the service even accidentally.
 This makes Fcitx and Android replacement points visible in constructors and prevents a feature
 system from silently expanding its authority through a service reference.
