@@ -51,6 +51,7 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.autofill.InlineSuggestionRequestFactory
 import org.fcitx.fcitx5.android.input.wm.AndroidImeWindowLayout
+import org.fcitx.fcitx5.android.input.wm.AndroidCandidateAnchorController
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
@@ -96,6 +97,11 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private lateinit var contentView: FrameLayout
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
+    private val candidateAnchor = AndroidCandidateAnchorController(
+        contentView = { contentView },
+        decorView = { decorView },
+        candidatesView = { candidatesView }
+    )
 
     private val keyEvents: AndroidKeyEventController = AndroidKeyEventController(
         connection = { currentInputConnection },
@@ -108,7 +114,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     ) ?: R.drawable.ic_baseline_keyboard_24
 
     private val navbarMgr = NavigationBarManager()
-    private val inputDeviceMgr = InputDeviceManager { isVirtualKeyboard ->
+    private val inputDeviceMgr = InputDeviceManager(::systemWantsInputView) { isVirtualKeyboard ->
         submitEngineCommand(
             EngineCommand.SetCandidatePagingMode(if (isVirtualKeyboard) 0 else 1)
         )
@@ -321,13 +327,13 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     @SuppressLint("MissingSuperCall")
     override fun onEvaluateInputViewShown() = true
 
-    fun superEvaluateInputViewShown() = super.onEvaluateInputViewShown()
+    private fun systemWantsInputView() = super.onEvaluateInputViewShown()
 
     override fun onEvaluateFullscreenMode() = false
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         // request to show floating CandidatesView when pressing physical keyboard
-        if (inputDeviceMgr.evaluateOnKeyDown(event, this)) {
+        if (inputDeviceMgr.evaluateOnKeyDown(event)) {
             submitEngineCommand(EngineCommand.Focus(true))
             forceShowSelf()
         }
@@ -343,13 +349,13 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     @Suppress("DEPRECATION", "OVERRIDE_DEPRECATION")
     override fun onViewClicked(focusChanged: Boolean) {
         super.onViewClicked(focusChanged)
-        inputDeviceMgr.evaluateOnViewClicked(this)
+        inputDeviceMgr.evaluateOnViewClicked()
     }
 
     @RequiresApi(34)
     override fun onUpdateEditorToolType(toolType: Int) {
         super.onUpdateEditorToolType(toolType)
-        inputDeviceMgr.evaluateOnUpdateEditorToolType(toolType, this)
+        inputDeviceMgr.evaluateOnUpdateEditorToolType(toolType)
     }
 
     override fun onBindInput() {
@@ -394,18 +400,15 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             InputSessionEvent.InputViewStarted(info.toEditorSnapshot(), restarting)
         )
         submitEngineCommand(EngineCommand.Focus(true))
-        if (inputDeviceMgr.evaluateOnStartInputView(info, this)) {
+        if (inputDeviceMgr.evaluateOnStartInputView(info)) {
             // because onStartInputView will always be called after onStartInput,
             // editorInfo and capFlags should be up-to-date
             inputSession.current.editorSessionOrNull()?.let { inputView?.startInput(it) }
         } else {
             if (currentInputConnection?.monitorCursorAnchor() != true) {
-                if (!decorLocationUpdated) {
-                    updateDecorLocation()
-                }
                 // anchor CandidatesView to bottom-left corner in case InputConnection does not
                 // support monitoring CursorAnchorInfo
-                candidatesView?.updateCursorAnchor(contentSize)
+                candidateAnchor.showFallback()
             }
             showStatusIcon(currentStatusIcon())
         }
@@ -430,59 +433,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         )
     }
 
-    private val contentSize = floatArrayOf(0f, 0f)
-    private val decorLocation = floatArrayOf(0f, 0f)
-    private val decorLocationInt = intArrayOf(0, 0)
-    private var decorLocationUpdated = false
-
-    private fun updateDecorLocation() {
-        contentSize[0] = contentView.width.toFloat()
-        contentSize[1] = contentView.height.toFloat()
-        decorView.getLocationOnScreen(decorLocationInt)
-        decorLocation[0] = decorLocationInt[0].toFloat()
-        decorLocation[1] = decorLocationInt[1].toFloat()
-        // contentSize and decorLocation can be completely wrong,
-        // when measuring right after the very first onStartInputView() of an IMS' lifecycle
-        if (contentSize[0] > 0 && contentSize[1] > 0) {
-            decorLocationUpdated = true
-        }
-    }
-
-    private val anchorPosition = floatArrayOf(0f, 0f, 0f, 0f)
-
     override fun onUpdateCursorAnchorInfo(info: CursorAnchorInfo) {
-        val bounds = info.getCharacterBounds(0)
-        if (bounds != null) {
-            // anchor to start of composing span instead of insertion mark if available
-            val horizontal =
-                if (candidatesView?.layoutDirection == View.LAYOUT_DIRECTION_RTL) bounds.right else bounds.left
-            anchorPosition[0] = horizontal
-            anchorPosition[1] = bounds.bottom
-            anchorPosition[2] = horizontal
-            anchorPosition[3] = bounds.top
-        } else {
-            anchorPosition[0] = info.insertionMarkerHorizontal
-            anchorPosition[1] = info.insertionMarkerBottom
-            anchorPosition[2] = info.insertionMarkerHorizontal
-            anchorPosition[3] = info.insertionMarkerTop
-        }
-        // avoid calling `decorView.getLocationOnScreen` repeatedly
-        if (!decorLocationUpdated) {
-            updateDecorLocation()
-        }
-        if (anchorPosition.any(Float::isNaN)) {
-            // anchor candidates view to bottom-left corner in case CursorAnchorInfo is invalid
-            candidatesView?.updateCursorAnchor(contentSize)
-            return
-        }
-        // params of `Matrix.mapPoints` must be [x0, y0, x1, y1]
-        info.matrix.mapPoints(anchorPosition)
-        val (xOffset, yOffset) = decorLocation
-        anchorPosition[0] -= xOffset
-        anchorPosition[1] -= yOffset
-        anchorPosition[2] -= xOffset
-        anchorPosition[3] -= yOffset
-        candidatesView?.updateCursorAnchor(anchorPosition, contentSize)
+        candidateAnchor.update(info)
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -500,7 +452,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
         sessionStore.dispatch(InputSessionEvent.InputViewFinished)
-        decorLocationUpdated = false
+        candidateAnchor.invalidateWindowGeometry()
         inputDeviceMgr.onFinishInputView()
         editor.finishInputView()
         currentInputConnection?.monitorCursorAnchor(false)

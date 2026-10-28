@@ -13,7 +13,10 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.candidates.floating.FloatingCandidatesMode
 import org.fcitx.fcitx5.android.utils.isTypeNull
 
-class InputDeviceManager(private val onChange: (Boolean) -> Unit) {
+class InputDeviceManager(
+    private val systemWantsInputView: () -> Boolean,
+    private val onChange: (Boolean) -> Unit
+) {
 
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
@@ -73,26 +76,24 @@ class InputDeviceManager(private val onChange: (Boolean) -> Unit) {
     /**
      * @return should use virtual keyboard
      */
-    fun evaluateOnStartInputView(info: EditorInfo, service: FcitxInputMethodService): Boolean {
+    fun evaluateOnStartInputView(info: EditorInfo): Boolean {
         startedInputView = true
         isNullInputType = info.isTypeNull()
-        isVirtualKeyboard = when (candidatesViewMode) {
-            FloatingCandidatesMode.SystemDefault -> service.superEvaluateInputViewShown()
-            FloatingCandidatesMode.InputDevice -> isVirtualKeyboard
-            FloatingCandidatesMode.Disabled -> true
-        }
+        isVirtualKeyboard = InputDeviceVisibilityPolicy.onStartInputView(
+            candidatesViewMode, isVirtualKeyboard, systemWantsInputView()
+        )
         return isVirtualKeyboard
     }
 
     /**
      * @return should force show input views on hardware key down
      */
-    fun evaluateOnKeyDown(e: KeyEvent, service: FcitxInputMethodService): Boolean {
+    fun evaluateOnKeyDown(e: KeyEvent): Boolean {
         if (startedInputView) {
             // filter out back/home/volume buttons and combination keys
             if (e.unicodeChar != 0) {
                 // evaluate virtual keyboard visibility when pressing physical keyboard while InputView visible
-                evaluateOnKeyDownInner(service)
+                evaluateOnKeyDownInner()
             }
             // no need to force show InputView since it's already visible
             return false
@@ -101,37 +102,34 @@ class InputDeviceManager(private val onChange: (Boolean) -> Unit) {
             // and pressing any digit/letter/punctuation key on physical keyboard
             val showInputView = !isNullInputType && e.unicodeChar != 0
             if (showInputView) {
-                evaluateOnKeyDownInner(service)
+                evaluateOnKeyDownInner()
             }
             return showInputView
         }
     }
 
-    private fun evaluateOnKeyDownInner(service: FcitxInputMethodService) {
-        isVirtualKeyboard = when (candidatesViewMode) {
-            FloatingCandidatesMode.SystemDefault -> service.superEvaluateInputViewShown()
-            FloatingCandidatesMode.InputDevice -> false
-            FloatingCandidatesMode.Disabled -> true
-        }
+    private fun evaluateOnKeyDownInner() {
+        isVirtualKeyboard = InputDeviceVisibilityPolicy.onHardwareKey(
+            candidatesViewMode, systemWantsInputView()
+        )
     }
 
-    fun evaluateOnViewClicked(service: FcitxInputMethodService) {
+    fun evaluateOnViewClicked() {
         if (!startedInputView) return
-        isVirtualKeyboard = when (candidatesViewMode) {
-            FloatingCandidatesMode.SystemDefault -> service.superEvaluateInputViewShown()
-            else -> true
-        }
+        isVirtualKeyboard = InputDeviceVisibilityPolicy.onEditorClicked(
+            candidatesViewMode, systemWantsInputView()
+        )
     }
 
-    fun evaluateOnUpdateEditorToolType(toolType: Int, service: FcitxInputMethodService) {
+    fun evaluateOnUpdateEditorToolType(toolType: Int) {
         if (!startedInputView) return
-        isVirtualKeyboard = when (candidatesViewMode) {
-            FloatingCandidatesMode.SystemDefault -> service.superEvaluateInputViewShown()
-            FloatingCandidatesMode.InputDevice ->
-                // switch to virtual keyboard on touch screen events, otherwise preserve current mode
-                if (toolType == MotionEvent.TOOL_TYPE_FINGER || toolType == MotionEvent.TOOL_TYPE_STYLUS) true else isVirtualKeyboard
-            FloatingCandidatesMode.Disabled -> true
-        }
+        isVirtualKeyboard = InputDeviceVisibilityPolicy.onEditorTool(
+            candidatesViewMode,
+            isVirtualKeyboard,
+            systemWantsInputView(),
+            isDirectTouch = toolType == MotionEvent.TOOL_TYPE_FINGER ||
+                toolType == MotionEvent.TOOL_TYPE_STYLUS
+        )
     }
 
     /**
@@ -153,5 +151,47 @@ class InputDeviceManager(private val onChange: (Boolean) -> Unit) {
 
     fun onFinishInputView() {
         startedInputView = false
+    }
+}
+
+/** Pure visibility decisions; Android views and service callbacks stay in [InputDeviceManager]. */
+object InputDeviceVisibilityPolicy {
+    fun onStartInputView(
+        mode: FloatingCandidatesMode,
+        currentVirtual: Boolean,
+        systemWantsInputView: Boolean
+    ): Boolean = when (mode) {
+        FloatingCandidatesMode.SystemDefault -> systemWantsInputView
+        FloatingCandidatesMode.InputDevice -> currentVirtual
+        FloatingCandidatesMode.Disabled -> true
+    }
+
+    fun onHardwareKey(
+        mode: FloatingCandidatesMode,
+        systemWantsInputView: Boolean
+    ): Boolean = when (mode) {
+        FloatingCandidatesMode.SystemDefault -> systemWantsInputView
+        FloatingCandidatesMode.InputDevice -> false
+        FloatingCandidatesMode.Disabled -> true
+    }
+
+    fun onEditorClicked(
+        mode: FloatingCandidatesMode,
+        systemWantsInputView: Boolean
+    ): Boolean = when (mode) {
+        FloatingCandidatesMode.SystemDefault -> systemWantsInputView
+        FloatingCandidatesMode.InputDevice,
+        FloatingCandidatesMode.Disabled -> true
+    }
+
+    fun onEditorTool(
+        mode: FloatingCandidatesMode,
+        currentVirtual: Boolean,
+        systemWantsInputView: Boolean,
+        isDirectTouch: Boolean
+    ): Boolean = when (mode) {
+        FloatingCandidatesMode.SystemDefault -> systemWantsInputView
+        FloatingCandidatesMode.InputDevice -> if (isDirectTouch) true else currentVirtual
+        FloatingCandidatesMode.Disabled -> true
     }
 }

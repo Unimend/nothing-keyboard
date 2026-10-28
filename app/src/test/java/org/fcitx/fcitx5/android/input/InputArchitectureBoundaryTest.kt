@@ -67,6 +67,27 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `service delegates floating candidate geometry to window system`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("candidateAnchor.update(info)" in source)
+        assertFalse("anchorPosition" in source)
+        assertFalse("decorLocationUpdated" in source)
+        assertFalse("info.matrix.mapPoints" in source)
+    }
+
+    @Test
+    fun `input device policy cannot depend on concrete input method service`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/InputDeviceManager.kt"
+        ).readText()
+        assertFalse("FcitxInputMethodService" in source)
+        assertFalse("superEvaluateInputViewShown" in source)
+        assertTrue("systemWantsInputView: () -> Boolean" in source)
+    }
+
+    @Test
     fun `candidate and punctuation controllers require narrow ports not Android service`() {
         listOf("candidates/interaction/CandidateCommands.kt",
             "candidates/interaction/CandidateInteractionController.kt",

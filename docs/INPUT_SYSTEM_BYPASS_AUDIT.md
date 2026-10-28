@@ -286,3 +286,19 @@ candidate-to-toolbar mutation and peer-adapter inspection. The Android 12 diagno
 expanded `nihao`, selecting the visible `比`, and Return committing `比好`. Continuous horizontal
 multi-page dragging remains part of the final device regression matrix rather than a new ownership
 exception.
+
+## Input-device and floating-anchor platform boundary
+
+`InputDeviceManager` no longer receives `FcitxInputMethodService`. It receives one narrow callback
+for the platform's input-view preference, while `InputDeviceVisibilityPolicy` owns the pure mode
+decisions for input-view start, hardware keys, editor clicks and tool-type changes. Tests cover
+SystemDefault delegation, InputDevice preservation/hardware hiding/direct-touch restoration and the
+Disabled mode. A source boundary prevents the concrete service dependency from returning.
+
+Cursor-anchor geometry moved from the service into `AndroidCandidateAnchorController` under the
+window system. `CandidateAnchorPolicy` chooses composing-character start before insertion marker,
+uses the right edge for RTL, and rejects NaN or infinite coordinates before and after the platform
+matrix transform. The controller owns measurement retries, decor offsets and bottom-left fallback.
+The service now forwards cursor information and invalidates geometry only at lifecycle boundaries.
+Pure geometry and architecture tests pass; physical-keyboard floating placement still requires a
+connected hardware keyboard for a full visual device check.
