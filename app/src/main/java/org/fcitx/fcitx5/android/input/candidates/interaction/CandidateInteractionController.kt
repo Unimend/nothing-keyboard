@@ -6,16 +6,12 @@ package org.fcitx.fcitx5.android.input.candidates.interaction
 import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
-import org.mechdancer.dependency.Dependent
+import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.mechdancer.dependency.UniqueComponent
-import org.mechdancer.dependency.manager.ManagedHandler
-import org.mechdancer.dependency.manager.managedHandler
 
 /** Single command and loading-state boundary shared by every candidate surface. */
-class CandidateInteractionController : UniqueComponent<CandidateInteractionController>(), Dependent,
-    ManagedHandler by managedHandler() {
-    private val service by manager.inputMethodService()
+class CandidateInteractionController(private val commands: EngineCommandPort) :
+    UniqueComponent<CandidateInteractionController>() {
 
     var state = CandidateInteractionState()
         private set
@@ -63,11 +59,11 @@ class CandidateInteractionController : UniqueComponent<CandidateInteractionContr
     }
 
     fun select(engineIndex: Int) {
-        service.selectCandidate(engineIndex)
+        commands.selectCandidate(engineIndex)
     }
 
     fun triggerTabAction(actionId: Int) {
-        service.triggerCandidateTabAction(actionId)
+        commands.triggerCandidateTabAction(actionId)
     }
 
     private fun update(event: CandidateInteractionEvent) {

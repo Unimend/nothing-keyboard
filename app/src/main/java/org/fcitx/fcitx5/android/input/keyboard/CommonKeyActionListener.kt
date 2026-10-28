@@ -75,13 +75,13 @@ class CommonKeyActionListener :
             // Chinese: select 1st candidate, except prediction candidates
             if (hasPreedit()) {
                 // preedit not empty, maybe there are candidates to select ...
-                service.selectCandidate(0)
+                service.engineCommands.selectCandidate(0)
             }
         } else {
             // Other languages: commit preedit as-is
             service.editingCommands.execute(EditingCommand.FinishComposition)
         }
-        return service.submitEngineCommand(EngineCommand.Reset)
+        return service.engineCommands.submit(EngineCommand.Reset)
     }
 
     private fun showInputMethodPicker() {
@@ -93,7 +93,7 @@ class CommonKeyActionListener :
     val listener by lazy {
         KeyActionListener { action, _ ->
             when (action) {
-                is TextKeyAction -> service.submitEngineCommand(
+                is TextKeyAction -> service.engineCommands.submit(
                     EngineCommand.SendKeyText(action.act, action.modifiers)
                 )
                 is SymAction -> {
@@ -105,7 +105,7 @@ class CommonKeyActionListener :
                         // newline: Chinese selects candidate 0; other languages commit raw text.
                         commitAndReset()
                     } else {
-                        service.submitEngineCommand(
+                        service.engineCommands.submit(
                             EngineCommand.SendKey(action.key, action.modifiers)
                         )
                     }
@@ -119,11 +119,11 @@ class CommonKeyActionListener :
                 }
                 is QuickPhraseAction -> {
                     commitAndReset()
-                    service.submitEngineCommand(EngineCommand.TriggerQuickPhrase)
+                    service.engineCommands.submit(EngineCommand.TriggerQuickPhrase)
                 }
                 is UnicodeAction -> {
                     commitAndReset()
-                    service.submitEngineCommand(EngineCommand.TriggerUnicode)
+                    service.engineCommands.submit(EngineCommand.TriggerUnicode)
                 }
                 is LangSwitchAction -> {
                     when (langSwitchKeyBehavior) {
@@ -132,14 +132,14 @@ class CommonKeyActionListener :
                                 if (service.engineQueries.enabledInputMethods().size < 2) {
                                     service.showDialog(AddMoreInputMethodsPrompt.build(context))
                                 } else {
-                                    service.submitEngineCommand(
+                                    service.engineCommands.submit(
                                         EngineCommand.EnumerateInputMethod()
                                     )
                                 }
                             }
                         }
                         LangSwitchBehavior.ToggleActivate -> {
-                            service.submitEngineCommand(EngineCommand.ToggleInputMethod)
+                            service.engineCommands.submit(EngineCommand.ToggleInputMethod)
                         }
                         LangSwitchBehavior.NextInputMethodApp -> {
                             service.switchToNextIME()
@@ -171,7 +171,7 @@ class CommonKeyActionListener :
                         Stopped -> {}
                         Selection -> editingCommands.execute(EditingCommand.DeleteSelection)
                         Reset -> if (action.totalCnt != 0) {
-                            service.submitEngineCommand(EngineCommand.Reset)
+                            service.engineCommands.submit(EngineCommand.Reset)
                         }
                     }
                     backspaceSwipeState = Stopped
@@ -188,11 +188,11 @@ class CommonKeyActionListener :
                 is SpaceLongPressAction -> {
                     when (spaceKeyLongPressBehavior) {
                         SpaceLongPressBehavior.None -> {}
-                        SpaceLongPressBehavior.Enumerate -> service.submitEngineCommand(
+                        SpaceLongPressBehavior.Enumerate -> service.engineCommands.submit(
                             EngineCommand.EnumerateInputMethod()
                         )
                         SpaceLongPressBehavior.ToggleActivate ->
-                            service.submitEngineCommand(EngineCommand.ToggleInputMethod)
+                            service.engineCommands.submit(EngineCommand.ToggleInputMethod)
                         SpaceLongPressBehavior.ShowPicker -> showInputMethodPicker()
                     }
                 }

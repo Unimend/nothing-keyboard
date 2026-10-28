@@ -41,7 +41,7 @@ object InputMethodPickerDialog {
                 adapter = InputMethodListAdapter(entries, enabledIndex) {
                     val (uniqueName, _, ime) = it
                     if (ime) service.switchInputMethod(uniqueName)
-                    else service.submitEngineCommand(EngineCommand.ActivateInputMethod(uniqueName))
+                    else service.engineCommands.submit(EngineCommand.ActivateInputMethod(uniqueName))
                     dialog.dismiss()
                 }
                 styledDrawable(android.R.attr.dividerHorizontal)?.let {

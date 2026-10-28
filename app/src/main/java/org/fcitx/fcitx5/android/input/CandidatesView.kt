@@ -101,11 +101,11 @@ class CandidatesView(
     private val candidatesUi = PagedCandidatesUi(
         ctx, theme, setupTextView,
         onCandidateClick = { index ->
-            service.selectCandidate(index)
+            service.engineCommands.selectCandidate(index)
         },
         onCandidateAction = { index, text, view -> showCandidateActionMenu(index, text, view) },
-        onPrevPage = { service.offsetCandidatePage(-1) },
-        onNextPage = { service.offsetCandidatePage(1) }
+        onPrevPage = { service.engineCommands.offsetCandidatePage(-1) },
+        onNextPage = { service.engineCommands.offsetCandidatePage(1) }
     )
 
     private var previousEngineState: EngineState? = null

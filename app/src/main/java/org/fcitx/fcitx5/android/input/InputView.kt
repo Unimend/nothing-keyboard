@@ -121,13 +121,15 @@ class InputView(
 
     private val scope = DynamicScope()
     private val popup = PopupComponent()
-    private val punctuation = PunctuationController(punctuationSink)
+    private val punctuation = PunctuationController(
+        punctuationSink, service.inputSession, service.engineQueries, service.lifecycleScope
+    )
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
     private val windowLifecycle = InputWindowLifecycleDispatcher()
     private val windowManager = InputWindowManager(surfaceSink)
     private val inputModeStore = InputModeStore()
-    private val candidateInteraction = CandidateInteractionController()
+    private val candidateInteraction = CandidateInteractionController(service.engineCommands)
     private val clipboardInteraction = ClipboardInteractionController(StoredClipboardMutations)
     private val clipboardHistory = ClipboardHistory(StoredClipboardHistory)
     private val pickerInteractionStore = PickerInteractionStore()

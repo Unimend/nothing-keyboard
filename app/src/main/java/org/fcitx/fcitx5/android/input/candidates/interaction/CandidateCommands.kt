@@ -3,24 +3,24 @@
  */
 package org.fcitx.fcitx5.android.input.candidates.interaction
 
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
+import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 
 /** Candidate command boundary for surfaces that live outside the InputView dependency scope. */
-fun FcitxInputMethodService.selectCandidate(engineIndex: Int) {
-    if (engineIndex >= 0) submitEngineCommand(EngineCommand.SelectCandidate(engineIndex))
+fun EngineCommandPort.selectCandidate(engineIndex: Int) {
+    if (engineIndex >= 0) submit(EngineCommand.SelectCandidate(engineIndex))
 }
 
-fun FcitxInputMethodService.triggerCandidateTabAction(actionId: Int) {
-    submitEngineCommand(EngineCommand.TriggerCandidateTabAction(actionId))
+fun EngineCommandPort.triggerCandidateTabAction(actionId: Int) {
+    submit(EngineCommand.TriggerCandidateTabAction(actionId))
 }
 
-fun FcitxInputMethodService.triggerCandidateAction(engineIndex: Int, actionId: Int) {
+fun EngineCommandPort.triggerCandidateAction(engineIndex: Int, actionId: Int) {
     if (engineIndex >= 0) {
-        submitEngineCommand(EngineCommand.TriggerCandidateAction(engineIndex, actionId))
+        submit(EngineCommand.TriggerCandidateAction(engineIndex, actionId))
     }
 }
 
-fun FcitxInputMethodService.offsetCandidatePage(delta: Int) {
-    if (delta != 0) submitEngineCommand(EngineCommand.OffsetCandidatePage(delta))
+fun EngineCommandPort.offsetCandidatePage(delta: Int) {
+    if (delta != 0) submit(EngineCommand.OffsetCandidatePage(delta))
 }

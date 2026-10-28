@@ -81,7 +81,7 @@ import splitties.dimensions.dp
 import splitties.resources.styledColor
 import timber.log.Timber
 
-class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort {
+class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private val sessionStore = InputSessionStore()
     val inputSession: InputSessionReader = sessionStore.reader
@@ -94,7 +94,8 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     private lateinit var subtypeController: AndroidSubtypeController
     val platformInputMethods: PlatformInputMethodPort get() = subtypeController
 
-    private lateinit var engineCommands: FcitxCommandDispatcher
+    private lateinit var engineDispatcher: FcitxCommandDispatcher
+    val engineCommands: EngineCommandPort get() = engineDispatcher
 
     private lateinit var pkgNameCache: PackageNameCache
 
@@ -196,19 +197,17 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     }
 
     private fun submitHardwareKey(event: KeyEvent, eventId: Int): Boolean =
-        engineCommands.submitHardwareKey(event, eventId)
+        engineDispatcher.submitHardwareKey(event, eventId)
 
-    override fun submit(command: EngineCommand): Job = engineCommands.submit(command)
-
-    fun submitEngineCommand(command: EngineCommand): Job = submit(command)
+    private fun submitEngineCommand(command: EngineCommand): Job = engineCommands.submit(command)
 
     private fun submitEngineCommand(command: EngineCommand, guard: () -> Boolean): Job =
-        engineCommands.submit(command, guard)
+        engineDispatcher.submit(command, guard)
 
     override fun onCreate() {
         fcitx = FcitxDaemon.connect(javaClass.name)
         engineQueries = FcitxEngineQueries(fcitx)
-        engineCommands = FcitxCommandDispatcher(fcitx, lifecycleScope)
+        engineDispatcher = FcitxCommandDispatcher(fcitx, lifecycleScope)
         subtypeController = AndroidSubtypeController(engineQueries, engineCommands,
             currentSubtype = { inputMethodManager.currentInputMethodSubtype },
             switchSubtype = { switchInputMethod(InputMethodUtil.componentName, it) })

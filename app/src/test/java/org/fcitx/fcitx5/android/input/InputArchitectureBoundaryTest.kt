@@ -11,6 +11,17 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `candidate and punctuation controllers require narrow ports not Android service`() {
+        listOf("candidates/interaction/CandidateCommands.kt",
+            "candidates/interaction/CandidateInteractionController.kt",
+            "engine/PunctuationController.kt").forEach { name ->
+            val source = sourceRoot.resolve("org/fcitx/fcitx5/android/input/$name").readText()
+            assertFalse(name, "FcitxInputMethodService" in source)
+            assertFalse(name, "inputMethodService" in source)
+        }
+    }
+
+    @Test
     fun `inline suggestions use one cancellable request with structured children`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt"

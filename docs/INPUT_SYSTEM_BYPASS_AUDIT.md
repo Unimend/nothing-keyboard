@@ -190,3 +190,13 @@ and are delivered together. New responses, editor-session starts and InputView d
 the prior request and clear its presentation. A source guard prevents service-scoped child tasks
 from escaping that owner. Build and boundary tests pass; real autofill-provider response ordering
 has not been exercised on the diagnostic input field.
+
+## Removal of service-shaped command shortcuts
+
+Service no longer implements `EngineCommandPort` or exposes its old public `submitEngineCommand`
+shortcut. It publishes a narrowly typed command port backed by the dispatcher. Candidate command
+extensions target that port, and `CandidateInteractionController` receives it at construction.
+`PunctuationController` receives only a reader, query port, output sink and owner scope.
+Tests exercise candidate commands without Android Service and ensure late/non-cooperative punctuation
+queries cannot overwrite a newer map or publish after disposal. The Service retains private lifecycle
+submission helpers; these are not callable by surfaces.

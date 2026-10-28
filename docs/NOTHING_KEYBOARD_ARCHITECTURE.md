@@ -47,7 +47,7 @@ but that does not mean the entire product has passed every device/lifecycle case
 | Area | Owner / contract | Remaining verification or cleanup |
 |---|---|---|
 | 1. Android lifecycle | Service, InputDeviceManager | Further isolate insets/device orchestration |
-| 2. Session state | InputSessionStore → InputSessionReader; narrow sinks | Reader-port device regression |
+| 2. Session state | InputSessionStore → InputSessionReader; narrow sinks | Reader-port device smoke passed; broader editor matrix remains |
 | 3. Engine integration | EngineCommandPort / InputEngineQueries / EngineEffect | Replacement-engine integration is not yet tested |
 | 4. Editor capabilities | EditorCapability + Android policy + native adapter | Password editor/device matrix |
 | 5. Composition and cursor | EditorController | Complex external editor/filter cases |
@@ -55,9 +55,9 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 7. Input modes | InputModeStore | Cross-session remembered-mode matrix |
 | 8. Candidate data and selection | Candidate models/reducers/interaction controller | Large-list and mixed-font profiling |
 | 9. Destructive editing | EditingCommandPort + DestructiveEditingController | Custom editors rejecting edits |
-| 10. Clipboard | ClipboardInteractionController | Persistence/privacy lifecycle audit |
+| 10. Clipboard | ClipboardInteractionController + history/mutation ports + ClipboardItem | Platform collection, retention and settings audit |
 | 11. Navigation and windows | InputNavigator + InputWindowManager | Disposal now explicit; stress rebuilds |
-| 12. Gestures | KeyboardGesturePolicy + shared bindings | Cancellation and multi-touch matrix |
+| 12. Gestures | KeyboardGesturePolicy + shared bindings | Cancel verified on device; multi-touch matrix remains |
 | 13. Typography | NothingTypography + shared measurer/renderer | Font scale and fallback matrix |
 | 14. Functional glyphs | NothingGlyphRegistry | Missing custom assets remain explicit fallbacks |
 | 15. Layout/theme | NothingDesignTokens + semantic styles | Scattered dimensions/preferences audit |

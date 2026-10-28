@@ -59,7 +59,7 @@ abstract class BaseInputView(
         }
 
     private fun triggerCandidateAction(idx: Int, actionIdx: Int) {
-        service.triggerCandidateAction(idx, actionIdx)
+        service.engineCommands.triggerCandidateAction(idx, actionIdx)
     }
 
     private var candidateActionMenu: PopupMenu? = null

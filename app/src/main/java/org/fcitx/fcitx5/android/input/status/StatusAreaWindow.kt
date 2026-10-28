@@ -82,7 +82,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     }
 
     private fun activateAction(action: EngineStatusAction) {
-        service.submitEngineCommand(EngineCommand.ActivateStatusAction(action.id))
+        service.engineCommands.submit(EngineCommand.ActivateStatusAction(action.id))
     }
 
     var popupMenu: PopupMenu? = null
@@ -141,7 +141,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
                             )
                         }
                         ReloadConfig -> {
-                            service.submitEngineCommand(EngineCommand.ReloadConfiguration)
+                            service.engineCommands.submit(EngineCommand.ReloadConfiguration)
                                 .invokeOnCompletion { failure ->
                                     if (failure != null) return@invokeOnCompletion
                                     service.lifecycleScope.launch {
