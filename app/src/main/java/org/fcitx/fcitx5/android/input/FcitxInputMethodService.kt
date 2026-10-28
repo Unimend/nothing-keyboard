@@ -43,9 +43,7 @@ import kotlinx.coroutines.Job
 import org.fcitx.fcitx5.android.input.engine.FcitxCommandDispatcher
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.core.CapabilityFlag
-import org.fcitx.fcitx5.android.core.SubtypeManager
+import org.fcitx.fcitx5.android.input.session.AndroidEditorCapabilities
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.FcitxDaemon
 import org.fcitx.fcitx5.android.data.InputFeedbacks
@@ -66,7 +64,9 @@ import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
-import org.fcitx.fcitx5.android.input.engine.FcitxPlatformAdapter
+import org.fcitx.fcitx5.android.input.session.InputSessionReader
+import org.fcitx.fcitx5.android.input.engine.AndroidSubtypeController
+import org.fcitx.fcitx5.android.input.engine.PlatformInputMethodPort
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
@@ -83,12 +83,16 @@ import timber.log.Timber
 
 class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort {
 
-    val inputSession = InputSessionStore()
+    private val sessionStore = InputSessionStore()
+    val inputSession: InputSessionReader = sessionStore.reader
 
     private lateinit var fcitx: FcitxConnection
     private lateinit var engineBridge: FcitxEngineBridge
     lateinit var engineQueries: InputEngineQueries
         private set
+
+    private lateinit var subtypeController: AndroidSubtypeController
+    val platformInputMethods: PlatformInputMethodPort get() = subtypeController
 
     private lateinit var engineCommands: FcitxCommandDispatcher
 
@@ -150,7 +154,9 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     )
 
     private fun replaceInputView(theme: Theme): InputView {
-        val newInputView = InputView(this, theme)
+        val newInputView = InputView(this, theme,
+            surfaceSink = { sessionStore.dispatch(InputSessionEvent.SurfaceChanged(it)) },
+            punctuationSink = { sessionStore.dispatch(InputSessionEvent.PunctuationChanged(it.toMap())) })
         setInputView(newInputView)
         inputDeviceMgr.setInputView(newInputView)
         inputView = newInputView
@@ -196,15 +202,6 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     fun submitEngineCommand(command: EngineCommand): Job = submit(command)
 
-    suspend fun syncPlatformInputMethodSubtypes() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            SubtypeManager.syncWith(
-                engineQueries.enabledInputMethods().map(FcitxPlatformAdapter::inputMethod)
-                    .toTypedArray()
-            )
-        }
-    }
-
     private fun submitEngineCommand(command: EngineCommand, guard: () -> Boolean): Job =
         engineCommands.submit(command, guard)
 
@@ -212,7 +209,12 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         fcitx = FcitxDaemon.connect(javaClass.name)
         engineQueries = FcitxEngineQueries(fcitx)
         engineCommands = FcitxCommandDispatcher(fcitx, lifecycleScope)
-        engineBridge = FcitxEngineBridge(fcitx, inputSession, ::handleEngineEffect)
+        subtypeController = AndroidSubtypeController(engineQueries, engineCommands,
+            currentSubtype = { inputMethodManager.currentInputMethodSubtype },
+            switchSubtype = { switchInputMethod(InputMethodUtil.componentName, it) })
+        engineBridge = FcitxEngineBridge(fcitx, inputSession,
+            publish = { sessionStore.dispatch(InputSessionEvent.EngineChanged(it)) },
+            effectSink = ::handleEngineEffect)
         engineBridge.startIn(lifecycleScope)
         lifecycleScope.launch {
             inputSession.state.collect(InputCoreDiagnostics::publishSession)
@@ -223,7 +225,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         }
         prefs.candidates.registerOnChangeListener(recreateCandidatesViewListener)
         ThemeManager.addOnChangedListener(onThemeChangeListener)
-        lifecycleScope.launch { syncPlatformInputMethodSubtypes() }
+        lifecycleScope.launch { platformInputMethods.synchronize() }
         super.onCreate()
         window.window!!.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -241,13 +243,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         when (effect) {
             is EngineEffect.ForwardKey -> handleForwardedEngineKey(effect)
             is EngineEffect.InputMethodChanged -> {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                    val im = effect.inputMethod.uniqueName
-                    val subtype = SubtypeManager.subtypeOf(im) ?: return
-                    skipNextSubtypeChange = im
-                    // [^1]: notify system that input method subtype has changed
-                    switchInputMethod(InputMethodUtil.componentName, subtype)
-                }
+                subtypeController.onEngineInputMethodChanged(effect.inputMethod.uniqueName)
                 if (inputDeviceMgr.evaluateOnInputMethodActivate()) {
                     showStatusIcon(StatusIconMapping.fromEntry(effect.inputMethod))
                 }
@@ -389,51 +385,17 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         inputDeviceMgr.evaluateOnUpdateEditorToolType(toolType, this)
     }
 
-    private var firstBindInput = true
-
     override fun onBindInput() {
         val uid = currentInputBinding.uid
         val pkgName = pkgNameCache.forUid(uid)
         Timber.d("onBindInput: uid=$uid pkg=$pkgName")
-        // ensure InputContext has been created before focusing it
         submitEngineCommand(EngineCommand.ActivateContext(uid, pkgName))
-        if (firstBindInput) {
-            firstBindInput = false
-            // only use input method from subtype for the first `onBindInput`, because
-            // 1. fcitx has `ShareInputState` option, thus reading input method from subtype
-            //    everytime would ruin `ShareInputState=Program`
-            // 2. im from subtype should be read once, when user changes input method from other
-            //    app to a subtype of ours via system input method picker (on 34+)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                val subtype = inputMethodManager.currentInputMethodSubtype ?: return
-                val im = SubtypeManager.inputMethodOf(subtype)
-                submitEngineCommand(EngineCommand.ActivateInputMethod(im))
-            }
-        }
+        subtypeController.onBindInput()
     }
-
-    /**
-     * When input method changes internally (eg. via language switch key or keyboard shortcut),
-     * we want to notify system that subtype has changed (see [^1]), then ignore the incoming
-     * [onCurrentInputMethodSubtypeChanged] callback.
-     * Input method should only be changed when user changes subtype in system input method picker
-     * manually.
-     */
-    private var skipNextSubtypeChange: String? = null
 
     override fun onCurrentInputMethodSubtypeChanged(newSubtype: InputMethodSubtype) {
         super.onCurrentInputMethodSubtypeChanged(newSubtype)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            val im = SubtypeManager.inputMethodOf(newSubtype)
-            Timber.d("onCurrentInputMethodSubtypeChanged: im=$im")
-            // don't change input method if this "subtype change" was our notify to system
-            // see [^1]
-            if (skipNextSubtypeChange == im) {
-                skipNextSubtypeChange = null
-                return
-            }
-            submitEngineCommand(EngineCommand.ActivateInputMethod(im))
-        }
+        subtypeController.onPlatformSubtypeChanged(newSubtype)
     }
 
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
@@ -442,11 +404,10 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         // initialSel{Start,End} is outdated. but it's the client app's responsibility to send
         // right cursor position, try to workaround this would simply introduce more bugs.
         editor.startInput(attribute.initialSelStart, attribute.initialSelEnd)
-        val flags = CapabilityFlags.fromEditorInfo(attribute)
-        inputSession.dispatch(
+        val capabilities = AndroidEditorCapabilities.fromAndroid(attribute.inputType, attribute.imeOptions)
+        sessionStore.dispatch(
             InputSessionEvent.InputStarted(
-                attribute.toEditorSnapshot(), flags.flags,
-                flags.has(CapabilityFlag.Password), restarting
+                attribute.toEditorSnapshot(), capabilities, restarting
             )
         )
         // EditorInfo may change between onStartInput and onStartInputView
@@ -455,13 +416,13 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         val isNullType = attribute.isTypeNull()
         // Commands share one serial queue, preserving focus -> capability -> focus ordering.
         if (restarting) submitEngineCommand(EngineCommand.Focus(false))
-        submitEngineCommand(EngineCommand.SetCapabilities(flags.flags))
+        submitEngineCommand(EngineCommand.SetCapabilities(capabilities))
         if (!isNullType) submitEngineCommand(EngineCommand.Focus(true))
     }
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         Timber.d("onStartInputView: restarting=$restarting")
-        inputSession.dispatch(
+        sessionStore.dispatch(
             InputSessionEvent.InputViewStarted(info.toEditorSnapshot(), restarting)
         )
         submitEngineCommand(EngineCommand.Focus(true))
@@ -491,7 +452,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         candidatesEnd: Int
     ) {
         // onUpdateSelection can left behind when user types quickly enough, eg. long press backspace
-        inputSession.dispatch(InputSessionEvent.SelectionChanged(newSelStart, newSelEnd))
+        sessionStore.dispatch(InputSessionEvent.SelectionChanged(newSelStart, newSelEnd))
         Timber.d("onUpdateSelection: old=[$oldSelStart,$oldSelEnd] new=[$newSelStart,$newSelEnd] cand=[$candidatesStart,$candidatesEnd]")
         editor.selectionChanged(
             newSelStart,
@@ -622,7 +583,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
-        inputSession.dispatch(InputSessionEvent.InputViewFinished)
+        sessionStore.dispatch(InputSessionEvent.InputViewFinished)
         decorLocationUpdated = false
         inputDeviceMgr.onFinishInputView()
         editor.finishInputView()
@@ -634,7 +595,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     override fun onFinishInput() {
         Timber.d("onFinishInput")
-        inputSession.dispatch(InputSessionEvent.InputFinished)
+        sessionStore.dispatch(InputSessionEvent.InputFinished)
         submitEngineCommand(EngineCommand.Focus(false))
     }
 

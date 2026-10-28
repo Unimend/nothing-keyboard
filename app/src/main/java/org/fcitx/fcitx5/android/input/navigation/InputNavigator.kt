@@ -34,6 +34,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
     private val modeStore: InputModeStore by manager.must()
 
     fun navigate(command: InputNavigationCommand) {
+        if (windowManager.isDisposed) return
         InputCoreDiagnostics.recordNavigation(command.diagnosticName)
         when (command) {
             is InputNavigationCommand.ShowKeyboard -> showKeyboard(command.layout)
@@ -73,6 +74,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
         keyboard.switchLayout(layout)
         // switchLayout posts its layout mutation to the main executor. Queue attachment behind it.
         ContextCompat.getMainExecutor(service).execute {
+            if (windowManager.isDisposed) return@execute
             if (!windowManager.isAttached(keyboard)) {
                 windowManager.attachWindow(KeyboardWindow)
             }

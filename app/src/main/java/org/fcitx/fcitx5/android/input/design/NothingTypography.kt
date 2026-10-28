@@ -4,6 +4,8 @@
 package org.fcitx.fcitx5.android.input.design
 
 import android.graphics.Typeface
+import android.content.Context
+import android.text.Layout
 import android.text.Spannable
 import android.text.SpannableString
 import android.text.TextPaint
@@ -188,4 +190,14 @@ fun TextView.setNothingText(
 ) {
     text = value
     applyNothingTextStyle(theme, style, sizeSp, bold)
+}
+
+/** Uses the same typeface, spans and letter spacing as a rendered semantic text surface. */
+class NothingTextMeasurer(context: Context, private val theme: Theme, private val style: NothingTextStyle) {
+    private val probe = TextView(context)
+
+    fun widthInEm(text: CharSequence): Float {
+        probe.setNothingText(text, theme, style)
+        return Layout.getDesiredWidth(probe.text, probe.paint) / probe.paint.textSize
+    }
 }

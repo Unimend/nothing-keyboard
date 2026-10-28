@@ -20,6 +20,7 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.mode.PickerKind
 import org.fcitx.fcitx5.android.input.mode.InputMode
 import org.fcitx.fcitx5.android.input.popup.PopupAction
+import org.fcitx.fcitx5.android.input.popup.PopupResult
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
@@ -111,7 +112,7 @@ class PickerWindow(
         PopupActionListener {
             when (it) {
                 is PopupAction.PreviewAction -> {
-                    if (!popupPreview) return@PopupActionListener
+                    if (!popupPreview) return@PopupActionListener PopupResult.None
                 }
                 is PopupAction.ShowKeyboardAction -> {
                     // prevent ViewPager from consuming swipe gesture when popup keyboard shown

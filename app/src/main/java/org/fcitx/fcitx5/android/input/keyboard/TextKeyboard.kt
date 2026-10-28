@@ -22,6 +22,7 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
+import org.fcitx.fcitx5.android.input.popup.PopupResult
 import splitties.views.imageResource
 
 @SuppressLint("ViewConstructor")
@@ -213,7 +214,7 @@ class TextKeyboard(
         return transformPunctuation(c)
     }
 
-    override fun onPopupAction(action: PopupAction) {
+    override fun onPopupAction(action: PopupAction): PopupResult {
         val newAction = when (action) {
             is PopupAction.PreviewAction -> action.copy(content = transformPopupPreview(action.content))
             is PopupAction.PreviewUpdateAction -> action.copy(content = transformPopupPreview(action.content))
@@ -232,7 +233,7 @@ class TextKeyboard(
             }
             else -> action
         }
-        super.onPopupAction(newAction)
+        return super.onPopupAction(newAction)
     }
 
     private fun switchCapsState(lock: Boolean = false) {

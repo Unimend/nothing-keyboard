@@ -5,6 +5,15 @@ package org.fcitx.fcitx5.android.input.session
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.StateFlow
+
+interface InputSessionReader {
+    val state: StateFlow<InputSessionSnapshot>
+    val current: InputSessionSnapshot
+}
+
+fun interface SurfaceStateSink { fun publish(surface: InputSurface) }
+fun interface PunctuationStateSink { fun publish(mapping: Map<String, String>) }
 
 enum class InputLifecycle { Inactive, InputStarted, InputViewStarted }
 
@@ -38,21 +47,21 @@ data class InputSessionSnapshot(
     val lifecycle: InputLifecycle = InputLifecycle.Inactive,
     val editor: EditorSnapshot? = null,
     val selection: SessionRange = SessionRange(),
-    val capabilityFlags: ULong = 0u,
-    val password: Boolean = false,
+    val capabilities: Set<EditorCapability> = emptySet(),
     val surface: InputSurface = InputSurface.None,
     val previousSurface: InputSurface = InputSurface.None,
     val restarting: Boolean = false,
     val engine: EngineState = EngineState(),
     val punctuationMapping: Map<String, String> = emptyMap(),
     val revision: Long = 0
-)
+) {
+    val password: Boolean get() = EditorCapability.Password in capabilities
+}
 
 sealed interface InputSessionEvent {
     data class InputStarted(
         val editor: EditorSnapshot,
-        val capabilityFlags: ULong,
-        val password: Boolean = false,
+        val capabilities: Set<EditorCapability>,
         val restarting: Boolean
     ) : InputSessionEvent
 
@@ -76,8 +85,7 @@ object InputSessionReducer {
                 lifecycle = InputLifecycle.InputStarted,
                 editor = event.editor,
                 selection = event.editor.initialSelection,
-                capabilityFlags = event.capabilityFlags,
-                password = event.password,
+                capabilities = event.capabilities.toSet(),
                 restarting = event.restarting
             )
             is InputSessionEvent.InputViewStarted -> state.copy(
@@ -114,6 +122,12 @@ class InputSessionStore {
     private val mutableState = MutableStateFlow(InputSessionSnapshot())
     val state = mutableState.asStateFlow()
     val current: InputSessionSnapshot get() = mutableState.value
+
+    /** A distinct object: readers cannot cast their port back to the mutable store. */
+    val reader: InputSessionReader = object : InputSessionReader {
+        override val state: StateFlow<InputSessionSnapshot> = this@InputSessionStore.state
+        override val current: InputSessionSnapshot get() = this@InputSessionStore.current
+    }
 
     fun dispatch(event: InputSessionEvent) {
         mutableState.value = InputSessionReducer.reduce(mutableState.value, event)

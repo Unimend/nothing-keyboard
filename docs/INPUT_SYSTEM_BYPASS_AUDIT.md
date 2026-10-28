@@ -49,8 +49,8 @@ unrepresentable, and a test must prevent it from returning.
 
 - `FcitxInputMethodService` may access `InputConnection` for engine effects and Android IME
   lifecycle bridging.
-- `FcitxInputMethodService` and `input/engine` are the only locations allowed to import Fcitx core
-  protocol types. This exception is guarded by a static boundary test.
+- Only `input/engine` may import Fcitx core protocol types. The former Service exception has been
+  removed from the architecture test.
 - `AndroidEditingCommandExecutor` is the only command-to-editor adapter.
 - `DestructiveEditingController` owns mutation/history mechanics and therefore receives an
   `InputConnection` through its host interface.
@@ -74,14 +74,18 @@ The service still routes engine effects and owns platform lifecycle orchestratio
 separate remaining boundaries, not completed by the editor extraction.
 
 1. **Service decomposition:** `FcitxInputMethodService` still contains platform lifecycle,
-   capability negotiation and subtype orchestration in one large class. Command scheduling now
-   belongs to the engine boundary and editor effects belong to the editing boundary. These are permitted
+   Android window/insets/device lifecycle orchestration in one large class. Command scheduling and
+   subtype synchronization now belong to the engine/platform boundary; editor effects belong to
+   editing. Editor capabilities are semantic values, encoded into native bits only by the adapter.
+   These are permitted
    platform-boundary operations, but should become separate collaborators before replacing Fcitx.
 2. **Window-local state:** toolbar and window animation state is still local to its owning surface.
    Move only cross-surface state into the session reducer; ephemeral animation state should remain
    local.
-3. **Candidate measurement:** expanded candidate width estimation still uses generic `Paint`
-   rather than the rendered typography metrics.
+3. **Candidate measurement validation:** generic `Paint` estimation was replaced with the shared
+   typography measurer (real Doto/system spans, letter spacing and candidate style). Comment spacing
+   now shares a pure presentation function between measurement and rendering. Device visual checks
+   for mixed Latin/CJK/symbol candidates remain pending.
 4. **Non-semantic icon coverage:** the registry is now the only resolution route for shared
    controls, but several navigation arrows do not yet have custom pixel assets and intentionally
    fall back to their system drawable until those assets are designed.
@@ -108,3 +112,28 @@ Queue tests cover FIFO despite joining later handles, cancellation of queued wor
 owner shutdown, and checking validity only after engine readiness. Native translation is no longer
 called by Service. The unused parallel `capabilityFlags` field was removed; the session snapshot
 remains the published capability state.
+
+## Further boundary closure on 2026-10-28
+
+- Native capability bits were removed from session/events/commands. `EditorCapability` expresses
+  requirements; `AndroidEditorCapabilities` classifies editor metadata and `FcitxCapabilityAdapter`
+  alone encodes native bits. Numeric password editors are now classified as passwords too.
+- `AndroidSubtypeController` owns initial binding and notification echoes. Its pure policy has
+  tests; Android 14+ integration cannot be exercised on the current Android 12 device.
+- `PopupResult` replaces mutable output slots on popup requests across keyboard and picker pages.
+  Popup timing uses monotonic time, repeat dismissals cancel prior jobs, and InputView teardown
+  explicitly clears popups.
+- `InputWindowManager.dispose()` unloads the active surface before scope destruction. Deferred
+  navigation/layout commands are ignored after disposal.
+- Service publishes a separate `InputSessionReader` object, not its mutable store. Window and
+  punctuation producers receive narrow sink interfaces at construction. Only Service and the
+  reducer/store may reference the general session event/write API.
+- Punctuation refresh cancels earlier requests and is cancelled on InputView disposal.
+
+Device checks after the user handed over the phone: selected delete/undo no longer duplicates text;
+symbol clear/undo restores `abc123`; emoji range deletion restores `abc123😀` with a collapsed cursor;
+expanded candidate “比” maps to `比hao`, Return commits `比好`, and delete/undo restores Chinese rather
+than pinyin. Rotation with Editing open returns to a ready Keyboard with no crash-buffer entries;
+the original `free` rotation setting was restored. The final read-only session-port change still
+requires a smoke test on the latest APK. Candidate font measurement was visually checked in the
+expanded Chinese grid; exhaustive mixed-script/density checks remain pending.

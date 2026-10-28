@@ -30,7 +30,7 @@ class GridExpandedCandidateWindow :
     }
 
     override val adapter by lazy {
-        object : GridPagingCandidateViewAdapter(theme) {
+        object : GridPagingCandidateViewAdapter(context, theme) {
             override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
                 super.onBindViewHolder(holder, position)
                 bindCandidateUiViewHolder(holder)

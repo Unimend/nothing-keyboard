@@ -37,6 +37,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyView
 import org.fcitx.fcitx5.android.input.keyboard.TextKeyView
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.popup.PopupAction
+import org.fcitx.fcitx5.android.input.popup.PopupResult
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import splitties.views.dsl.constraintlayout.below
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -267,9 +268,8 @@ class PickerPageUi(
         keyActionListener?.onKeyAction(CommitAction(item), Source.Keyboard)
     }
 
-    private fun onPopupAction(action: PopupAction) {
-        popupActionListener?.onPopupAction(action)
-    }
+    private fun onPopupAction(action: PopupAction): PopupResult =
+        popupActionListener?.onPopupAction(action) ?: PopupResult.None
 
     private fun onItemLongClick(view: KeyView, popup: KeyDef.Popup.Keyboard) {
         if (!popupOnKeyPress) {
@@ -293,14 +293,12 @@ class PickerPageUi(
 
     private fun onPopupChangeFocus(viewId: Int, x: Float, y: Float): Boolean {
         val changeFocusAction = PopupAction.ChangeFocusAction(viewId, x, y)
-        onPopupAction(changeFocusAction)
-        return changeFocusAction.outResult
+        return (onPopupAction(changeFocusAction) as? PopupResult.FocusChanged)?.changed ?: false
     }
 
     private fun onPopupTrigger(viewId: Int): Boolean {
         val triggerAction = PopupAction.TriggerAction(viewId)
-        onPopupAction(triggerAction)
-        val action = triggerAction.outAction as? TextKeyAction ?: return false
+        val action = (onPopupAction(triggerAction) as? PopupResult.Triggered)?.action as? TextKeyAction ?: return false
         onItemClick(action.act)
         onPopupAction(PopupAction.DismissAction(viewId))
         return true

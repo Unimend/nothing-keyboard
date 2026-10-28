@@ -48,6 +48,8 @@ import org.fcitx.fcitx5.android.input.picker.PickerInteractionStore
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.preedit.PreeditComponent
 import org.fcitx.fcitx5.android.input.session.EngineState
+import org.fcitx.fcitx5.android.input.session.SurfaceStateSink
+import org.fcitx.fcitx5.android.input.session.PunctuationStateSink
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
@@ -84,7 +86,9 @@ import timber.log.Timber
 @SuppressLint("ViewConstructor")
 class InputView(
     service: FcitxInputMethodService,
-    theme: Theme
+    theme: Theme,
+    surfaceSink: SurfaceStateSink,
+    punctuationSink: PunctuationStateSink
 ) : BaseInputView(service, theme) {
 
     private val nothingCompactHeightScale = if (theme.isNothingStyle) {
@@ -114,11 +118,11 @@ class InputView(
 
     private val scope = DynamicScope()
     private val popup = PopupComponent()
-    private val punctuation = PunctuationController()
+    private val punctuation = PunctuationController(punctuationSink)
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
     private val windowLifecycle = InputWindowLifecycleDispatcher()
-    private val windowManager = InputWindowManager()
+    private val windowManager = InputWindowManager(surfaceSink)
     private val inputModeStore = InputModeStore()
     private val candidateInteraction = CandidateInteractionController()
     private val clipboardInteraction = ClipboardInteractionController()
@@ -417,9 +421,12 @@ class InputView(
     }
 
     override fun onDetachedFromWindow() {
+        windowManager.dispose()
         advancedPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
         keyboardPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
         kawaiiBar.onInputScopeDestroyed()
+        popup.dismissAll()
+        punctuation.dispose()
         sessionStateJob?.cancel()
         sessionStateJob = null
         // clear DynamicScope, implies that InputView should not be attached again after detached.

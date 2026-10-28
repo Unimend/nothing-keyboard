@@ -3,6 +3,8 @@
  */
 package org.fcitx.fcitx5.android.input.engine
 
+import org.fcitx.fcitx5.android.input.session.EditorCapability
+
 /** Commands the Android input session may send to any input-engine implementation. */
 sealed interface EngineCommand {
     data class SendKeyText(
@@ -25,7 +27,7 @@ sealed interface EngineCommand {
     data object FocusOutIn : EngineCommand
     data class ActivateContext(val uid: Int, val packageName: String) : EngineCommand
     data class DeactivateContext(val uid: Int) : EngineCommand
-    data class SetCapabilities(val flags: ULong) : EngineCommand
+    data class SetCapabilities(val capabilities: Set<EditorCapability>) : EngineCommand
     data class ActivateInputMethod(val uniqueName: String) : EngineCommand
     data class EnumerateInputMethod(val forward: Boolean = true) : EngineCommand
     data object ToggleInputMethod : EngineCommand

@@ -12,18 +12,18 @@ import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.session.EngineStateEvent
-import org.fcitx.fcitx5.android.input.session.InputSessionEvent
-import org.fcitx.fcitx5.android.input.session.InputSessionStore
+import org.fcitx.fcitx5.android.input.session.InputSessionReader
 
 /**
  * The single service-level ingress for Fcitx events.
  *
  * Stateful events are translated into project-owned immutable state before effect events are
- * forwarded to Android. Views must observe [InputSessionStore] and never subscribe to Fcitx.
+ * forwarded to Android. Views must observe [InputSessionReader] and never subscribe to Fcitx.
  */
 class FcitxEngineBridge(
     private val connection: FcitxConnection,
-    private val session: InputSessionStore,
+    private val session: InputSessionReader,
+    private val publish: (EngineStateEvent) -> Unit,
     private val effectSink: (EngineEffect) -> Unit
 ) {
     private var collectionJob: Job? = null
@@ -34,7 +34,7 @@ class FcitxEngineBridge(
             connection.runImmediately { eventFlow }.collect { event ->
                 InputCoreDiagnostics.recordEngineEvent(event::class.simpleName ?: "FcitxEvent")
                 if (!session.current.engine.ready) {
-                    session.dispatch(InputSessionEvent.EngineChanged(EngineStateEvent.Operational))
+                    publish(EngineStateEvent.Operational)
                 }
                 publishState(event)
                 if (event is FcitxEvent.ReadyEvent) publishCachedState()
@@ -49,13 +49,13 @@ class FcitxEngineBridge(
         val alreadyReady = connection.runImmediately { isReady }
         publishCachedState()
         if (alreadyReady) {
-            session.dispatch(InputSessionEvent.EngineChanged(EngineStateEvent.Operational))
+            publish(EngineStateEvent.Operational)
         }
     }
 
     private fun publishState(event: FcitxEvent<*>) {
         FcitxEngineStateAdapter.map(event)?.let {
-            session.dispatch(InputSessionEvent.EngineChanged(it))
+            publish(it)
         }
     }
 

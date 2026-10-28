@@ -42,12 +42,17 @@ sealed class PopupAction {
     data class ChangeFocusAction(
         override val viewId: Int,
         val x: Float,
-        val y: Float,
-        var outResult: Boolean = false
+        val y: Float
     ) : PopupAction()
 
     data class TriggerAction(
-        override val viewId: Int,
-        var outAction: KeyAction? = null
+        override val viewId: Int
     ) : PopupAction()
+}
+
+/** Results are returned explicitly; consumers never write into a caller's command object. */
+sealed interface PopupResult {
+    data object None : PopupResult
+    data class FocusChanged(val changed: Boolean) : PopupResult
+    data class Triggered(val action: KeyAction?) : PopupResult
 }

@@ -39,6 +39,36 @@ Current ownership:
 | Navigation | `InputNavigator` | `InputWindowManager` |
 | Visual language | design tokens, typography and glyph registry | Android Views/drawables |
 
+## 18 responsibility areas: working audit index
+
+This index separates responsibility from completion. Several areas have established boundaries,
+but that does not mean the entire product has passed every device/lifecycle case.
+
+| Area | Owner / contract | Remaining verification or cleanup |
+|---|---|---|
+| 1. Android lifecycle | Service, InputDeviceManager | Further isolate insets/device orchestration |
+| 2. Session state | InputSessionStore → InputSessionReader; narrow sinks | Reader-port device regression |
+| 3. Engine integration | EngineCommandPort / InputEngineQueries / EngineEffect | Replacement-engine integration is not yet tested |
+| 4. Editor capabilities | EditorCapability + Android policy + native adapter | Password editor/device matrix |
+| 5. Composition and cursor | EditorController | Complex external editor/filter cases |
+| 6. Key commands and hardware | Semantic keys + AndroidKeyEventController | Physical keyboard and stale native replies |
+| 7. Input modes | InputModeStore | Cross-session remembered-mode matrix |
+| 8. Candidate data and selection | Candidate models/reducers/interaction controller | Large-list and mixed-font profiling |
+| 9. Destructive editing | EditingCommandPort + DestructiveEditingController | Custom editors rejecting edits |
+| 10. Clipboard | ClipboardInteractionController | Persistence/privacy lifecycle audit |
+| 11. Navigation and windows | InputNavigator + InputWindowManager | Disposal now explicit; stress rebuilds |
+| 12. Gestures | KeyboardGesturePolicy + shared bindings | Cancellation and multi-touch matrix |
+| 13. Typography | NothingTypography + shared measurer/renderer | Font scale and fallback matrix |
+| 14. Functional glyphs | NothingGlyphRegistry | Missing custom assets remain explicit fallbacks |
+| 15. Layout/theme | NothingDesignTokens + semantic styles | Scattered dimensions/preferences audit |
+| 16. Motion/feedback | InputMotionPolicy + KeyboardFeedback | Remaining surface-local animator cleanup |
+| 17. Popups | PopupAction / PopupResult + PopupComponent | Geometry ownership and configuration changes |
+| 18. Settings, persistence and diagnostics | AppPrefs/data layer + InputCoreDiagnostics/tests | Settings/data ownership is not yet fully audited |
+
+The session's general write API is private to the Service composition root and store. Ordinary
+surfaces receive a reader, not a mutable store. Each producer receives only its own sink: engine
+events, surface changes, or punctuation maps. A new producer must not regain general dispatch.
+
 ## Dependency direction
 
 ```text

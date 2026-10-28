@@ -29,6 +29,7 @@ import org.fcitx.fcitx5.android.input.gesture.KeyboardGestureConfig
 import org.fcitx.fcitx5.android.input.gesture.KeyboardGesturePolicy
 import org.fcitx.fcitx5.android.input.feedback.KeyboardFeedback
 import org.fcitx.fcitx5.android.input.popup.PopupAction
+import org.fcitx.fcitx5.android.input.popup.PopupResult
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.above
@@ -490,21 +491,18 @@ abstract class BaseKeyboard(
     }
 
     @CallSuper
-    protected open fun onPopupAction(action: PopupAction) {
-        popupActionListener?.onPopupAction(action)
-    }
+    protected open fun onPopupAction(action: PopupAction): PopupResult =
+        popupActionListener?.onPopupAction(action) ?: PopupResult.None
 
     private fun onPopupChangeFocus(viewId: Int, x: Float, y: Float): Boolean {
         val changeFocusAction = PopupAction.ChangeFocusAction(viewId, x, y)
-        popupActionListener?.onPopupAction(changeFocusAction)
-        return changeFocusAction.outResult
+        return (onPopupAction(changeFocusAction) as? PopupResult.FocusChanged)?.changed ?: false
     }
 
     private fun onPopupTrigger(viewId: Int): Boolean {
         val triggerAction = PopupAction.TriggerAction(viewId)
         // ask popup keyboard whether there's a pending KeyAction
-        onPopupAction(triggerAction)
-        val action = triggerAction.outAction ?: return false
+        val action = (onPopupAction(triggerAction) as? PopupResult.Triggered)?.action ?: return false
         onAction(action, KeyActionListener.Source.Popup)
         onPopupAction(PopupAction.DismissAction(viewId))
         return true

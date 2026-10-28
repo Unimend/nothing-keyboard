@@ -4,8 +4,6 @@
  */
 package org.fcitx.fcitx5.android.core
 
-import android.text.InputType
-import android.view.inputmethod.EditorInfo
 import splitties.bitflags.hasFlag
 
 /**
@@ -94,90 +92,7 @@ value class CapabilityFlags constructor(val flags: ULong) {
             CapabilityFlag.CommitStringWithCursor
         )
 
-        fun fromEditorInfo(info: EditorInfo): CapabilityFlags {
-            var flags = DefaultFlags.flags
-            info.imeOptions.let {
-                if (it.hasFlag(EditorInfo.IME_FLAG_FORCE_ASCII)) {
-                    flags += CapabilityFlag.Alpha
-                }
-                if (it.hasFlag(EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING)) {
-                    flags += CapabilityFlag.Sensitive
-                }
-            }
-            info.inputType.let {
-                when (it and InputType.TYPE_MASK_CLASS) {
-                    InputType.TYPE_NULL -> {
-                        flags -= CapabilityFlag.Preedit
-                        flags += CapabilityFlag.NoSpellCheck
-                    }
-                    InputType.TYPE_CLASS_TEXT -> {
-                        (it and InputType.TYPE_MASK_FLAGS).run {
-                            if (hasFlag(InputType.TYPE_TEXT_FLAG_AUTO_COMPLETE) ||
-                                hasFlag(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS)
-                            ) {
-                                flags += CapabilityFlag.NoSpellCheck
-                            }
-                            if (hasFlag(InputType.TYPE_TEXT_FLAG_AUTO_CORRECT)) {
-                                flags += CapabilityFlag.SpellCheck
-                            }
-                            if (hasFlag(InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS)) {
-                                flags += CapabilityFlag.Uppercase
-                            }
-                            if (hasFlag(InputType.TYPE_TEXT_FLAG_CAP_SENTENCES)) {
-                                flags += CapabilityFlag.UppercaseSentences
-                            }
-                            if (hasFlag(InputType.TYPE_TEXT_FLAG_CAP_WORDS)) {
-                                flags += CapabilityFlag.UppercaseWords
-                            }
-                            if (hasFlag(InputType.TYPE_TEXT_FLAG_IME_MULTI_LINE) ||
-                                hasFlag(InputType.TYPE_TEXT_FLAG_MULTI_LINE)
-                            ) {
-                                flags += CapabilityFlag.Multiline
-                            }
-                        }
-                        (it and InputType.TYPE_MASK_VARIATION).run {
-                            if (equals(InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS) ||
-                                equals(InputType.TYPE_TEXT_VARIATION_WEB_EMAIL_ADDRESS)
-                            ) {
-                                flags += CapabilityFlag.Email
-                            }
-                            if (equals(InputType.TYPE_TEXT_VARIATION_PASSWORD) ||
-                                equals(InputType.TYPE_TEXT_VARIATION_WEB_PASSWORD)
-                            ) {
-                                flags += CapabilityFlag.Password
-                            }
-                            if (equals(InputType.TYPE_TEXT_VARIATION_VISIBLE_PASSWORD)) {
-                                flags += CapabilityFlag.Sensitive
-                                flags += CapabilityFlag.NoSpellCheck
-                            }
-                            if (equals(InputType.TYPE_TEXT_VARIATION_URI)) {
-                                flags += CapabilityFlag.Url
-                            }
-                        }
-                    }
-                    InputType.TYPE_CLASS_NUMBER -> {
-                        flags += CapabilityFlag.NoSpellCheck
-                        flags += CapabilityFlag.Number
-                    }
-                    InputType.TYPE_CLASS_PHONE -> {
-                        flags += CapabilityFlag.NoSpellCheck
-                        flags += CapabilityFlag.Dialable
-                    }
-                    InputType.TYPE_CLASS_DATETIME -> {
-                        flags += CapabilityFlag.NoSpellCheck
-                        (it and InputType.TYPE_MASK_VARIATION).run {
-                            if (hasFlag(InputType.TYPE_DATETIME_VARIATION_DATE)) {
-                                flags += CapabilityFlag.Date
-                            }
-                            if (hasFlag(InputType.TYPE_DATETIME_VARIATION_TIME)) {
-                                flags += CapabilityFlag.Time
-                            }
-                        }
-                    }
-                }
-            }
-            return CapabilityFlags(flags)
-        }
+
     }
 
     constructor(vararg flags: CapabilityFlag) : this(mergeFlags(flags))

@@ -13,9 +13,8 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
-import org.fcitx.fcitx5.android.input.session.InputSessionEvent
+import org.fcitx.fcitx5.android.input.session.SurfaceStateSink
 import org.mechdancer.dependency.DynamicScope
 import org.mechdancer.dependency.manager.must
 import org.mechdancer.dependency.minusAssign
@@ -26,10 +25,9 @@ import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 import timber.log.Timber
 
-class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>() {
+class InputWindowManager(private val surfaceSink: SurfaceStateSink) : UniqueViewComponent<InputWindowManager, FrameLayout>() {
 
     private val context by manager.context()
-    private val service by manager.inputMethodService()
     private val lifecycle: InputWindowLifecycleDispatcher by manager.must()
     private lateinit var scope: DynamicScope
 
@@ -37,6 +35,8 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
 
     private var currentWindow: InputWindow? = null
     private var currentView: View? = null
+    var isDisposed: Boolean = false
+        private set
 
     private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
 
@@ -113,12 +113,13 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
      * [attachWindow] includes the operation done by [addEssentialWindow].
      */
     fun attachWindow(window: InputWindow) {
+        if (isDisposed) return
         if (window === currentWindow) {
             Timber.d("Skip attaching $window")
             // InputView survives across editor sessions, while InputViewFinished resets the
             // session surface to None. Re-publish the already attached surface without
             // rebuilding the view or emitting a false lifecycle transition.
-            service.inputSession.dispatch(InputSessionEvent.SurfaceChanged(window.surface))
+            surfaceSink.publish(window.surface)
             return
         }
         val newView = if (window is EssentialWindow) {
@@ -160,7 +161,7 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
         // notify the window it was attached
         window.onAttached()
         currentWindow = window
-        service.inputSession.dispatch(InputSessionEvent.SurfaceChanged(window.surface))
+        surfaceSink.publish(window.surface)
         // broadcast the new window was added to layout
         lifecycle.attached(window)
     }
@@ -172,4 +173,20 @@ class InputWindowManager : UniqueViewComponent<InputWindowManager, FrameLayout>(
     }
 
     fun isAttached(window: InputWindow) = currentWindow === window
+
+    /** Release the active surface before its dependency scope disappears. Idempotent. */
+    fun dispose() {
+        if (isDisposed) return
+        isDisposed = true
+        val old = currentWindow
+        currentWindow = null
+        currentView = null
+        if (old != null) {
+            old.onDetached()
+            TransitionManager.endTransitions(view)
+            view.removeAllViews()
+            lifecycle.detached(old)
+        }
+        essentialWindows.clear()
+    }
 }

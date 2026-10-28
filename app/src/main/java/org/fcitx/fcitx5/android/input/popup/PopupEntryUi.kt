@@ -26,7 +26,6 @@ import splitties.views.gravityCenter
 
 class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeight: Int, radius: Float) : Ui {
 
-    var lastShowTime = -1L
 
     val textView = view(::AutoScaleTextView) {
         gravity = gravityCenter

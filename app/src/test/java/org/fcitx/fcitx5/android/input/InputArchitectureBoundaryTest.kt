@@ -11,6 +11,41 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `surface teardown precedes dependency scope destruction`() {
+        val source = sourceRoot.resolve("org/fcitx/fcitx5/android/input/InputView.kt").readText()
+            .substringAfter("override fun onDetachedFromWindow()")
+        assertTrue(source.indexOf("windowManager.dispose()") in 0 until source.indexOf("scope.clear()"))
+        assertTrue(source.indexOf("popup.dismissAll()") in 0 until source.indexOf("scope.clear()"))
+    }
+
+    @Test
+    fun `popup requests cannot contain mutable output slots`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/popup/PopupAction.kt"
+        ).readText()
+        assertFalse("Mutable result slot in popup command", "var out" in source)
+    }
+
+    @Test
+    fun `session and commands cannot expose native capability bits`() {
+        listOf("session/InputSessionStore.kt", "engine/EngineCommand.kt").forEach { name ->
+            val source = sourceRoot.resolve("org/fcitx/fcitx5/android/input/$name").readText()
+            assertFalse("Native bit layout escaped into $name", "ULong" in source)
+            assertFalse("Legacy capability field returned in $name", "capabilityFlags" in source)
+        }
+    }
+
+    @Test
+    fun `candidate grid measurement uses shared semantic typography`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/candidates/expanded/GridPagingCandidateViewAdapter.kt"
+        ).readText()
+        assertFalse("Generic paint bypasses mixed typography", "android.graphics.Paint" in source)
+        assertTrue("Measure using actual typography", "NothingTextMeasurer" in source)
+        assertTrue("Measure exactly the displayed content", "candidate.textForDisplay()" in source)
+    }
+
+    @Test
     fun `service cannot implement native engine command execution`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
@@ -133,7 +168,6 @@ class InputArchitectureBoundaryTest {
     @Test
     fun `Fcitx protocol types stay inside engine platform boundary`() {
         val allowed = setOf(
-            "FcitxInputMethodService.kt",
             "engine/"
         )
         val violations = inputSources().filter { file ->
@@ -160,15 +194,12 @@ class InputArchitectureBoundaryTest {
     fun `session mutations have explicit owners`() {
         val allowed = setOf(
             "FcitxInputMethodService.kt",
-            "engine/FcitxEngineBridge.kt",
-            "engine/PunctuationController.kt",
-            "wm/InputWindowManager.kt",
             "session/InputSessionStore.kt"
         )
         val violations = inputSources().filter { file ->
             val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
             allowed.none(relative::endsWith) &&
-                Regex("""inputSession\.dispatch|session\.dispatch\(InputSessionEvent""")
+                Regex("""\b(InputSessionStore|InputSessionEvent)\b""")
                     .containsMatchIn(file.readText())
         }
         assertTrue("Unowned session mutation: ${violations.joinToString()}", violations.isEmpty())

@@ -137,6 +137,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
 
     fun switchLayout(to: KeyboardLayout?, remember: Boolean = true) {
         ContextCompat.getMainExecutor(service).execute {
+            if (windowManager.isDisposed) return@execute
             val targetMode = to?.let(InputMode::Keyboard) ?: modeStore.state.rememberedSymbolMode
             if (targetMode is InputMode.Keyboard) {
                 val target = targetMode.layout

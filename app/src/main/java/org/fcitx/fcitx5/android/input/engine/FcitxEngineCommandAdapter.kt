@@ -4,7 +4,6 @@
 package org.fcitx.fcitx5.android.input.engine
 
 import android.view.KeyEvent
-import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.core.KeyState
@@ -51,7 +50,7 @@ object FcitxEngineCommandAdapter {
                 EngineCommand.FocusOutIn -> focusOutIn()
                 is EngineCommand.ActivateContext -> activate(command.uid, command.packageName)
                 is EngineCommand.DeactivateContext -> deactivate(command.uid)
-                is EngineCommand.SetCapabilities -> setCapFlags(CapabilityFlags(command.flags))
+                is EngineCommand.SetCapabilities -> setCapFlags(command.capabilities.toFcitxCapabilities())
                 is EngineCommand.ActivateInputMethod -> activateIme(command.uniqueName)
                 is EngineCommand.EnumerateInputMethod -> enumerateIme(command.forward)
                 EngineCommand.ToggleInputMethod -> toggleIme()

@@ -145,7 +145,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
                                 .invokeOnCompletion { failure ->
                                     if (failure != null) return@invokeOnCompletion
                                     service.lifecycleScope.launch {
-                                        service.syncPlatformInputMethodSubtypes()
+                                        service.platformInputMethods.synchronize()
                                         Toast.makeText(
                                             service,
                                             R.string.done,

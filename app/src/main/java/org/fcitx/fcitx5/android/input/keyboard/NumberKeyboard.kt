@@ -15,6 +15,7 @@ import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
 import org.fcitx.fcitx5.android.input.mode.PickerKind
 import org.fcitx.fcitx5.android.input.mode.InputMode
 import org.fcitx.fcitx5.android.input.popup.PopupAction
+import org.fcitx.fcitx5.android.input.popup.PopupResult
 import splitties.views.imageResource
 
 @SuppressLint("ViewConstructor")
@@ -74,8 +75,9 @@ class NumberKeyboard(
     }
 
     @SuppressLint("MissingSuperCall")
-    override fun onPopupAction(action: PopupAction) {
-        // leave empty on purpose to disable popup in NumberKeyboard
+    override fun onPopupAction(action: PopupAction): PopupResult {
+        // NumberKeyboard deliberately has no popup surface.
+        return PopupResult.None
     }
 
 }

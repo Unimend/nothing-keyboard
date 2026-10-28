@@ -5,6 +5,7 @@
 package org.fcitx.fcitx5.android.input.popup
 
 import android.graphics.Rect
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -38,6 +39,7 @@ class PopupComponent :
 
     private val showingEntryUi = HashMap<Int, PopupEntryUi>()
     private val dismissJobs = HashMap<Int, Job>()
+    private val shownAt = HashMap<Int, Long>()
     private val freeEntryUi = LinkedList<PopupEntryUi>()
 
     private val showingContainerUi = HashMap<Int, PopupContainerUi>()
@@ -79,17 +81,16 @@ class PopupComponent :
     }
 
     private fun showPopup(viewId: Int, content: String, bounds: Rect) {
+        shownAt[viewId] = SystemClock.uptimeMillis()
         showingEntryUi[viewId]?.apply {
             dismissJobs[viewId]?.also {
                 dismissJobs.remove(viewId)?.cancel()
             }
-            lastShowTime = System.currentTimeMillis()
             setText(content)
             return
         }
         val popup = (freeEntryUi.poll()
             ?: PopupEntryUi(context, theme, popupKeyHeight, popupRadius)).apply {
-            lastShowTime = System.currentTimeMillis()
             setText(content)
         }
         popup.root.layoutParams = FrameLayout.LayoutParams(popupWidth, popupHeight).apply {
@@ -183,9 +184,10 @@ class PopupComponent :
     }
 
     private fun dismissPopup(viewId: Int) {
+        dismissJobs.remove(viewId)?.cancel()
         dismissPopupContainer(viewId)
         showingEntryUi[viewId]?.also {
-            val timeLeft = it.lastShowTime + hideThreshold - System.currentTimeMillis()
+            val timeLeft = (shownAt[viewId] ?: 0L) + hideThreshold - SystemClock.uptimeMillis()
             if (timeLeft <= 0L) {
                 dismissPopupEntry(viewId, it)
             } else {
@@ -206,7 +208,9 @@ class PopupComponent :
     }
 
     private fun dismissPopupEntry(viewId: Int, popup: PopupEntryUi) {
+        if (showingEntryUi[viewId] !== popup) return
         showingEntryUi.remove(viewId)
+        shownAt.remove(viewId)
         root.removeView(popup.root)
         freeEntryUi.add(popup)
     }
@@ -217,6 +221,7 @@ class PopupComponent :
             job.cancel()
         }
         dismissJobs.clear()
+        shownAt.clear()
         // too
         showingContainerUi.forEach { (_, container) ->
             root.removeView(container.root)
@@ -233,13 +238,13 @@ class PopupComponent :
     val listener = PopupActionListener { action ->
         with(action) {
             when (this) {
-                is PopupAction.ChangeFocusAction -> outResult = changeFocus(viewId, x, y)
-                is PopupAction.DismissAction -> dismissPopup(viewId)
-                is PopupAction.PreviewAction -> showPopup(viewId, content, bounds)
-                is PopupAction.PreviewUpdateAction -> updatePopup(viewId, content)
-                is PopupAction.ShowKeyboardAction -> showKeyboard(viewId, keyboard, bounds)
-                is PopupAction.ShowMenuAction -> showMenu(viewId, menu, bounds)
-                is PopupAction.TriggerAction -> outAction = triggerFocused(viewId)
+                is PopupAction.ChangeFocusAction -> PopupResult.FocusChanged(changeFocus(viewId, x, y))
+                is PopupAction.DismissAction -> dismissPopup(viewId).let { PopupResult.None }
+                is PopupAction.PreviewAction -> showPopup(viewId, content, bounds).let { PopupResult.None }
+                is PopupAction.PreviewUpdateAction -> updatePopup(viewId, content).let { PopupResult.None }
+                is PopupAction.ShowKeyboardAction -> showKeyboard(viewId, keyboard, bounds).let { PopupResult.None }
+                is PopupAction.ShowMenuAction -> showMenu(viewId, menu, bounds).let { PopupResult.None }
+                is PopupAction.TriggerAction -> PopupResult.Triggered(triggerFocused(viewId))
             }
         }
     }

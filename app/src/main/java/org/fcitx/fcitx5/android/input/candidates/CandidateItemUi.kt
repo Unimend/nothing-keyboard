@@ -13,6 +13,7 @@ import android.view.View
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import org.fcitx.fcitx5.android.input.session.EngineCandidate
+import org.fcitx.fcitx5.android.input.candidates.model.commentForDisplay
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
@@ -124,13 +125,8 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
             color(fg) {
                 append(candidate.text)
             }
-            if (candidate.comment.isNotBlank()) {
-                if (candidate.spaceBeforeComment) {
-                    append(" ")
-                }
-                color(altFg) {
-                    append(candidate.comment)
-                }
+            color(altFg) {
+                append(candidate.commentForDisplay())
             }
         }
         text.applyNothingTextStyle(theme, NothingTextStyle.Candidate)
