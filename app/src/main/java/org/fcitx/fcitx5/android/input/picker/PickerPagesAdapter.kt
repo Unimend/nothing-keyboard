@@ -63,13 +63,15 @@ class PickerPagesAdapter(
     private var lastInvalidateKey = policy.invalidateKey()
 
     @SuppressLint("NotifyDataSetChanged")
-    fun refreshIfNeeded() {
+    fun refreshIfNeeded(): Boolean {
         val newKey = policy.invalidateKey()
         if (lastInvalidateKey != newKey) {
             lastInvalidateKey = newKey
             rebuildCategories()
             notifyDataSetChanged()
+            return true
         }
+        return false
     }
 
     private val recentlyUsed = RecentlyUsed(recentlyUsedFileName, density.pageSize)
@@ -77,6 +79,7 @@ class PickerPagesAdapter(
     fun insertRecent(text: String) {
         if (text.length == 1 && text[0].code.let { it in Digit || it in FullWidthDigit }) return
         recentlyUsed.insert(text)
+        notifyItemChanged(0)
     }
 
     fun getCategoryList(): List<PickerData.Category> {
@@ -86,6 +89,16 @@ class PickerPagesAdapter(
     fun getCategoryIndexOfPage(page: Int): Int {
         return categories.indexOfFirst { page in it.second }
     }
+
+    fun getPositionOfPage(page: Int): PickerPosition? {
+        val categoryIndex = getCategoryIndexOfPage(page)
+        if (categoryIndex < 0) return null
+        val range = categories[categoryIndex].second
+        return PickerPosition(categoryIndex, (page - range.first).coerceAtLeast(0))
+    }
+
+    fun resolvePage(position: PickerPosition): Int =
+        resolvePickerPage(position, categories.map { it.second })
 
     fun getCategoryRangeOfPage(page: Int): IntRange {
         return categories.find { page in it.second }?.second ?: IntRange(0, 0)

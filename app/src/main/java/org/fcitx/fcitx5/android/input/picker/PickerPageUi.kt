@@ -204,27 +204,7 @@ class PickerPageUi(
         layoutParams = ViewGroup.LayoutParams(matchParent, matchParent)
     }
 
-    fun setItems(items: List<String>) {
-        keyViews.forEachIndexed { i, keyView ->
-            keyView.apply {
-                if (i >= items.size) {
-                    isEnabled = false
-                    mainText.text = ""
-                    setOnClickListener(null)
-                } else {
-                    isEnabled = true
-                    mainText.text = items[i]
-                    mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
-                    setOnClickListener { onItemClick(items[i]) }
-                }
-                swipeEnabled = false
-                onGestureListener = null
-                setOnLongClickListener(null)
-            }
-        }
-    }
-
-    fun setItems(items: List<String>, policy: PickerPolicy) {
+    fun setItems(items: List<String>, policy: PickerPolicy? = null) {
         keyViews.forEachIndexed { i, keyView ->
             keyView.apply {
                 if (i >= items.size) {
@@ -237,33 +217,39 @@ class PickerPageUi(
                 } else {
                     isEnabled = true
                     val item = items[i]
-                    val transformed = policy.transform(item)
+                    val transformed = policy?.transform(item) ?: item
                     mainText.text = transformed
                     mainText.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
                     setOnClickListener {
                         onItemClick(transformed)
                     }
-                    setOnLongClickListener longClick@{ view ->
-                        if (view !is KeyView) return@longClick false
-                        val popup = policy.popup(item) ?: return@longClick false
-                        onItemLongClick(view, popup)
-                        false
-                    }
-                    swipeEnabled = true
-                    onGestureListener = OnGestureListener { view, event ->
-                        view as KeyView
-                        when (event.type) {
-                            CustomGestureView.GestureType.Down -> {
-                                onPopupShow(view, item)
-                                // never "consume" the gesture on touch down
-                                false
-                            }
-                            CustomGestureView.GestureType.Move -> {
-                                onPopupChangeFocus(view.id, event.x, event.y)
-                            }
-                            CustomGestureView.GestureType.Up -> {
-                                onPopupTrigger(view.id).also {
-                                    onPopupAction(PopupAction.DismissAction(view.id))
+                    if (policy == null) {
+                        setOnLongClickListener(null)
+                        swipeEnabled = false
+                        onGestureListener = null
+                    } else {
+                        setOnLongClickListener longClick@{ view ->
+                            if (view !is KeyView) return@longClick false
+                            val popup = policy.popup(item) ?: return@longClick false
+                            onItemLongClick(view, popup)
+                            false
+                        }
+                        swipeEnabled = true
+                        onGestureListener = OnGestureListener { view, event ->
+                            view as KeyView
+                            when (event.type) {
+                                CustomGestureView.GestureType.Down -> {
+                                    onPopupShow(view, item)
+                                    // never "consume" the gesture on touch down
+                                    false
+                                }
+                                CustomGestureView.GestureType.Move -> {
+                                    onPopupChangeFocus(view.id, event.x, event.y)
+                                }
+                                CustomGestureView.GestureType.Up -> {
+                                    onPopupTrigger(view.id).also {
+                                        onPopupAction(PopupAction.DismissAction(view.id))
+                                    }
                                 }
                             }
                         }

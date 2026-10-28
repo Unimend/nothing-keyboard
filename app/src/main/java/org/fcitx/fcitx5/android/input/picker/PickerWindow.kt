@@ -54,11 +54,26 @@ class PickerWindow(
     private val popup: PopupComponent by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
     private val navigator: InputNavigator by manager.must()
+    private val interactionStore: PickerInteractionStore by manager.must()
 
     private val keyBorder by ThemeManager.prefs.keyBorder
 
     private lateinit var pickerLayout: PickerLayout
     private lateinit var pickerPagesAdapter: PickerPagesAdapter
+
+    private fun syncPageUi(position: Int) {
+        val pickerPosition = pickerPagesAdapter.getPositionOfPage(position) ?: return
+        val range = pickerPagesAdapter.getCategoryRangeOfPage(position)
+        pickerLayout.tabsUi.activateTab(pickerPosition.categoryIndex)
+        pickerLayout.paginationUi.updatePageCount(range.run { last - first + 1 })
+        pickerLayout.paginationUi.updateScrollProgress(pickerPosition.pageInCategory, 0f)
+    }
+
+    private fun restorePosition() {
+        val page = pickerPagesAdapter.resolvePage(interactionStore.state.position(key.kind))
+        pickerLayout.pager.setCurrentItem(page, false)
+        syncPageUi(page)
+    }
 
     override fun enterAnimation(lastWindow: InputWindow): Transition? = null
 
@@ -126,13 +141,7 @@ class PickerWindow(
         }
         pager.apply {
             adapter = pickerPagesAdapter
-            // show first symbol category by default, rather than recently used
-            val range = pickerPagesAdapter.getRangeOfCategoryIndex(1)
-            setCurrentItem(range.first, false)
-            // update initial tab and page manually to avoid
-            // "Adding or removing callbacks during dispatch to callbacks"
-            tabsUi.activateTab(1)
-            paginationUi.updatePageCount(range.run { last - first + 1 })
+            restorePosition()
             registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
                 override fun onPageScrolled(
                     position: Int,
@@ -140,12 +149,19 @@ class PickerWindow(
                     positionOffsetPixels: Int
                 ) {
                     val range = pickerPagesAdapter.getCategoryRangeOfPage(position)
+                    if (range.isEmpty()) return
                     paginationUi.updatePageCount(range.run { last - first + 1 })
                     paginationUi.updateScrollProgress(position - range.first, positionOffset)
                 }
 
                 override fun onPageSelected(position: Int) {
-                    tabsUi.activateTab(pickerPagesAdapter.getCategoryIndexOfPage(position))
+                    val pickerPosition = pickerPagesAdapter.getPositionOfPage(position) ?: return
+                    interactionStore.selectPage(
+                        key.kind,
+                        pickerPosition.categoryIndex,
+                        pickerPosition.pageInCategory
+                    )
+                    tabsUi.activateTab(pickerPosition.categoryIndex)
                     popup.dismissAll()
                 }
             })
@@ -156,7 +172,10 @@ class PickerWindow(
 
     override fun onAttached() {
         pickerLayout.embeddedKeyboard.also {
-            pickerPagesAdapter.refreshIfNeeded()
+            if (pickerPagesAdapter.refreshIfNeeded()) {
+                pickerLayout.tabsUi.setTabs(pickerPagesAdapter.getCategoryList())
+                restorePosition()
+            }
             it.onReturnDrawableUpdate(returnKeyDrawable.resourceId)
             it.keyActionListener = keyActionListener
         }

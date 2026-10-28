@@ -39,6 +39,7 @@ import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractio
 import org.fcitx.fcitx5.android.input.picker.emojiPicker
 import org.fcitx.fcitx5.android.input.picker.emoticonPicker
 import org.fcitx.fcitx5.android.input.picker.symbolPicker
+import org.fcitx.fcitx5.android.input.picker.PickerInteractionStore
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.preedit.PreeditComponent
 import org.fcitx.fcitx5.android.input.session.EngineState
@@ -115,6 +116,7 @@ class InputView(
     private val windowManager = InputWindowManager()
     private val inputModeStore = InputModeStore()
     private val candidateInteraction = CandidateInteractionController()
+    private val pickerInteractionStore = PickerInteractionStore()
     private val navigator = InputNavigator()
     private val kawaiiBar = KawaiiBarComponent()
     private val horizontalCandidate = HorizontalCandidateComponent()
@@ -139,6 +141,7 @@ class InputView(
         scope += windowManager
         scope += inputModeStore
         scope += candidateInteraction
+        scope += pickerInteractionStore
         scope += navigator
         scope += kawaiiBar
         scope += horizontalCandidate
