@@ -4,6 +4,8 @@
  */
 package org.fcitx.fcitx5.android.input.clipboard
 
+import org.fcitx.fcitx5.android.input.editing.EditingCommand
+
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.view.View
@@ -119,7 +121,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             }
 
             override fun onPaste(entry: ClipboardEntry) {
-                service.commitText(entry.text)
+                service.editingCommands.execute(EditingCommand.CommitText(entry.text))
                 if (clipboardReturnAfterPaste) {
                     navigator.navigate(InputNavigationCommand.ShowKeyboard())
                 }

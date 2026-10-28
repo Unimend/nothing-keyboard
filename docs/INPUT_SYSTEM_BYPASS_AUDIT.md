@@ -20,6 +20,7 @@ unrepresentable, and a test must prevent it from returning.
 | Input session | `InputSessionStore` snapshot | UI state sourced from parallel broadcasts | Legacy broadcast API deleted; boundary test forbids its return |
 | Engine key protocol | `EngineKey` + `EngineKeyModifier` | Views constructing native symbols, flags or scan codes | Translation exists only in `FcitxEngineCommandAdapter` |
 | Hardware key events | `AndroidKeyEventController` | Service/UI caching native events or synthesizing modifier sequences | Static ownership test |
+| Engine command scheduling | `FcitxCommandDispatcher` + `SerialCommandQueue` | Service managing native jobs; caller join starting queued work | Queue behavior tests and Service boundary test |
 
 ## Removed legacy escape hatches
 
@@ -60,8 +61,21 @@ unrepresentable, and a test must prevent it from returning.
 
 ## Remaining migration work, ordered upstream to downstream
 
-1. **Service decomposition:** `FcitxInputMethodService` still contains the Android engine bridge,
-   editor-effect adapter and lifecycle orchestration in one large class. These are permitted
+Editor migration checkpoint: EditorController now owns the selection tracker, composition range
+and text, commit/preedit updates, cursor reconciliation, Return/arrow handling, and the destructive
+editing controller. Composition uses EngineText and an Android span renderer, with no Fcitx text
+types. The old Service editing forwarding methods have been deleted. Keyboard, navigation, clipboard and toolbar send
+EditingCommand through EditingCommandPort; the concrete executor is constructed once by the
+service. Selection tracking is private, reads return a copy, and lifecycle changes enter through
+startInput, selectionChanged, finishInputView and unbindInput. Cross-editor undo behavior is intentionally preserved.
+Editor effects are interpreted by EditorController. EngineTextRenderer owns semantic span conversion
+for both editor composition and keyboard preedit; lifecycle transitions invalidate queued cursor moves.
+The service still routes engine effects and owns platform lifecycle orchestration; those are
+separate remaining boundaries, not completed by the editor extraction.
+
+1. **Service decomposition:** `FcitxInputMethodService` still contains platform lifecycle,
+   capability negotiation and subtype orchestration in one large class. Command scheduling now
+   belongs to the engine boundary and editor effects belong to the editing boundary. These are permitted
    platform-boundary operations, but should become separate collaborators before replacing Fcitx.
 2. **Window-local state:** toolbar and window animation state is still local to its owning surface.
    Move only cross-surface state into the session reducer; ephemeral animation state should remain
@@ -74,3 +88,23 @@ unrepresentable, and a test must prevent it from returning.
 
 Every future migration must finish with three artifacts: one owner, removal of the previous entry
 point, and a boundary test. Without all three, the system is still considered transitional.
+
+## 2026-10-28 device regression finding
+
+Fast Select All → Backspace → Undo on the editing surface duplicated the text. Selected-range
+backspace previously queued an Android DEL and immediately collapsed the selection. DEL could
+arrive after collapse and delete nothing, while undo still restored the captured range. Selected
+backspace now delegates to the same atomic editor transaction as DeleteSelection. Unit tests cover
+synthetic-key bypass and three repeated delete/restore cycles. Cross-editor undo remains unchanged.
+
+Verification: unit tests and debug APK build passed. Device verified English composition/Return,
+ordinary backspace/undo and navigation into Editing before the selected-delete fix. The fix passed
+unit tests and was installed, but its device retest was interrupted when the foreground changed to
+Notes; do not mark this device case passed. Automated touches were stopped to avoid further changes
+to the user's note. Hardware-key acceptance and non-reused correlation IDs were subsequently fixed
+and built locally, not installed after that interruption.
+
+Queue tests cover FIFO despite joining later handles, cancellation of queued work, failure isolation,
+owner shutdown, and checking validity only after engine readiness. Native translation is no longer
+called by Service. The unused parallel `capabilityFlags` field was removed; the session snapshot
+remains the published capability state.

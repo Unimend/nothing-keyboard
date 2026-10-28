@@ -14,6 +14,8 @@ import org.fcitx.fcitx5.android.core.ScancodeMapping
 
 /** The only place where project-owned [EngineCommand] values become Fcitx API calls. */
 object FcitxEngineCommandAdapter {
+    fun acceptsHardwareKey(event: KeyEvent): Boolean = KeySym.fromKeyEvent(event) != null
+
     suspend fun executeHardwareKey(api: FcitxAPI, event: KeyEvent, timestamp: Int): Boolean {
         val symbol = KeySym.fromKeyEvent(event) ?: return false
         api.sendKey(

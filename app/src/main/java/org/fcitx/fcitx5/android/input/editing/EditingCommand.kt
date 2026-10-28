@@ -4,6 +4,10 @@
 package org.fcitx.fcitx5.android.input.editing
 
 sealed interface EditingCommand {
+    data class CommitText(val text: String, val cursor: Int = -1) : EditingCommand
+    data object FinishComposition : EditingCommand
+    data object ApplicationUndo : EditingCommand
+    data object ApplicationRedo : EditingCommand
     data class MoveCursor(val keyCode: Int, val extendSelection: Boolean) : EditingCommand
     data class ExtendSelection(val steps: Int) : EditingCommand
     data object CancelSelection : EditingCommand

@@ -10,6 +10,47 @@ import org.junit.Test
 
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
+    @Test
+    fun `service cannot implement native engine command execution`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        listOf("FcitxEngineCommandAdapter", "postFcitxJob", "Channel<Job>", "CoroutineStart.LAZY")
+            .forEach { assertFalse("Engine queue escaped its boundary: $it", it in source) }
+    }
+
+    @Test
+    fun `surfaces cannot access concrete editor implementations`() {
+        val forbidden = Regex("""\b(EditorController|AndroidEditingCommandExecutor|DestructiveEditingController)\b""")
+        val violations = inputSources().filter {
+            val path = it.invariantSeparatorsPath
+            "/editing/" !in path && it.name != "FcitxInputMethodService.kt" &&
+                forbidden.containsMatchIn(it.readText())
+        }
+        assertTrue("Concrete editor dependency: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `service cannot own composition or destructive editing implementations`() {
+        val source = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        listOf("FormattedText", "CursorTracker()", "DestructiveEditingController(",
+            "setComposingText(", "finishComposingText(", "commitText(text, 1)").forEach {
+            assertFalse("Editor implementation leaked into service: $it", it in source)
+        }
+    }
+
+    @Test
+    fun `semantic text spans have one renderer`() {
+        val violations = inputSources().filter {
+            it.name != "EngineTextRenderer.kt" &&
+                "EngineTextStyle" in it.readText() &&
+                "setSpan(" in it.readText()
+        }
+        assertTrue("Duplicated semantic text rendering: $violations", violations.isEmpty())
+    }
+
     private val sourceRoot: File by lazy {
         sequenceOf(File("app/src/main/java"), File("../app/src/main/java"))
             .first { it.isDirectory }
@@ -38,6 +79,7 @@ class InputArchitectureBoundaryTest {
         val allowed = setOf(
             "FcitxInputMethodService.kt",
             "editing/AndroidEditingCommandExecutor.kt",
+            "editing/EditorController.kt",
             "editing/DestructiveEditingController.kt",
             "engine/AndroidKeyEventController.kt"
         )

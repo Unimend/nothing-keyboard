@@ -16,7 +16,6 @@ import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
-import org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.candidates.interaction.selectCandidate
@@ -63,7 +62,7 @@ class CommonKeyActionListener :
     private val langSwitchKeyBehavior by kbdPrefs.langSwitchKeyBehavior
 
     private var backspaceSwipeState = Stopped
-    private val editingCommands by lazy { AndroidEditingCommandExecutor(service) }
+    private val editingCommands get() = service.editingCommands
     private val navigator: InputNavigator by manager.must()
 
     private fun hasPreedit(): Boolean = service.inputSession.current.engine.let {
@@ -80,7 +79,7 @@ class CommonKeyActionListener :
             }
         } else {
             // Other languages: commit preedit as-is
-            service.finishComposing()
+            service.editingCommands.execute(EditingCommand.FinishComposition)
         }
         return service.submitEngineCommand(EngineCommand.Reset)
     }
@@ -114,7 +113,7 @@ class CommonKeyActionListener :
                 is CommitAction -> {
                     commitAndReset().invokeOnCompletion { failure ->
                         if (failure == null) {
-                            service.lifecycleScope.launch { service.commitText(action.text) }
+                            service.lifecycleScope.launch { service.editingCommands.execute(EditingCommand.CommitText(action.text)) }
                         }
                     }
                 }

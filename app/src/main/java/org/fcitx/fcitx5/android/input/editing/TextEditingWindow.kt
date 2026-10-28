@@ -43,7 +43,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
     private val buttonRadius by ThemeManager.prefs.textEditingButtonRadius
 
     private val session = EditingSession()
-    private val commandExecutor by lazy { AndroidEditingCommandExecutor(service) }
+    private val commandExecutor get() = service.editingCommands
     private val navigator: InputNavigator by manager.must()
 
     private fun sendDirectionKey(keyEventCode: Int) {

@@ -14,7 +14,7 @@ import timber.log.Timber
 /** Owns Android/Fcitx hardware-key correlation and synthetic Android key sequences. */
 class AndroidKeyEventController(
     private val connection: () -> InputConnection?,
-    private val submitHardwareKey: (KeyEvent, Int) -> Unit,
+    private val submitHardwareKey: (KeyEvent, Int) -> Boolean,
     private val commitText: (String) -> Unit
 ) {
     private val pendingEvents = LruCache<Int, KeyEvent>(78)
@@ -24,8 +24,9 @@ class AndroidKeyEventController(
     fun forwardToEngine(event: KeyEvent): Boolean {
         val eventId = nextEventId++
         pendingEvents.put(eventId, event)
-        submitHardwareKey(event, eventId)
-        return true
+        val accepted = submitHardwareKey(event, eventId)
+        if (!accepted) pendingEvents.remove(eventId)
+        return accepted
     }
 
     fun handleForwarded(effect: EngineEffect.ForwardKey) {
@@ -97,7 +98,7 @@ class AndroidKeyEventController(
 
     fun reset() {
         pendingEvents.evictAll()
-        nextEventId = 0
+        // Do not reuse IDs: an old engine reply must not match a new editor's pending event.
         lastMetaState = 0
     }
 

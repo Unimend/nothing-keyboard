@@ -40,8 +40,10 @@ class DestructiveEditingController(
         val end = selection.end
 
         if (start != end) {
-            recordSelectedText(connection, start, end)
-            host.predictEditingSelection(start)
+            // A queued DEL followed by setSelection can collapse the range before DEL arrives.
+            // All selected-range deletions must use the same ordered editor transaction.
+            deleteSelection()
+            return
         } else if (start > 0) {
             val deletedLength = recordCharacterBeforeCursor(connection, start)
             host.predictEditingSelection(start - deletedLength)
@@ -49,23 +51,14 @@ class DestructiveEditingController(
 
         if (host.shouldSimulateBackspaceKey) {
             host.sendBackspaceKey()
-            if (start != end) collapseSelection(connection, start)
             return
         }
-        if (start == end) {
-            if (start <= 0) {
-                host.sendBackspaceKey()
-            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                connection.deleteSurroundingTextInCodePoints(1, 0)
-            } else {
-                connection.deleteSurroundingText(1, 0)
-            }
+        if (start <= 0) {
+            host.sendBackspaceKey()
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            connection.deleteSurroundingTextInCodePoints(1, 0)
         } else {
-            connection.withBatchEdit {
-                commitText("", 0)
-                setSelection(start, start)
-            }
-            host.resetEditingSelection(start)
+            connection.deleteSurroundingText(1, 0)
         }
     }
 
@@ -115,11 +108,6 @@ class DestructiveEditingController(
     }
 
     fun invalidateUndo() = history.clear()
-
-    private fun collapseSelection(connection: InputConnection, position: Int) {
-        connection.setSelection(position, position)
-        host.resetEditingSelection(position)
-    }
 
     private fun recordSelectedText(connection: InputConnection, start: Int, end: Int) {
         history.record(

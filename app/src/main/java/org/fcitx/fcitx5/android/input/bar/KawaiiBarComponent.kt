@@ -4,6 +4,8 @@
  */
 package org.fcitx.fcitx5.android.input.bar
 
+import org.fcitx.fcitx5.android.input.editing.EditingCommand
+
 import android.graphics.Color
 import android.os.Build
 import android.util.Size
@@ -254,10 +256,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             }
             buttonsUi.apply {
                 undoButton.setOnClickListener {
-                    service.sendCombinationKeyEvents(KeyEvent.KEYCODE_Z, ctrl = true)
+                    service.editingCommands.execute(EditingCommand.ApplicationUndo)
                 }
                 redoButton.setOnClickListener {
-                    service.sendCombinationKeyEvents(KeyEvent.KEYCODE_Z, ctrl = true, shift = true)
+                    service.editingCommands.execute(EditingCommand.ApplicationRedo)
                 }
                 cursorMoveButton.setOnClickListener {
                     navigator.navigate(InputNavigationCommand.ShowEditing)
@@ -272,7 +274,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             clipboardUi.suggestionView.apply {
                 setOnClickListener {
                     ClipboardManager.lastEntry?.let {
-                        service.commitText(it.text)
+                        service.editingCommands.execute(EditingCommand.CommitText(it.text))
                     }
                     clipboardTimeoutJob?.cancel()
                     clipboardTimeoutJob = null

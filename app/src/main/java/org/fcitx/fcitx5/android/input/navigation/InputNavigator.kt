@@ -3,6 +3,8 @@
  */
 package org.fcitx.fcitx5.android.input.navigation
 
+import org.fcitx.fcitx5.android.input.editing.EditingCommand
+
 import androidx.core.content.ContextCompat
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
@@ -38,7 +40,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             InputNavigationCommand.ShowClipboard ->
                 windowManager.attachWindow(ClipboardWindow())
             InputNavigationCommand.ShowEditing -> {
-                service.finishComposing()
+                service.editingCommands.execute(EditingCommand.FinishComposition)
                 windowManager.attachWindow(TextEditingWindow())
             }
             is InputNavigationCommand.ShowPicker -> {

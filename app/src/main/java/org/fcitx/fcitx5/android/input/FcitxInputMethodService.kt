@@ -25,7 +25,6 @@ import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.CursorAnchorInfo
 import android.view.inputmethod.EditorInfo
-import android.view.inputmethod.InputConnection
 import android.view.inputmethod.InlineSuggestionsRequest
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.view.inputmethod.InputMethodSubtype
@@ -40,16 +39,12 @@ import androidx.autofill.inline.common.ViewStyle
 import androidx.autofill.inline.v1.InlineSuggestionUi
 import androidx.core.view.updateLayoutParams
 import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.consumeEach
+import org.fcitx.fcitx5.android.input.engine.FcitxCommandDispatcher
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.core.CapabilityFlag
-import org.fcitx.fcitx5.android.core.FcitxAPI
-import org.fcitx.fcitx5.android.core.FormattedText
 import org.fcitx.fcitx5.android.core.SubtypeManager
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.FcitxDaemon
@@ -59,10 +54,7 @@ import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.cursor.CursorRange
-import org.fcitx.fcitx5.android.input.cursor.CursorTracker
-import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
-import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
+import org.fcitx.fcitx5.android.input.editing.EditorController
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
 import org.fcitx.fcitx5.android.input.engine.AndroidKeyEventController
@@ -70,8 +62,6 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
-import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
-import org.fcitx.fcitx5.android.input.engine.FcitxEngineCommandAdapter
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
@@ -87,12 +77,9 @@ import org.fcitx.fcitx5.android.utils.isTypeNull
 import org.fcitx.fcitx5.android.utils.monitorCursorAnchor
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
 import org.fcitx.fcitx5.android.utils.styledFloat
-import org.fcitx.fcitx5.android.utils.withBatchEdit
-import splitties.bitflags.hasFlag
 import splitties.dimensions.dp
 import splitties.resources.styledColor
 import timber.log.Timber
-import kotlin.math.max
 
 class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort {
 
@@ -103,7 +90,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     lateinit var engineQueries: InputEngineQueries
         private set
 
-    private var jobs = Channel<Job>(capacity = Channel.UNLIMITED)
+    private lateinit var engineCommands: FcitxCommandDispatcher
 
     private lateinit var pkgNameCache: PackageNameCache
 
@@ -112,10 +99,10 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
 
-    private val keyEvents = AndroidKeyEventController(
+    private val keyEvents: AndroidKeyEventController = AndroidKeyEventController(
         connection = { currentInputConnection },
         submitHardwareKey = ::submitHardwareKey,
-        commitText = ::commitText
+        commitText = { editor.commitText(it) }
     )
 
     private fun currentStatusIcon() = inputSession.current.engine.inputMethod?.let(
@@ -138,55 +125,19 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         }
     }
 
-    private var capabilityFlags = CapabilityFlags.DefaultFlags
-
-    private val selection = CursorTracker()
-
-    val currentInputSelection: CursorRange
-        get() = selection.latest
-
-    private val composing = CursorRange()
-    private var composingText = FormattedText.Empty
-
-    private val destructiveEditing = DestructiveEditingController(
-        object : DestructiveEditingHost {
-            override val editingConnection: InputConnection?
-                get() = currentInputConnection
-            override val editingSelection: CursorRange
-                get() = selection.latest
-            override val hasActiveComposition: Boolean
-                get() = composing.isNotEmpty()
-            override val shouldSimulateBackspaceKey: Boolean
-                get() = currentInputEditorInfo.privateImeOptions != DeleteSurroundingFlag ||
-                    currentInputEditorInfo.inputType and InputType.TYPE_MASK_CLASS ==
-                    InputType.TYPE_NULL
-
-            override fun predictEditingSelection(start: Int, end: Int) {
-                selection.predict(start, end)
-            }
-
-            override fun resetEditingSelection(start: Int, end: Int) {
-                selection.resetTo(start, end)
-            }
-
-            override fun resetEditingComposition() = resetComposingState()
-
-            override fun sendBackspaceKey() = keyEvents.sendDownUp(KeyEvent.KEYCODE_DEL)
-
-            override fun resetInputEngine() {
-                submitEngineCommand(EngineCommand.Reset)
-            }
-        }
+    private val editor: EditorController = EditorController(
+        connection = { currentInputConnection },
+        editorInfo = { currentInputEditorInfo },
+        sendKey = { keyEvents.sendDownUp(it) },
+        submitEngineCommand = { command, guard -> submitEngineCommand(command, guard) },
+        ignoreSystemCursor = { ignoreSystemCursor }
     )
 
-    private fun resetComposingState() {
-        composing.clear()
-        composingText = FormattedText.Empty
+    val editingCommands: org.fcitx.fcitx5.android.input.editing.EditingCommandPort by lazy {
+        org.fcitx.fcitx5.android.input.editing.AndroidEditingCommandExecutor(editor) { code, shift, ctrl ->
+            keyEvents.sendCombination(code, shift = shift, ctrl = ctrl)
+        }
     }
-
-    private var cursorUpdateIndex: Int = 0
-
-    private var highlightColor: Int = DefaultHighlightColor
 
     private val prefs = AppPrefs.getInstance()
     private val inlineSuggestions by prefs.keyboard.inlineSuggestions
@@ -238,34 +189,10 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         replaceInputViews(it)
     }
 
-    /**
-     * Post a fcitx operation to [jobs] to be executed
-     *
-     * Unlike `fcitx.runOnReady` or `fcitx.launchOnReady` where
-     * subsequent operations can start if the prior operation is not finished (suspended),
-     * [postFcitxJob] ensures that operations are executed sequentially.
-     */
-    private fun postFcitxJob(block: suspend FcitxAPI.() -> Unit): Job {
-        val job = fcitx.lifecycleScope.launch(start = CoroutineStart.LAZY) {
-            fcitx.runOnReady(block)
-        }
-        jobs.trySend(job)
-        return job
-    }
+    private fun submitHardwareKey(event: KeyEvent, eventId: Int): Boolean =
+        engineCommands.submitHardwareKey(event, eventId)
 
-    private fun submitHardwareKey(event: KeyEvent, eventId: Int) {
-        postFcitxJob {
-            if (!FcitxEngineCommandAdapter.executeHardwareKey(this, event, eventId)) {
-                Timber.d("Skipped KeyEvent: $event")
-            }
-        }
-    }
-
-    /** Serializes project-owned commands on the engine connection queue. */
-    override fun submit(command: EngineCommand): Job = postFcitxJob {
-        InputCoreDiagnostics.recordEngineCommand(command::class.simpleName ?: "EngineCommand")
-        FcitxEngineCommandAdapter.execute(this, command)
-    }
+    override fun submit(command: EngineCommand): Job = engineCommands.submit(command)
 
     fun submitEngineCommand(command: EngineCommand): Job = submit(command)
 
@@ -279,18 +206,12 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     }
 
     private fun submitEngineCommand(command: EngineCommand, guard: () -> Boolean): Job =
-        postFcitxJob {
-            if (!guard()) return@postFcitxJob
-            InputCoreDiagnostics.recordEngineCommand(command::class.simpleName ?: "EngineCommand")
-            FcitxEngineCommandAdapter.execute(this, command)
-        }
+        engineCommands.submit(command, guard)
 
     override fun onCreate() {
         fcitx = FcitxDaemon.connect(javaClass.name)
         engineQueries = FcitxEngineQueries(fcitx)
-        lifecycleScope.launch {
-            jobs.consumeEach { it.join() }
-        }
+        engineCommands = FcitxCommandDispatcher(fcitx, lifecycleScope)
         engineBridge = FcitxEngineBridge(fcitx, inputSession, ::handleEngineEffect)
         engineBridge.startIn(lifecycleScope)
         lifecycleScope.launch {
@@ -316,22 +237,9 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     }
 
     private fun handleEngineEffect(effect: EngineEffect) {
+        if (editor.handleEngineEffect(effect)) return
         when (effect) {
-            is EngineEffect.CommitText -> commitText(effect.text, effect.cursor)
-            is EngineEffect.VirtualKey -> when (effect.key) {
-                EngineVirtualKey.Backspace -> deleteBackward()
-                EngineVirtualKey.Return -> handleReturnKey()
-                EngineVirtualKey.ArrowLeft -> handleArrowKey(KeyEvent.KEYCODE_DPAD_LEFT)
-                EngineVirtualKey.ArrowRight -> handleArrowKey(KeyEvent.KEYCODE_DPAD_RIGHT)
-                EngineVirtualKey.Unicode -> commitText(Character.toString(effect.unicode))
-                EngineVirtualKey.Unhandled ->
-                    Timber.w("Unhandled virtual engine key: ${effect.rawSymbol}")
-            }
             is EngineEffect.ForwardKey -> handleForwardedEngineKey(effect)
-            is EngineEffect.UpdateClientPreedit ->
-                updateComposingText(FcitxPlatformAdapter.text(effect.text))
-            is EngineEffect.DeleteSurrounding ->
-                handleDeleteSurrounding(effect.before, effect.after)
             is EngineEffect.InputMethodChanged -> {
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                     val im = effect.inputMethod.uniqueName
@@ -354,143 +262,13 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
                     }
                 }
             }
+            else -> Unit // Editor effects were consumed above.
         }
     }
 
     private fun handleForwardedEngineKey(effect: EngineEffect.ForwardKey) =
         keyEvents.handleForwarded(effect)
 
-    private fun handleDeleteSurrounding(before: Int, after: Int) {
-        val ic = currentInputConnection ?: return
-        if (before > 0) {
-            selection.predictOffset(-before)
-        }
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-            ic.deleteSurroundingTextInCodePoints(before, after)
-        } else {
-            ic.deleteSurroundingText(before, after)
-        }
-    }
-
-    fun deleteBackward() {
-        destructiveEditing.deleteBackward()
-    }
-
-    private fun handleReturnKey() {
-        currentInputEditorInfo.run {
-            if (inputType and InputType.TYPE_MASK_CLASS == InputType.TYPE_NULL ||
-                imeOptions.hasFlag(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
-            ) {
-                keyEvents.sendDownUp(KeyEvent.KEYCODE_ENTER)
-                return
-            }
-            if (actionLabel?.isNotEmpty() == true && actionId != EditorInfo.IME_ACTION_UNSPECIFIED) {
-                currentInputConnection.performEditorAction(actionId)
-                return
-            }
-            when (val action = imeOptions and EditorInfo.IME_MASK_ACTION) {
-                EditorInfo.IME_ACTION_UNSPECIFIED,
-                EditorInfo.IME_ACTION_NONE -> keyEvents.sendDownUp(KeyEvent.KEYCODE_ENTER)
-                else -> currentInputConnection.performEditorAction(action)
-            }
-        }
-    }
-
-    private fun handleArrowKey(keyCode: Int) {
-        val type = currentInputEditorInfo.inputType and InputType.TYPE_MASK_CLASS
-        val variation = currentInputEditorInfo.inputType and InputType.TYPE_MASK_VARIATION
-        if (type == InputType.TYPE_NULL ||
-            // confirm URL suggestion in browser location bar, see also https://bugzilla.mozilla.org/show_bug.cgi?id=1999915
-            type == InputType.TYPE_CLASS_TEXT && variation == InputType.TYPE_TEXT_VARIATION_URI
-        ) {
-            keyEvents.sendDownUp(keyCode)
-            return
-        }
-        val (start, end) = currentInputSelection
-        val offset = if (start == end) 1 else 0
-        val target = when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_LEFT -> start - offset
-            KeyEvent.KEYCODE_DPAD_RIGHT -> end + offset
-            else -> return
-        }
-        currentInputConnection.setSelection(target, target)
-    }
-
-    fun commitText(text: String, cursor: Int = -1) {
-        val ic = currentInputConnection ?: return
-        destructiveEditing.invalidateUndo()
-        // when composing text equals commit content, finish composing text as-is
-        if (composing.isNotEmpty() && composingText.toString() == text) {
-            val c = if (cursor == -1) text.length else cursor
-            val target = composing.start + c
-            resetComposingState()
-            ic.withBatchEdit {
-                if (selection.current.start != target) {
-                    selection.predict(target)
-                    ic.setSelection(target, target)
-                }
-                ic.finishComposingText()
-            }
-            return
-        }
-        // committed text should replace composing (if any), replace selected range (if any),
-        // or simply prepend before cursor
-        val start = if (composing.isEmpty()) selection.latest.start else composing.start
-        resetComposingState()
-        if (cursor == -1) {
-            selection.predict(start + text.length)
-            ic.commitText(text, 1)
-        } else {
-            val target = start + cursor
-            selection.predict(target)
-            ic.withBatchEdit {
-                commitText(text, 1)
-                setSelection(target, target)
-            }
-        }
-    }
-
-    fun clearAllText() {
-        destructiveEditing.clearAll()
-    }
-
-    fun undoLastEdit() {
-        destructiveEditing.undo()
-    }
-
-    fun deleteSelection() {
-        destructiveEditing.deleteSelection()
-    }
-
-    fun invalidateDestructiveUndo() {
-        destructiveEditing.invalidateUndo()
-    }
-
-    fun sendCombinationKeyEvents(
-        keyEventCode: Int,
-        alt: Boolean = false,
-        ctrl: Boolean = false,
-        shift: Boolean = false
-    ) = keyEvents.sendCombination(keyEventCode, alt, ctrl, shift)
-
-    fun applySelectionOffset(offsetStart: Int, offsetEnd: Int = 0) {
-        val lastSelection = selection.latest
-        currentInputConnection?.also {
-            val start = max(lastSelection.start + offsetStart, 0)
-            val end = max(lastSelection.end + offsetEnd, 0)
-            if (start > end) return
-            selection.predict(start, end)
-            it.setSelection(start, end)
-        }
-    }
-
-    fun cancelSelection() {
-        val lastSelection = selection.latest
-        if (lastSelection.isEmpty()) return
-        val end = lastSelection.end
-        selection.predict(end)
-        currentInputConnection?.setSelection(end, end)
-    }
 
     private lateinit var lastKnownConfig: Configuration
 
@@ -522,7 +300,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     override fun onWindowShown() {
         super.onWindowShown()
-        highlightColor =
+        editor.highlightColor =
             styledColorOrDefault(android.R.attr.colorAccent, DefaultHighlightColor).alpha(0.4f)
         InputFeedbacks.syncSystemPrefs()
     }
@@ -663,10 +441,8 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         // sometimes when restarting input, onUpdateSelection happens before onStartInput, and
         // initialSel{Start,End} is outdated. but it's the client app's responsibility to send
         // right cursor position, try to workaround this would simply introduce more bugs.
-        selection.resetTo(attribute.initialSelStart, attribute.initialSelEnd)
-        resetComposingState()
+        editor.startInput(attribute.initialSelStart, attribute.initialSelEnd)
         val flags = CapabilityFlags.fromEditorInfo(attribute)
-        capabilityFlags = flags
         inputSession.dispatch(
             InputSessionEvent.InputStarted(
                 attribute.toEditorSnapshot(), flags.flags,
@@ -675,7 +451,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         )
         // EditorInfo may change between onStartInput and onStartInputView
         inputDeviceMgr.notifyOnStartInput(attribute)
-        Timber.d("onStartInput: initialSel=${selection.current}, restarting=$restarting")
+        Timber.d("onStartInput: initialSel=${editor.currentSelection}, restarting=$restarting")
         val isNullType = attribute.isTypeNull()
         // Commands share one serial queue, preserving focus -> capability -> focus ordering.
         if (restarting) submitEngineCommand(EngineCommand.Focus(false))
@@ -715,15 +491,13 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         candidatesEnd: Int
     ) {
         // onUpdateSelection can left behind when user types quickly enough, eg. long press backspace
-        cursorUpdateIndex += 1
         inputSession.dispatch(InputSessionEvent.SelectionChanged(newSelStart, newSelEnd))
         Timber.d("onUpdateSelection: old=[$oldSelStart,$oldSelEnd] new=[$newSelStart,$newSelEnd] cand=[$candidatesStart,$candidatesEnd]")
-        handleCursorUpdate(
+        editor.selectionChanged(
             newSelStart,
             newSelEnd,
             candidatesStart,
-            candidatesEnd,
-            cursorUpdateIndex
+            candidatesEnd
         )
     }
 
@@ -780,129 +554,6 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         anchorPosition[2] -= xOffset
         anchorPosition[3] -= yOffset
         candidatesView?.updateCursorAnchor(anchorPosition, contentSize)
-    }
-
-    private fun handleCursorUpdate(
-        newSelStart: Int,
-        newSelEnd: Int,
-        newComposingStart: Int,
-        newComposingEnd: Int,
-        updateIndex: Int
-    ) {
-        if (selection.consume(newSelStart, newSelEnd)) {
-            // try restore composing range in case it was dropped by InputFilter
-            // but only when prediction matches, since InputFilter can also change editor content
-            // ref:
-            // https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-15.0.0_r36/core/java/android/widget/Editor.java#2083
-            // https://android.googlesource.com/platform/frameworks/base/+/refs/tags/android-15.0.0_r36/core/java/android/widget/TextView.java#7351
-            if (newComposingStart == -1 && newComposingEnd == -1 && composing.isNotEmpty()) {
-                currentInputConnection?.setComposingRegion(composing.start, composing.end)
-            }
-            return // do nothing if prediction matches
-        } else {
-            // cursor update can't match any prediction: it's treated as a user input
-            selection.resetTo(newSelStart, newSelEnd)
-        }
-        // skip selection range update, we only care about selection cursor (zero width) here
-        if (newSelStart != newSelEnd) return
-        // do reset if composing is empty && input panel is not empty
-        if (composing.isEmpty()) {
-            Timber.d("handleCursorUpdate: reset if engine is not empty")
-            submitEngineCommand(EngineCommand.ResetIfNotEmpty)
-            return
-        }
-        // check if cursor inside composing text
-        if (composing.contains(newSelStart)) {
-            if (ignoreSystemCursor) return
-            // fcitx cursor position is relative to client preedit (composing text)
-            val position = newSelStart - composing.start
-            // move fcitx cursor when cursor position changed
-            if (position != composingText.cursor) {
-                // cursor in InvokeActionEvent counts by "UTF-8 characters"
-                val codePointPosition = composingText.codePointCountUntil(position)
-                submitEngineCommand(
-                    EngineCommand.MoveCursor(codePointPosition),
-                    guard = { updateIndex == cursorUpdateIndex }
-                )
-            }
-        } else {
-            Timber.d("handleCursorUpdate: focus out/in")
-            resetComposingState()
-            // cursor outside composing range, finish composing as-is
-            currentInputConnection?.finishComposingText()
-            // `fcitx.reset()` here would commit preedit after new cursor position
-            // since we have `ClientUnfocusCommit`, focus out and in would do the trick
-            submitEngineCommand(EngineCommand.FocusOutIn)
-        }
-    }
-
-    // because setComposingText(text, cursor) can only put cursor at end of composing,
-    // sometimes onUpdateSelection would receive event with wrong cursor position.
-    // those events need to be filtered.
-    // because of https://android.googlesource.com/platform/frameworks/base.git/+/refs/tags/android-11.0.0_r45/core/java/android/view/inputmethod/BaseInputConnection.java#851
-    // it's not possible to set cursor inside composing text
-    private fun updateComposingText(text: FormattedText) {
-        val ic = currentInputConnection ?: return
-        val lastSelection = selection.latest
-        ic.beginBatchEdit()
-        if (composingText.spanEquals(text)) {
-            // composing text content is up-to-date
-            // update cursor only when it's not empty AND cursor position is valid
-            if (text.length > 0 && text.cursor >= 0) {
-                val p = text.cursor + composing.start
-                if (p != lastSelection.start) {
-                    Timber.d("updateComposingText: set Android selection ($p, $p)")
-                    ic.setSelection(p, p)
-                    selection.predict(p)
-                }
-            }
-        } else {
-            // composing text content changed
-            Timber.d("updateComposingText: '$text' lastSelection=$lastSelection")
-            if (text.isEmpty()) {
-                if (composing.isEmpty()) {
-                    // do not reset saved selection range when incoming composing
-                    // and saved composing range are both empty:
-                    // composing.start is invalid when it's empty.
-                    selection.predict(lastSelection.start)
-                } else {
-                    // clear composing text, put cursor at start of original composing
-                    selection.predict(composing.start)
-                    composing.clear()
-                }
-                ic.setComposingText("", 1)
-            } else {
-                val start = if (composing.isEmpty()) lastSelection.start else composing.start
-                composing.update(start, start + text.length)
-                // skip cursor reposition when:
-                // - preedit cursor is at the end
-                // - cursor position is invalid
-                if (text.cursor == text.length || text.cursor < 0) {
-                    selection.predict(composing.end)
-                    ic.setComposingText(text.toSpannedString(highlightColor), 1)
-                } else {
-                    val p = text.cursor + composing.start
-                    selection.predict(p)
-                    ic.setComposingText(text.toSpannedString(highlightColor), 1)
-                    ic.setSelection(p, p)
-                }
-            }
-            Timber.d("updateComposingText: composing=$composing")
-        }
-        composingText = text
-        ic.endBatchEdit()
-    }
-
-    /**
-     * Finish composing text and leave cursor position as-is.
-     * Also updates internal composing state of [FcitxInputMethodService].
-     */
-    fun finishComposing() {
-        val ic = currentInputConnection ?: return
-        if (composing.isEmpty()) return
-        composing.clear()
-        composingText = FormattedText.Empty
-        ic.finishComposingText()
     }
 
     @SuppressLint("RestrictedApi")
@@ -974,11 +625,8 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         inputSession.dispatch(InputSessionEvent.InputViewFinished)
         decorLocationUpdated = false
         inputDeviceMgr.onFinishInputView()
-        currentInputConnection?.apply {
-            finishComposingText()
-            monitorCursorAnchor(false)
-        }
-        resetComposingState()
+        editor.finishInputView()
+        currentInputConnection?.monitorCursorAnchor(false)
         submitEngineCommand(EngineCommand.FocusOutIn)
         hideStatusIcon()
         showingDialog?.dismiss()
@@ -988,12 +636,11 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         Timber.d("onFinishInput")
         inputSession.dispatch(InputSessionEvent.InputFinished)
         submitEngineCommand(EngineCommand.Focus(false))
-        capabilityFlags = CapabilityFlags.DefaultFlags
     }
 
     override fun onUnbindInput() {
         keyEvents.reset()
-        cursorUpdateIndex = 0
+        editor.unbindInput()
         // currentInputBinding can be null on some devices under some special Multi-screen mode
         val uid = currentInputBinding?.uid ?: return
         Timber.d("onUnbindInput: uid=$uid")

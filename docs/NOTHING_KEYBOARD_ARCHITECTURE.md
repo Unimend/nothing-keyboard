@@ -33,7 +33,9 @@ Current ownership:
 | Engine session | `InputSessionStore` | `FcitxEngineBridge` / Fcitx adapters |
 | Semantic keys | `EngineKey` and keyboard actions | `FcitxEngineCommandAdapter` |
 | Hardware keys | `AndroidKeyEventController` | Android `KeyEvent` + Fcitx adapter |
-| Editing | `DestructiveEditingController` and `EditingSession` | `AndroidEditingCommandExecutor` |
+| Editor state and composition | `EditorController` | Android `InputConnection`; semantic `EngineEffect` input |
+| Editing tools | `DestructiveEditingController` and `EditingSession` | `EditingCommandPort` / `AndroidEditingCommandExecutor` |
+| Engine command order | `SerialCommandQueue` | `FcitxCommandDispatcher` |
 | Navigation | `InputNavigator` | `InputWindowManager` |
 | Visual language | design tokens, typography and glyph registry | Android Views/drawables |
 
@@ -90,8 +92,9 @@ clear-all performed by this keyboard. It must not invoke application/system Undo
 reopen a committed CJK phrase as raw composing pinyin.
 
 `DestructiveEditingController` owns capture, deletion, clear-all, Unicode-aware backspace history,
-and restoration. `FcitxInputMethodService` only supplies the current editor connection plus cursor,
-composition, and engine-reset bridges through `DestructiveEditingHost`.
+and restoration. `EditorController` supplies cursor, composition and engine-reset bridges through
+`DestructiveEditingHost`. The service supplies platform connection providers at construction time;
+surfaces submit `EditingCommand` through `EditingCommandPort`, never the concrete controller.
 
 Every path that deletes a selected range (gesture release, editing-panel command, or a normal
 backspace tap while text is selected) records the same `DeletedTextEdit`. This keeps repeated
