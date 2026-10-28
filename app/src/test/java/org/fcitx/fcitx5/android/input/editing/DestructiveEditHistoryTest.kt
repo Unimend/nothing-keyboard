@@ -11,7 +11,7 @@ class DestructiveEditHistoryTest {
     @Test
     fun `record can be consumed only once`() {
         val history = DestructiveEditHistory()
-        val edit = DeletedTextEdit(2, "中文", 4)
+        val edit = DestructiveEditTransaction.RestoreRange(2, "中文", 4)
 
         history.record(edit)
 
@@ -22,7 +22,7 @@ class DestructiveEditHistoryTest {
     @Test
     fun `new typing can invalidate destructive undo`() {
         val history = DestructiveEditHistory()
-        history.record(DeletedTextEdit(0, "old", 3))
+        history.record(DestructiveEditTransaction.RestoreDocument("old", 3))
 
         history.clear()
 
@@ -32,14 +32,14 @@ class DestructiveEditHistoryTest {
     @Test
     fun `empty deletion is not recorded`() {
         val history = DestructiveEditHistory()
-        history.record(DeletedTextEdit(0, "", 0))
+        history.record(DestructiveEditTransaction.RestoreRange(0, "", 0))
         assertNull(history.consume())
     }
 
     @Test
     fun `a deletion after undo creates a fresh undo cycle`() {
         val history = DestructiveEditHistory()
-        val edit = DeletedTextEdit(2, "中文", 4)
+        val edit = DestructiveEditTransaction.RestoreRange(2, "中文", 4)
 
         history.record(edit)
         assertEquals(edit, history.consume())

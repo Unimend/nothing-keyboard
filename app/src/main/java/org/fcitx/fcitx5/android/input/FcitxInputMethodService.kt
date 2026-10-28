@@ -89,7 +89,13 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     val platformInputMethods: PlatformInputMethodPort get() = subtypeController
 
     private lateinit var engineDispatcher: FcitxCommandDispatcher
-    val engineCommands: EngineCommandPort get() = engineDispatcher
+    private val editingAwareEngineCommands: EngineCommandPort by lazy {
+        org.fcitx.fcitx5.android.input.editing.EditingAwareEngineCommandPort(
+            engineDispatcher,
+            editor::invalidateDestructiveUndo
+        )
+    }
+    val engineCommands: EngineCommandPort get() = editingAwareEngineCommands
 
     private lateinit var pkgNameCache: PackageNameCache
 
@@ -118,7 +124,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private val keyEvents: AndroidKeyEventController = AndroidKeyEventController(
         connection = { currentInputConnection },
         submitHardwareKey = ::submitHardwareKey,
-        commitText = { editor.commitText(it) }
+        commitText = { editor.commitText(it) },
+        invalidateDestructiveHistory = { editor.invalidateDestructiveUndo() }
     )
 
     private fun currentStatusIcon() = inputSession.current.engine.inputMethod?.let(

@@ -105,13 +105,14 @@ class DestructiveEditingController(
             selection.end
         }.coerceIn(0, committedText.length)
         history.record(
-            DeletedTextEdit(
-                start = 0,
+            DestructiveEditTransaction.RestoreDocument(
                 deletedText = committedText,
-                cursorAfterRestore = restoreCursor,
-                restoration = Restoration.ReplaceDocument
+                cursorAfterRestore = restoreCursor
             )
         )
+        // Detach Android's composing span before select-all. Clearing only our local range lets
+        // some editors replace the composing suffix while leaving committed text untouched.
+        connection.finishComposingText()
         host.resetEditingComposition()
         host.predictEditingSelection(0)
         connection.withBatchEdit {
@@ -126,12 +127,14 @@ class DestructiveEditingController(
     fun undo() {
         val connection = host.editingConnection ?: return
         val edit = history.consume() ?: return
+        connection.finishComposingText()
         host.resetEditingComposition()
         connection.withBatchEdit {
-            if (edit.restoration == Restoration.ReplaceDocument) {
-                performContextMenuAction(android.R.id.selectAll)
-            } else {
-                setSelection(edit.start, edit.start)
+            when (edit) {
+                is DestructiveEditTransaction.RestoreDocument ->
+                    performContextMenuAction(android.R.id.selectAll)
+                is DestructiveEditTransaction.RestoreRange ->
+                    setSelection(edit.start, edit.start)
             }
             commitText(edit.deletedText, 1)
             setSelection(edit.cursorAfterRestore, edit.cursorAfterRestore)
@@ -144,7 +147,7 @@ class DestructiveEditingController(
 
     private fun recordSelectedText(connection: InputConnection, start: Int, end: Int) {
         history.record(
-            DeletedTextEdit(
+            DestructiveEditTransaction.RestoreRange(
                 start = start,
                 deletedText = connection.getSelectedText(0)?.toString().orEmpty(),
                 cursorAfterRestore = end
@@ -161,7 +164,7 @@ class DestructiveEditingController(
             textBeforeCursor.codePointBefore(textBeforeCursor.length)
         )
         history.record(
-            DeletedTextEdit(
+            DestructiveEditTransaction.RestoreRange(
                 start = cursor - deletedText.length,
                 deletedText = deletedText,
                 cursorAfterRestore = cursor

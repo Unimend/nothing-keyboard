@@ -15,7 +15,8 @@ import timber.log.Timber
 class AndroidKeyEventController(
     private val connection: () -> InputConnection?,
     private val submitHardwareKey: (KeyEvent, Int) -> Boolean,
-    private val commitText: (String) -> Unit
+    private val commitText: (String) -> Unit,
+    private val invalidateDestructiveHistory: () -> Unit
 ) {
     private val pendingEvents = LruCache<Int, KeyEvent>(78)
     private var nextEventId = 0
@@ -25,7 +26,11 @@ class AndroidKeyEventController(
         val eventId = nextEventId++
         pendingEvents.put(eventId, event)
         val accepted = submitHardwareKey(event, eventId)
-        if (!accepted) pendingEvents.remove(eventId)
+        if (!accepted) {
+            pendingEvents.remove(eventId)
+        } else if (AndroidHardwareEditingPolicy.invalidatesDestructiveHistory(event)) {
+            invalidateDestructiveHistory()
+        }
         return accepted
     }
 
@@ -123,4 +128,40 @@ class AndroidKeyEventController(
             )
         )
     }
+}
+
+object AndroidHardwareEditingPolicy {
+    fun invalidatesDestructiveHistory(event: KeyEvent): Boolean = invalidatesDestructiveHistory(
+        event.action,
+        event.keyCode,
+        event.unicodeChar
+    )
+
+    fun invalidatesDestructiveHistory(action: Int, keyCode: Int, unicode: Int): Boolean {
+        if (action != KeyEvent.ACTION_DOWN || keyCode in modifierKeys) return false
+        return unicode > 0 || keyCode in setOf(
+            KeyEvent.KEYCODE_DEL,
+            KeyEvent.KEYCODE_FORWARD_DEL,
+            KeyEvent.KEYCODE_ENTER,
+            KeyEvent.KEYCODE_NUMPAD_ENTER,
+            KeyEvent.KEYCODE_TAB,
+            KeyEvent.KEYCODE_SPACE
+        )
+    }
+
+    private val modifierKeys = setOf(
+        KeyEvent.KEYCODE_SHIFT_LEFT,
+        KeyEvent.KEYCODE_SHIFT_RIGHT,
+        KeyEvent.KEYCODE_ALT_LEFT,
+        KeyEvent.KEYCODE_ALT_RIGHT,
+        KeyEvent.KEYCODE_CTRL_LEFT,
+        KeyEvent.KEYCODE_CTRL_RIGHT,
+        KeyEvent.KEYCODE_META_LEFT,
+        KeyEvent.KEYCODE_META_RIGHT,
+        KeyEvent.KEYCODE_CAPS_LOCK,
+        KeyEvent.KEYCODE_NUM_LOCK,
+        KeyEvent.KEYCODE_SCROLL_LOCK,
+        KeyEvent.KEYCODE_SYM,
+        KeyEvent.KEYCODE_FUNCTION
+    )
 }

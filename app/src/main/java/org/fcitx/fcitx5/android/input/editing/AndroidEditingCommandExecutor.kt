@@ -17,6 +17,9 @@ class AndroidEditingCommandExecutor(
     private val deletionGesture = DeletionGestureSession()
 
     override fun execute(command: EditingCommand) {
+        if (EditingHistoryPolicy.effect(command) == EditingHistoryEffect.InvalidateDestructiveEdit) {
+            editor.invalidateDestructiveUndo()
+        }
         val gestureEffect = when (command) {
             is EditingCommand.DeletionGestureMove -> deletionGesture.move(command.steps, session.current.engine)
             is EditingCommand.DeletionGestureRelease -> deletionGesture.release(command.totalSteps)
@@ -43,9 +46,9 @@ class AndroidEditingCommandExecutor(
                 sendCombination(command.keyCode, command.extendSelection, false)
             EditingCommand.CancelSelection -> editor.cancelSelection()
             EditingCommand.SelectAll -> contextAction(android.R.id.selectAll)
-            EditingCommand.Cut -> contextAction(android.R.id.cut, invalidatesUndo = true)
+            EditingCommand.Cut -> contextAction(android.R.id.cut)
             EditingCommand.Copy -> contextAction(android.R.id.copy)
-            EditingCommand.Paste -> contextAction(android.R.id.paste, invalidatesUndo = true)
+            EditingCommand.Paste -> contextAction(android.R.id.paste)
             EditingCommand.Backspace -> editor.deleteBackward()
             EditingCommand.ClearAll -> editor.clearAllText()
             EditingCommand.Undo -> editor.undoLastEdit()
@@ -57,7 +60,7 @@ class AndroidEditingCommandExecutor(
         repeat(steps.absoluteValue) { sendCombination(keyCode, true, false) }
     }
 
-    private fun contextAction(id: Int, invalidatesUndo: Boolean = false) {
-        editor.contextAction(id, invalidatesUndo)
+    private fun contextAction(id: Int) {
+        editor.contextAction(id)
     }
 }

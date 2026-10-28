@@ -334,6 +334,18 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `UI engine commands pass through editing aware history boundary`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("UI command port must be editing-aware", "EditingAwareEngineCommandPort(" in service)
+        assertTrue(
+            "Raw dispatcher must not be exposed as the UI command port",
+            "val engineCommands: EngineCommandPort get() = engineDispatcher" !in service
+        )
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",

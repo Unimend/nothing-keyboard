@@ -48,8 +48,7 @@ class EditorController(
         return true
     }
 
-    internal fun contextAction(id: Int, invalidatesUndo: Boolean) {
-        if (invalidatesUndo) destructiveEditing.invalidateUndo()
+    internal fun contextAction(id: Int) {
         connection()?.performContextMenuAction(id)
     }
     val currentSelection: CursorRange
@@ -131,6 +130,7 @@ class EditorController(
 
     fun handleDeleteSurrounding(before: Int, after: Int) {
         val ic = connection() ?: return
+        destructiveEditing.invalidateUndo()
         if (before > 0) {
             selection.predictOffset(-before)
         }

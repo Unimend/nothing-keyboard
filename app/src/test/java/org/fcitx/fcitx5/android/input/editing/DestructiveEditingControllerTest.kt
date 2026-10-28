@@ -15,6 +15,7 @@ class DestructiveEditingControllerTest {
         var end = 3
         var sentBackspace = 0
         var simulateBackspace = true
+        var finishedComposition = 0
         override val editingSelection = CursorRange(0, 3)
         override val editingComposition = CursorRange()
         override val hasActiveComposition: Boolean
@@ -57,6 +58,7 @@ class DestructiveEditingControllerTest {
                     end = start
                     true
                 }
+                "finishComposingText" -> { finishedComposition++; true }
                 "beginBatchEdit", "endBatchEdit" -> true
                 else -> error("Unexpected editor call: ${method.name}")
             }
@@ -112,11 +114,13 @@ class DestructiveEditingControllerTest {
 
         controller.clearAll()
         assertEquals("", editor.text)
+        assertEquals(1, editor.finishedComposition)
         assertEquals(0, editor.start)
         assertEquals(0, editor.end)
 
         controller.undo()
         assertEquals("abc", editor.text)
+        assertEquals(2, editor.finishedComposition)
         assertEquals(3, editor.start)
         assertEquals(3, editor.end)
     }

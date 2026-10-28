@@ -13,6 +13,7 @@ unrepresentable, and a test must prevent it from returning.
 | Picker tabs | Semantic `Category.label` | Drawable tabs that bypass mixed typography | Drawable field and rendering branch removed |
 | Editing commands | `EditingCommand` + `AndroidEditingCommandExecutor` | A View mutating `InputConnection` | Static boundary test |
 | Destructive editing | `DestructiveEditingController` | Per-surface delete, clear or undo implementations | Shared controller and gesture binding |
+| Editing history ownership | transaction types + command/engine/hardware policies | Stale undo surviving a new mutation | Pure policy tests and editing-aware engine port |
 | Editing selection UI | `EditingSession` | Keeping a private selected state after deletion | Delete command collapses local and Android selection |
 | Navigation | `InputNavigationCommand` + `InputNavigator` | A control attaching a window directly | Static boundary test |
 | Gesture semantics | `KeyboardGesturePolicy` + `BackspaceGestureController` | Per-surface thresholds or delete decisions | Shared controller on keyboard, editing and picker surfaces |
@@ -44,6 +45,9 @@ unrepresentable, and a test must prevent it from returning.
 - Hardware-key correlation caches, sticky-modifier cleanup and synthetic key sequences formerly
   spread across `FcitxInputMethodService`. They now have one owner in
   `AndroidKeyEventController`.
+- Ambiguous `DeletedTextEdit + Restoration` combinations. Range and whole-document restoration are
+  separate `DestructiveEditTransaction` types; software keys, physical keys, editor commands and
+  engine-side surrounding deletion now share explicit history invalidation policies.
 
 ## Deliberate platform boundaries (not legacy UI)
 

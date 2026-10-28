@@ -3,27 +3,31 @@
  */
 package org.fcitx.fcitx5.android.input.editing
 
-data class DeletedTextEdit(
-    val start: Int,
-    val deletedText: String,
-    val cursorAfterRestore: Int,
-    val restoration: Restoration = Restoration.Insert
-)
+sealed interface DestructiveEditTransaction {
+    val deletedText: String
+    val cursorAfterRestore: Int
 
-enum class Restoration {
-    Insert,
-    ReplaceDocument
+    data class RestoreRange(
+        val start: Int,
+        override val deletedText: String,
+        override val cursorAfterRestore: Int
+    ) : DestructiveEditTransaction
+
+    data class RestoreDocument(
+        override val deletedText: String,
+        override val cursorAfterRestore: Int
+    ) : DestructiveEditTransaction
 }
 
 /** One-level undo history owned by our destructive gestures, independent of app/system Undo. */
 class DestructiveEditHistory {
-    private var lastEdit: DeletedTextEdit? = null
+    private var lastEdit: DestructiveEditTransaction? = null
 
-    fun record(edit: DeletedTextEdit) {
+    fun record(edit: DestructiveEditTransaction) {
         lastEdit = edit.takeIf { it.deletedText.isNotEmpty() }
     }
 
-    fun consume(): DeletedTextEdit? = lastEdit.also { lastEdit = null }
+    fun consume(): DestructiveEditTransaction? = lastEdit.also { lastEdit = null }
 
     fun clear() {
         lastEdit = null

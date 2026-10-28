@@ -34,7 +34,7 @@ Current ownership:
 | Semantic keys | `EngineKey` and keyboard actions | `FcitxEngineCommandAdapter` |
 | Hardware keys | `AndroidKeyEventController` | Android `KeyEvent` + Fcitx adapter |
 | Editor state and composition | `EditorController` | Android `InputConnection`; semantic `EngineEffect` input |
-| Editing tools | `DestructiveEditingController` and `EditingSession` | `EditingCommandPort` / `AndroidEditingCommandExecutor` |
+| Editing tools | `DestructiveEditingController`, transaction/history policies and `EditingSession` | `EditingCommandPort` / `AndroidEditingCommandExecutor` |
 | Engine command order | `SerialCommandQueue` | `FcitxCommandDispatcher` |
 | Navigation | `InputNavigator` | `InputWindowManager` |
 | Visual language | design tokens, typography and glyph registry | Android Views/drawables |
@@ -133,13 +133,20 @@ document, so a delayed editor/composition callback cannot turn undo into a secon
 document. Client preedit is engine-owned transient state and is excluded from committed clear-all
 history.
 
+History ownership is explicit at both input boundaries. `EditingHistoryPolicy` classifies editing
+commands; `EditingAwareEngineCommandPort` invalidates stale history when software-key text intent
+enters the engine, before preedit exists; `AndroidHardwareEditingPolicy` does the same for accepted
+physical text/delete keys. Engine reset, focus, navigation, copy and composition rendering preserve
+history. Engine `DeleteSurrounding` effects invalidate it because they are mutations not captured by
+the destructive transaction controller.
+
 `DestructiveEditingController` owns capture, deletion, clear-all, Unicode-aware backspace history,
 and restoration. `EditorController` supplies cursor, composition and engine-reset bridges through
 `DestructiveEditingHost`. The service supplies platform connection providers at construction time;
 surfaces submit `EditingCommand` through `EditingCommandPort`, never the concrete controller.
 
 Every path that deletes a selected range (gesture release, editing-panel command, or a normal
-backspace tap while text is selected) records the same `DeletedTextEdit`. This keeps repeated
+backspace tap while text is selected) records the same `RestoreRange` transaction. This keeps repeated
 delete → undo → delete → undo cycles reversible instead of making only the first cycle work.
 Ordinary one-code-point backspace uses the same history as well, replacing any older selection
 deletion so down-swipe always restores the most recent destructive action.
