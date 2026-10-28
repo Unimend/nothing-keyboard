@@ -79,6 +79,19 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `candidate expansion controls must resolve through the pixel glyph registry`() {
+        val registry = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/design/NothingGlyphRegistry.kt"
+        ).readText()
+        listOf(
+            "R.drawable.ic_baseline_expand_more_24 -> R.drawable.ic_pixel_expand_more",
+            "R.drawable.ic_baseline_expand_less_24 -> R.drawable.ic_pixel_expand_less"
+        ).forEach { mapping ->
+            assertTrue("Missing candidate control glyph mapping: $mapping", mapping in registry)
+        }
+    }
+
+    @Test
     fun `key routing cannot inspect candidate renderer or own deletion gesture state`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/keyboard/CommonKeyActionListener.kt"

@@ -18,6 +18,14 @@ class NothingGlyphRegistryTest {
             R.drawable.ic_pixel_send,
             NothingGlyphRegistry.resolve(R.drawable.ic_baseline_send_24)
         )
+        assertEquals(
+            R.drawable.ic_pixel_expand_more,
+            NothingGlyphRegistry.resolve(R.drawable.ic_baseline_expand_more_24)
+        )
+        assertEquals(
+            R.drawable.ic_pixel_expand_less,
+            NothingGlyphRegistry.resolve(R.drawable.ic_baseline_expand_less_24)
+        )
     }
 
     @Test

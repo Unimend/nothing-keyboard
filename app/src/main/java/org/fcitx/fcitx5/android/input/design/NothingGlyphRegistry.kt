@@ -31,6 +31,8 @@ object NothingGlyphRegistry {
         R.drawable.ic_baseline_format_quote_24 -> R.drawable.ic_pixel_quote
         R.drawable.ic_baseline_space_bar_24 -> R.drawable.ic_pixel_space
         R.drawable.ic_baseline_arrow_drop_down_24 -> R.drawable.ic_pixel_hide_keyboard
+        R.drawable.ic_baseline_expand_more_24 -> R.drawable.ic_pixel_expand_more
+        R.drawable.ic_baseline_expand_less_24 -> R.drawable.ic_pixel_expand_less
         else -> source
     }
 }
