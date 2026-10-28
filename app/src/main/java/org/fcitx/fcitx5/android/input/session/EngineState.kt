@@ -18,7 +18,11 @@ data class EngineCandidate(
     val text: String,
     val comment: String,
     val spaceBeforeComment: Boolean
-)
+) {
+    companion object {
+        val Empty = EngineCandidate("", "", "", false)
+    }
+}
 
 data class EngineCandidateAction(
     val id: Int,

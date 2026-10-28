@@ -78,6 +78,8 @@ class InputCoreDiagnosticsActivity : AppCompatActivity() {
         appendLine("LAST EFFECT ${value.lastEngineEffect}")
         appendLine("COMMANDS    ${value.engineCommandCount}")
         appendLine("LAST COMMAND ${value.lastEngineCommand}")
+        appendLine("QUERIES     ${value.engineQueryCount}")
+        appendLine("LAST QUERY  ${value.lastEngineQuery}")
         appendLine("REVISION    ${session.revision}")
         appendLine("LIFECYCLE   ${session.lifecycle}")
         appendLine("READY       ${engine.ready}")

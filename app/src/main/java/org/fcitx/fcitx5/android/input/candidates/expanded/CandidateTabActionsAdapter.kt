@@ -17,7 +17,7 @@ import android.graphics.drawable.shapes.RectShape
 import android.view.Gravity
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import org.fcitx.fcitx5.android.core.CandidateAction
+import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
@@ -36,10 +36,10 @@ import splitties.views.gravityCenter
 abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: Boolean = false) :
     RecyclerView.Adapter<CandidateTabActionsAdapter.TabActionViewHolder>() {
 
-    private var tabs = listOf<CandidateAction>()
+    private var tabs = listOf<EngineCandidateAction>()
 
     @SuppressLint("NotifyDataSetChanged")
-    fun updateTabs(newTabs: List<CandidateAction>) {
+    fun updateTabs(newTabs: List<EngineCandidateAction>) {
         tabs = newTabs
         notifyDataSetChanged()
     }
@@ -66,10 +66,10 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
     }
 
     inner class TabActionViewHolder(val ui: TabActionUi) : RecyclerView.ViewHolder(ui.root) {
-        var tabAction: CandidateAction? = null
+        var tabAction: EngineCandidateAction? = null
             private set
 
-        fun update(tab: CandidateAction) {
+        fun update(tab: EngineCandidateAction) {
             tabAction = tab
             ui.update(tab)
             ui.root.setOnClickListener {
@@ -111,11 +111,11 @@ abstract class CandidateTabActionsAdapter(val theme: Theme, val indicatorStyle: 
                 root.background = createBackground(value, indicatorStyle)
             }
 
-        fun update(tab: CandidateAction) {
+        fun update(tab: EngineCandidateAction) {
             label.text = tab.text
             label.applyNothingTextRole(theme, NothingTextRole.AdaptiveContent, bold = false)
-            checkable = tab.isCheckable
-            root.isActivated = tab.isChecked
+            checkable = tab.checkable
+            root.isActivated = tab.checked
         }
 
         private fun createBackground(checkable: Boolean, indicatorStyle: Boolean): Drawable {

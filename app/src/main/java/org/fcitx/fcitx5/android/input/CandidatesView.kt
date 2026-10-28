@@ -16,7 +16,6 @@ import android.view.WindowInsets
 import android.widget.TextView
 import androidx.annotation.Size
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
@@ -42,9 +41,8 @@ import kotlin.math.roundToInt
 @SuppressLint("ViewConstructor")
 class CandidatesView(
     service: FcitxInputMethodService,
-    fcitx: FcitxConnection,
     theme: Theme
-) : BaseInputView(service, fcitx, theme) {
+) : BaseInputView(service, theme) {
 
     private val ctx = context.withTheme(R.style.Theme_InputViewTheme)
 
@@ -58,7 +56,7 @@ class CandidatesView(
     private val itemPaddingHorizontal by candidatesPrefs.itemPaddingHorizontal
 
     private var inputPanel = LegacyEngineStateAdapter.inputPanel(EngineState().inputPanel)
-    private var paged = LegacyEngineStateAdapter.pagedCandidates(EngineState().pagedCandidates)
+    private var paged = EngineState().pagedCandidates
 
     /**
      * horizontal, bottom, top
@@ -119,7 +117,7 @@ class CandidatesView(
             inputPanel = LegacyEngineStateAdapter.inputPanel(state.inputPanel)
         }
         if (pagedChanged) {
-            paged = LegacyEngineStateAdapter.pagedCandidates(state.pagedCandidates)
+            paged = state.pagedCandidates
         }
         if (panelChanged || pagedChanged) {
             updateUi()
@@ -129,7 +127,7 @@ class CandidatesView(
 
     private fun evaluateVisibility(): Boolean {
         return inputPanel.preedit.isNotEmpty() ||
-                paged.candidates.isNotEmpty() ||
+                paged.items.isNotEmpty() ||
                 inputPanel.auxUp.isNotEmpty() ||
                 inputPanel.auxDown.isNotEmpty()
     }

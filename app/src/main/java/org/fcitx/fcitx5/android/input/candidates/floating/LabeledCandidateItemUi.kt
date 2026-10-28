@@ -10,7 +10,7 @@ import android.graphics.Color
 import android.widget.TextView
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
-import org.fcitx.fcitx5.android.core.CandidateWord
+import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextRole
 import org.fcitx.fcitx5.android.input.design.applyNothingTextRole
@@ -28,7 +28,7 @@ class LabeledCandidateItemUi(
         setupTextView(this)
     }
 
-    fun update(candidate: CandidateWord, active: Boolean) {
+    fun update(candidate: EngineCandidate, active: Boolean) {
         val labelFg = if (active) theme.genericActiveForegroundColor else theme.candidateLabelColor
         val fg = if (active) theme.genericActiveForegroundColor else theme.candidateTextColor
         val altFg = if (active) theme.genericActiveForegroundColor else theme.candidateCommentColor
@@ -40,7 +40,7 @@ class LabeledCandidateItemUi(
                 append(candidate.text)
             }
             if (candidate.comment.isNotBlank()) {
-                if (candidate.spaceBetweenComment) {
+                if (candidate.spaceBeforeComment) {
                     append(" ")
                 }
                 color(altFg) {

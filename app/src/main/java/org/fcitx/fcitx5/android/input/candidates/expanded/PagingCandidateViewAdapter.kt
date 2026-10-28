@@ -8,7 +8,7 @@ package org.fcitx.fcitx5.android.input.candidates.expanded
 import android.view.ViewGroup
 import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
-import org.fcitx.fcitx5.android.core.CandidateWord
+import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.CandidateItemUi
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
@@ -49,6 +49,6 @@ open class PagingCandidateViewAdapter(val theme: Theme) :
 
     override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
         val item = getItem(position)
-        holder.update(item?.engineIndex ?: -1, item?.word ?: CandidateWord.Empty)
+        holder.update(item?.engineIndex ?: -1, item?.word ?: EngineCandidate.Empty)
     }
 }

@@ -18,8 +18,8 @@ import com.google.android.flexbox.AlignItems
 import com.google.android.flexbox.FlexDirection
 import com.google.android.flexbox.FlexWrap
 import com.google.android.flexbox.FlexboxLayoutManager
-import org.fcitx.fcitx5.android.core.FcitxEvent
-import org.fcitx.fcitx5.android.core.FcitxEvent.PagedCandidateEvent.LayoutHint
+import org.fcitx.fcitx5.android.input.session.EngineCandidateLayout
+import org.fcitx.fcitx5.android.input.session.EnginePagedCandidates
 import org.fcitx.fcitx5.android.data.theme.Theme
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.recyclerview.recyclerView
@@ -34,7 +34,7 @@ class PagedCandidatesUi(
     private val onNextPage: () -> Unit
 ) : Ui {
 
-    private var data = FcitxEvent.PagedCandidateEvent.Data.Empty
+    private var data = EnginePagedCandidates()
 
     private var isVertical = false
 
@@ -49,12 +49,12 @@ class PagedCandidatesUi(
         }
 
         override fun getItemId(position: Int): Long =
-            data.candidates.getOrNull(position).hashCode().toLong()
+            data.items.getOrNull(position).hashCode().toLong()
 
         override fun getItemCount() =
-            data.candidates.size + (if (data.hasPrev || data.hasNext) 1 else 0)
+            data.items.size + (if (data.hasPrevious || data.hasNext) 1 else 0)
 
-        override fun getItemViewType(position: Int) = if (position < data.candidates.size) 0 else 1
+        override fun getItemViewType(position: Int) = if (position < data.items.size) 0 else 1
 
         override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UiHolder {
             return when (viewType) {
@@ -76,7 +76,7 @@ class PagedCandidatesUi(
         override fun onBindViewHolder(holder: UiHolder, position: Int) {
             when (holder) {
                 is UiHolder.Candidate -> {
-                    val candidate = data.candidates[position]
+                    val candidate = data.items[position]
                     holder.ui.update(candidate, active = position == data.cursorIndex)
                     holder.ui.root.setOnClickListener {
                         onCandidateClick.invoke(position)
@@ -122,12 +122,13 @@ class PagedCandidatesUi(
 
     @SuppressLint("NotifyDataSetChanged")
     fun update(
-        data: FcitxEvent.PagedCandidateEvent.Data,
+        data: EnginePagedCandidates,
         orientation: FloatingCandidatesOrientation
     ) {
         this.data = data
         this.isVertical = when (orientation) {
-            FloatingCandidatesOrientation.Automatic -> data.layoutHint == LayoutHint.Vertical
+            FloatingCandidatesOrientation.Automatic ->
+                data.layout == EngineCandidateLayout.Vertical
             else -> orientation == FloatingCandidatesOrientation.Vertical
         }
         candidatesLayoutManager.apply {

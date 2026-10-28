@@ -14,7 +14,6 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.broadcast.PreeditEmptyStateComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerDialog
@@ -56,7 +55,6 @@ class CommonKeyActionListener :
     }
 
     private val context by manager.context()
-    private val fcitx by manager.fcitx()
     private val service by manager.inputMethodService()
     private val preeditState: PreeditEmptyStateComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
@@ -91,10 +89,8 @@ class CommonKeyActionListener :
     }
 
     private fun showInputMethodPicker() {
-        fcitx.launchOnReady {
-            service.lifecycleScope.launch {
-                service.showDialog(InputMethodPickerDialog.build(it, service, context))
-            }
+        service.lifecycleScope.launch {
+            service.showDialog(InputMethodPickerDialog.build(service, context))
         }
     }
 
@@ -136,11 +132,9 @@ class CommonKeyActionListener :
                 is LangSwitchAction -> {
                     when (langSwitchKeyBehavior) {
                         LangSwitchBehavior.Enumerate -> {
-                            service.postFcitxJob {
-                                if (enabledIme().size < 2) {
-                                    service.lifecycleScope.launch {
-                                        service.showDialog(AddMoreInputMethodsPrompt.build(context))
-                                    }
+                            service.lifecycleScope.launch {
+                                if (service.engineQueries.enabledInputMethods().size < 2) {
+                                    service.showDialog(AddMoreInputMethodsPrompt.build(context))
                                 } else {
                                     service.submitEngineCommand(
                                         EngineCommand.EnumerateInputMethod()

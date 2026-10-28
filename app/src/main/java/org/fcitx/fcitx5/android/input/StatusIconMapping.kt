@@ -7,13 +7,13 @@ package org.fcitx.fcitx5.android.input
 
 import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.InputMethodEntry
+import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 
 object StatusIconMapping {
     @DrawableRes
-    fun fromEntry(entry: InputMethodEntry): Int {
-        if (entry.subMode.icon.isNotEmpty()) {
-            when (entry.subMode.icon) {
+    fun fromEntry(entry: EngineInputMethod): Int {
+        if (entry.subModeIcon.isNotEmpty()) {
+            when (entry.subModeIcon) {
                 "fcitx_mozc_direct" -> return R.drawable.ic_status_latin_direct
                 "fcitx_mozc_hiragana" -> return R.drawable.ic_status_hiragana
                 "fcitx_mozc_katakana_full" -> return R.drawable.ic_status_katakana
@@ -22,8 +22,8 @@ object StatusIconMapping {
                 "fcitx_mozc_katakana_half" -> return R.drawable.ic_status_katakana_half_underscore
             }
         }
-        if (entry.subMode.label.isNotEmpty()) {
-            when (entry.subMode.label) {
+        if (entry.subModeLabel.isNotEmpty()) {
+            when (entry.subModeLabel) {
                 "あ" -> return R.drawable.ic_status_hiragana
                 "ア" -> return R.drawable.ic_status_katakana
                 "ｱ" -> return R.drawable.ic_status_katakana_half

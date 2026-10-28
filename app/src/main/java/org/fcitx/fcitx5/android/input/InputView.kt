@@ -18,7 +18,6 @@ import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.core.CapabilityFlags
-import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
@@ -73,9 +72,8 @@ import timber.log.Timber
 @SuppressLint("ViewConstructor")
 class InputView(
     service: FcitxInputMethodService,
-    fcitx: FcitxConnection,
     theme: Theme
-) : BaseInputView(service, fcitx, theme) {
+) : BaseInputView(service, theme) {
 
     private val nothingCompactHeightScale = if (theme.isNothingStyle) 0.9f else 1f
 
@@ -119,7 +117,6 @@ class InputView(
     private fun setupScope() {
         scope += this@InputView.wrapToUniqueComponent()
         scope += service.wrapToUniqueComponent()
-        scope += fcitx.wrapToUniqueComponent()
         scope += theme.wrapToUniqueComponent()
         scope += themedContext.wrapToUniqueComponent()
         scope += broadcaster
@@ -214,9 +211,9 @@ class InputView(
         setupScope()
 
         // restore punctuation mapping in case of InputView recreation
-        fcitx.launchOnReady {
-            punctuation.updatePunctuationMapping(it.statusAreaActionsCached)
-        }
+        punctuation.updatePunctuationMapping(
+            LegacyEngineStateAdapter.statusActions(service.inputSession.current.engine.statusActions)
+        )
 
         // make sure KeyboardWindow's view has been created before it receives any broadcast
         windowManager.addEssentialWindow(keyboardWindow, createView = true)
@@ -226,7 +223,9 @@ class InputView(
         // show KeyboardWindow by default
         windowManager.attachWindow(KeyboardWindow)
 
-        broadcaster.onImeUpdate(fcitx.runImmediately { inputMethodEntryCached })
+        service.inputSession.current.engine.inputMethod?.let {
+            broadcaster.onImeUpdate(LegacyEngineStateAdapter.inputMethod(it))
+        }
 
         customBackground.imageDrawable = theme.backgroundDrawable(keyBorder)
 
@@ -365,8 +364,8 @@ class InputView(
         }
         if (clientPreeditChanged || panelChanged) {
             preeditEmptyState.updatePreeditEmptyState(
-                clientPreedit = LegacyEngineStateAdapter.text(state.clientPreedit),
-                preedit = LegacyEngineStateAdapter.text(state.inputPanel.preedit)
+                clientPreedit = state.clientPreedit,
+                preedit = state.inputPanel.preedit
             )
         }
         if (inputMethodChanged) {

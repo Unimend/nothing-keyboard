@@ -15,7 +15,6 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.core.CandidateAction
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -31,7 +30,6 @@ import org.fcitx.fcitx5.android.input.candidates.expanded.CandidatesPagingSource
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateLayout
 import org.fcitx.fcitx5.android.input.candidates.expanded.PagingCandidateViewAdapter
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
-import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
@@ -42,6 +40,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyActionListener
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.mechdancer.dependency.manager.must
@@ -56,7 +55,6 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
 
     protected val service by manager.inputMethodService()
     protected val theme by manager.theme()
-    protected val fcitx by manager.fcitx()
     protected val inputView by manager.inputView()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val bar: KawaiiBarComponent by manager.must()
@@ -124,9 +122,9 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         }
     }
 
-    private fun updateTabs(newTabs: Array<CandidateAction>) {
-        val tabs = newTabs.takeWhile { !it.isSeparator }
-        val pinnedTabs = newTabs.drop(tabs.size + 1).filter { !it.isSeparator }
+    private fun updateTabs(newTabs: List<EngineCandidateAction>) {
+        val tabs = newTabs.takeWhile { !it.separator }
+        val pinnedTabs = newTabs.drop(tabs.size + 1).filter { !it.separator }
         if (tabs.isEmpty() && pinnedTabs.isEmpty()) {
             candidateLayout.tabsContainer.visibility = View.GONE
         } else {
@@ -146,7 +144,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             ),
             pagingSourceFactory = {
                 CandidatesPagingSource(
-                    fcitx,
+                    service.engineQueries,
                     total = horizontalCandidate.adapter.total,
                     offset = adapter.offset
                 )
@@ -165,7 +163,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             it.onReturnDrawableUpdate(returnKeyDrawable.resourceId)
             it.keyActionListener = keyActionListener
         }
-        updateTabs(fcitx.runImmediately { inputPanelCached.tabs })
+        updateTabs(service.inputSession.current.engine.inputPanel.tabs)
         offsetJob = service.lifecycleScope.launch {
             horizontalCandidate.expandedCandidateOffset.collect {
                 if (it <= 0) {
@@ -220,7 +218,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     }
 
     override fun onInputPanelUpdate(data: FcitxEvent.InputPanelEvent.Data) {
-        updateTabs(data.tabs)
+        updateTabs(service.inputSession.current.engine.inputPanel.tabs)
     }
 
 }

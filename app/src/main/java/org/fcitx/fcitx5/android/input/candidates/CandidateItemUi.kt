@@ -12,7 +12,7 @@ import android.view.Gravity
 import android.view.View
 import androidx.core.text.buildSpannedString
 import androidx.core.text.color
-import org.fcitx.fcitx5.android.core.CandidateWord
+import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
@@ -91,7 +91,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         })
     }
 
-    fun updateCandidate(index: Int, candidate: CandidateWord) {
+    fun updateCandidate(index: Int, candidate: EngineCandidate) {
         primaryMarker.visibility = if (index == 0) View.VISIBLE else View.GONE
         if (index == 0 && candidate.text.isNotEmpty() && candidate.text != lastPrimaryText) {
             lastPrimaryText = candidate.text
@@ -116,7 +116,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
                 append(candidate.text)
             }
             if (candidate.comment.isNotBlank()) {
-                if (candidate.spaceBetweenComment) {
+                if (candidate.spaceBeforeComment) {
                     append(" ")
                 }
                 color(altFg) {

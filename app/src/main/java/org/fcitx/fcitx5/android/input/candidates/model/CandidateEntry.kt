@@ -3,7 +3,7 @@
  */
 package org.fcitx.fcitx5.android.input.candidates.model
 
-import org.fcitx.fcitx5.android.core.CandidateWord
+import org.fcitx.fcitx5.android.input.session.EngineCandidate
 
 /**
  * Stable candidate identity shared by every candidate surface.
@@ -13,8 +13,8 @@ import org.fcitx.fcitx5.android.core.CandidateWord
  */
 data class CandidateEntry(
     val engineIndex: Int,
-    val word: CandidateWord
+    val word: EngineCandidate
 )
 
-fun Array<CandidateWord>.withEngineIndices(offset: Int = 0): List<CandidateEntry> =
+fun List<EngineCandidate>.withEngineIndices(offset: Int = 0): List<CandidateEntry> =
     mapIndexed { localIndex, word -> CandidateEntry(offset + localIndex, word) }

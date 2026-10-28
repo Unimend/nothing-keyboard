@@ -15,14 +15,12 @@ import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.core.Action
 import org.fcitx.fcitx5.android.core.SubtypeManager
-import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
-import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
@@ -34,6 +32,7 @@ import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeL
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 import org.fcitx.fcitx5.android.utils.alpha
@@ -53,7 +52,6 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
     override val surface = InputSurface.Status
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
-    private val fcitx: FcitxConnection by manager.fcitx()
     private val theme by manager.theme()
     private val windowManager: InputWindowManager by manager.must()
 
@@ -138,9 +136,9 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
                         popup.show()
                     }
                     is StatusAreaEntry.Android -> when (entry.type) {
-                        InputMethod -> fcitx.runImmediately { inputMethodEntryCached }.let {
+                        InputMethod -> service.inputSession.current.engine.inputMethod?.let {
                             AppUtil.launchMainToInputMethodConfig(
-                                context, it.uniqueName, it.displayName
+                                context, it.uniqueName, it.nativeName.ifEmpty { it.name }
                             )
                         }
                         ReloadConfig -> {
@@ -150,7 +148,9 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
                                     service.lifecycleScope.launch {
                                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                                             SubtypeManager.syncWith(
-                                                fcitx.runOnReady { enabledIme() }
+                                                service.engineQueries.enabledInputMethods().map(
+                                                    LegacyEngineStateAdapter::inputMethod
+                                                ).toTypedArray()
                                             )
                                         }
                                         Toast.makeText(
@@ -218,12 +218,11 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
     override fun onCreateBarExtension() = barExtension
 
     override fun onAttached() {
-        fcitx.launchOnReady {
-            val data = it.statusArea()
-            service.lifecycleScope.launch {
-                onStatusAreaUpdate(data)
-            }
-        }
+        onStatusAreaUpdate(
+            LegacyEngineStateAdapter.statusActions(
+                service.inputSession.current.engine.statusActions
+            )
+        )
     }
 
     override fun onDetached() {

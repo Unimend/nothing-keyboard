@@ -76,6 +76,8 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineCommandAdapter
+import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
+import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
@@ -101,6 +103,8 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     private lateinit var fcitx: FcitxConnection
     private lateinit var engineBridge: FcitxEngineBridge
+    lateinit var engineQueries: InputEngineQueries
+        private set
 
     private var jobs = Channel<Job>(capacity = Channel.UNLIMITED)
 
@@ -120,6 +124,10 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
 
+    private fun currentStatusIcon() = inputSession.current.engine.inputMethod?.let(
+        StatusIconMapping::fromEntry
+    ) ?: R.drawable.ic_baseline_keyboard_24
+
     private val navbarMgr = NavigationBarManager()
     private val inputDeviceMgr = InputDeviceManager { isVirtualKeyboard ->
         submitEngineCommand(
@@ -129,7 +137,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         if (isVirtualKeyboard) {
             hideStatusIcon()
         } else {
-            showStatusIcon(StatusIconMapping.fromEntry(fcitx.runImmediately { inputMethodEntryCached }))
+            showStatusIcon(currentStatusIcon())
         }
         window.window?.let {
             navbarMgr.evaluate(it, isVirtualKeyboard)
@@ -197,7 +205,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     )
 
     private fun replaceInputView(theme: Theme): InputView {
-        val newInputView = InputView(this, fcitx, theme)
+        val newInputView = InputView(this, theme)
         setInputView(newInputView)
         inputDeviceMgr.setInputView(newInputView)
         inputView = newInputView
@@ -205,7 +213,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     }
 
     private fun replaceCandidateView(theme: Theme): CandidatesView {
-        val newCandidatesView = CandidatesView(this, fcitx, theme)
+        val newCandidatesView = CandidatesView(this, theme)
         // replace CandidatesView manually
         contentView.removeView(candidatesView)
         // put CandidatesView directly under content view
@@ -243,7 +251,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
      * subsequent operations can start if the prior operation is not finished (suspended),
      * [postFcitxJob] ensures that operations are executed sequentially.
      */
-    fun postFcitxJob(block: suspend FcitxAPI.() -> Unit): Job {
+    private fun postFcitxJob(block: suspend FcitxAPI.() -> Unit): Job {
         val job = fcitx.lifecycleScope.launch(start = CoroutineStart.LAZY) {
             fcitx.runOnReady(block)
         }
@@ -268,6 +276,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     override fun onCreate() {
         fcitx = FcitxDaemon.connect(javaClass.name)
+        engineQueries = FcitxEngineQueries(fcitx)
         lifecycleScope.launch {
             jobs.consumeEach { it.join() }
         }
@@ -283,8 +292,12 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         prefs.candidates.registerOnChangeListener(recreateCandidatesViewListener)
         ThemeManager.addOnChangedListener(onThemeChangeListener)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            postFcitxJob {
-                SubtypeManager.syncWith(enabledIme())
+            lifecycleScope.launch {
+                SubtypeManager.syncWith(
+                    engineQueries.enabledInputMethods().map(
+                        LegacyEngineStateAdapter::inputMethod
+                    ).toTypedArray()
+                )
             }
         }
         super.onCreate()
@@ -325,11 +338,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
                     switchInputMethod(InputMethodUtil.componentName, subtype)
                 }
                 if (inputDeviceMgr.evaluateOnInputMethodActivate()) {
-                    showStatusIcon(
-                        StatusIconMapping.fromEntry(
-                            LegacyEngineStateAdapter.inputMethod(effect.inputMethod)
-                        )
-                    )
+                    showStatusIcon(StatusIconMapping.fromEntry(effect.inputMethod))
                 }
             }
             is EngineEffect.InputMethodSwitched -> {
@@ -788,7 +797,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
                 // support monitoring CursorAnchorInfo
                 candidatesView?.updateCursorAnchor(contentSize)
             }
-            showStatusIcon(StatusIconMapping.fromEntry(fcitx.runImmediately { inputMethodEntryCached }))
+            showStatusIcon(currentStatusIcon())
         }
     }
 

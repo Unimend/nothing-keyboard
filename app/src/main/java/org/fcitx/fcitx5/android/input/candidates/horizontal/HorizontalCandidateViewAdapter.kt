@@ -9,7 +9,7 @@ import android.view.ViewGroup
 import androidx.annotation.CallSuper
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.RecyclerView
-import org.fcitx.fcitx5.android.core.CandidateWord
+import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.candidates.CandidateItemUi
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
@@ -31,13 +31,13 @@ open class HorizontalCandidateViewAdapter(val theme: Theme) :
     var entries: List<CandidateEntry> = emptyList()
         private set
 
-    val candidates: Array<CandidateWord>
+    val candidates: Array<EngineCandidate>
         get() = entries.map { it.word }.toTypedArray()
 
     var total = -1
         private set
 
-    fun updateCandidates(data: Array<CandidateWord>, total: Int) {
+    fun updateCandidates(data: List<EngineCandidate>, total: Int) {
         val old = entries
         val newEntries = data.withEngineIndices()
         val diff = DiffUtil.calculateDiff(object : DiffUtil.Callback() {
@@ -57,7 +57,7 @@ open class HorizontalCandidateViewAdapter(val theme: Theme) :
         diff.dispatchUpdatesTo(this)
     }
 
-    fun appendCandidates(data: Array<CandidateWord>, total: Int) {
+    fun appendCandidates(data: List<EngineCandidate>, total: Int) {
         if (data.isEmpty()) return
         val start = entries.size
         entries = entries + data.withEngineIndices(start)

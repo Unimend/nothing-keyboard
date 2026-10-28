@@ -4,8 +4,7 @@
  */
 package org.fcitx.fcitx5.android.input.broadcast
 
-import org.fcitx.fcitx5.android.core.FormattedText
-import org.fcitx.fcitx5.android.input.dependency.fcitx
+import org.fcitx.fcitx5.android.input.session.EngineText
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
 import org.mechdancer.dependency.manager.ManagedHandler
@@ -15,7 +14,6 @@ import org.mechdancer.dependency.manager.must
 class PreeditEmptyStateComponent :
     UniqueComponent<PreeditEmptyStateComponent>(), Dependent, ManagedHandler by managedHandler() {
 
-    private val fcitx by manager.fcitx()
     private val broadcaster: InputBroadcaster by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
 
@@ -23,10 +21,10 @@ class PreeditEmptyStateComponent :
         private set
 
     fun updatePreeditEmptyState(
-        clientPreedit: FormattedText = fcitx.runImmediately { clientPreeditCached },
-        preedit: FormattedText = fcitx.runImmediately { inputPanelCached.preedit }
+        clientPreedit: EngineText,
+        preedit: EngineText
     ) {
-        val empty = clientPreedit.isEmpty() && preedit.isEmpty()
+        val empty = clientPreedit.isEmpty && preedit.isEmpty
         if (isEmpty == empty) return
         isEmpty = empty
         broadcaster.onPreeditEmptyStateUpdate(isEmpty)

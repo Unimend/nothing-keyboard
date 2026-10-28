@@ -8,7 +8,6 @@ import android.app.AlertDialog
 import android.content.Context
 import android.view.ViewGroup
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.utils.AppUtil
@@ -22,12 +21,11 @@ import splitties.views.topPadding
 
 object InputMethodPickerDialog {
     suspend fun build(
-        fcitx: FcitxAPI,
         service: FcitxInputMethodService,
         context: Context
     ): AlertDialog {
-        val entries = InputMethodData.resolve(fcitx, service)
-        val enabledIM = fcitx.inputMethodEntryCached.uniqueName
+        val entries = InputMethodData.resolve(service.engineQueries, service)
+        val enabledIM = service.inputSession.current.engine.inputMethod?.uniqueName
         val enabledIndex = entries.indexOfFirst { it.uniqueName == enabledIM }
         val dividerIndex = entries.indexOfFirst { it.ime }
         lateinit var dialog: AlertDialog

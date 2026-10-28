@@ -4,6 +4,7 @@
 package org.fcitx.fcitx5.android.input.session
 
 import org.fcitx.fcitx5.android.core.Action
+import org.fcitx.fcitx5.android.core.CandidateAction
 import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.core.FormattedText
@@ -59,8 +60,19 @@ object FcitxEngineStateAdapter {
         cursor = cursor
     )
 
-    private fun CandidateWord.toEngineCandidate() =
+    fun CandidateWord.toEngineCandidate() =
         EngineCandidate(label, text, comment, spaceBetweenComment)
+
+    fun candidate(value: CandidateWord) = value.toEngineCandidate()
+
+    fun candidateAction(value: CandidateAction) = EngineCandidateAction(
+        value.id,
+        value.text,
+        value.isSeparator,
+        value.icon,
+        value.isCheckable,
+        value.isChecked
+    )
 
     fun inputMethod(value: InputMethodEntry) = value.toEngineInputMethod()
 

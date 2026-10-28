@@ -6,16 +6,16 @@
 package org.fcitx.fcitx5.android.input.candidates
 
 import androidx.recyclerview.widget.RecyclerView
-import org.fcitx.fcitx5.android.core.CandidateWord
+import org.fcitx.fcitx5.android.input.session.EngineCandidate
 
 class CandidateViewHolder(val ui: CandidateItemUi) : RecyclerView.ViewHolder(ui.root) {
     var idx = -1
         private set
 
-    var candidate: CandidateWord = CandidateWord.Empty
+    var candidate: EngineCandidate = EngineCandidate.Empty
         private set
 
-    fun update(newIndex: Int, newCandidate: CandidateWord) {
+    fun update(newIndex: Int, newCandidate: EngineCandidate) {
         idx = newIndex
         if (candidate != newCandidate) {
             candidate = newCandidate
@@ -26,6 +26,6 @@ class CandidateViewHolder(val ui: CandidateItemUi) : RecyclerView.ViewHolder(ui.
     }
 
     fun clear() {
-        update(-1, CandidateWord.Empty)
+        update(-1, EngineCandidate.Empty)
     }
 }

@@ -8,7 +8,9 @@ package org.fcitx.fcitx5.android.input.candidates.horizontal
 import android.content.res.Configuration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import org.fcitx.fcitx5.android.R
@@ -24,7 +26,6 @@ import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateM
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.dependency.fcitx
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
@@ -35,7 +36,6 @@ class HorizontalCandidateComponent :
     UniqueViewComponent<HorizontalCandidateComponent, RecyclerView>(), InputBroadcastReceiver {
 
     private val context by manager.context()
-    private val fcitx by manager.fcitx()
     private val theme by manager.theme()
     private val inputView by manager.inputView()
     private val bar: KawaiiBarComponent by manager.must()
@@ -66,8 +66,8 @@ class HorizontalCandidateComponent :
         }
         val generation = candidateGeneration
         loadMoreInFlight = true
-        fcitx.launchOnReady { api ->
-            val next = api.getCandidates(offset, 32)
+        inputView.service.lifecycleScope.launch {
+            val next = inputView.service.engineQueries.candidates(offset, 32)
             view.post {
                 if (generation != candidateGeneration) return@post
                 loadMoreInFlight = false
@@ -171,12 +171,13 @@ class HorizontalCandidateComponent :
         candidateGeneration++
         loadMoreInFlight = false
         reachedCandidateEnd = false
-        val candidates = data.candidates
-        val total = data.total
+        val engineCandidates = inputView.service.inputSession.current.engine.candidates
+        val candidates = engineCandidates.items
+        val total = engineCandidates.total
         layoutMinWidth = if (fillStyle == NeverFillWidth) 0
             else view.width / maxSpanCountPref.getValue()
         adapter.updateCandidates(candidates, total)
-        if (!previousCandidates.contentEquals(candidates)) {
+        if (previousCandidates.toList() != candidates) {
             view.scrollToPosition(0)
         }
         // An empty adapter may not trigger LayoutManager.onLayoutCompleted().

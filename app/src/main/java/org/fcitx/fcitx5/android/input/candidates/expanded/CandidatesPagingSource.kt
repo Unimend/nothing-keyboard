@@ -6,13 +6,12 @@ package org.fcitx.fcitx5.android.input.candidates.expanded
 
 import androidx.paging.PagingSource
 import androidx.paging.PagingState
-import org.fcitx.fcitx5.android.core.CandidateWord
-import org.fcitx.fcitx5.android.daemon.FcitxConnection
+import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.input.candidates.model.CandidateEntry
 import org.fcitx.fcitx5.android.input.candidates.model.withEngineIndices
 import timber.log.Timber
 
-class CandidatesPagingSource(val fcitx: FcitxConnection, val total: Int, val offset: Int) :
+class CandidatesPagingSource(val queries: InputEngineQueries, val total: Int, val offset: Int) :
     PagingSource<Int, CandidateEntry>() {
 
     override suspend fun load(params: LoadParams<Int>): LoadResult<Int, CandidateEntry> {
@@ -20,9 +19,7 @@ class CandidatesPagingSource(val fcitx: FcitxConnection, val total: Int, val off
         val startIndex = params.key ?: offset
         val pageSize = params.loadSize
         Timber.d("getCandidates(offset=$startIndex, limit=$pageSize)")
-        val candidates = fcitx.runOnReady {
-            getCandidates(startIndex, pageSize)
-        }
+        val candidates = queries.candidates(startIndex, pageSize)
         val prevKey = if (startIndex >= pageSize) startIndex - pageSize else null
         val nextKey = if (total > 0) {
             if (startIndex + pageSize + 1 >= total) null else startIndex + pageSize

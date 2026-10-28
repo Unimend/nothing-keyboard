@@ -17,7 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
@@ -33,7 +32,6 @@ import kotlin.math.max
 
 abstract class BaseInputView(
     val service: FcitxInputMethodService,
-    val fcitx: FcitxConnection,
     val theme: Theme
 ) : ConstraintLayout(service) {
 
@@ -72,7 +70,7 @@ abstract class BaseInputView(
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
         service.lifecycleScope.launch {
-            val actions = fcitx.runOnReady { getCandidateActions(idx) }
+            val actions = service.engineQueries.candidateActions(idx)
             if (actions.isEmpty()) return@launch
             InputFeedbacks.hapticFeedback(view, longPress = true)
             candidateActionMenu = PopupMenu(themedContext, view).apply {
