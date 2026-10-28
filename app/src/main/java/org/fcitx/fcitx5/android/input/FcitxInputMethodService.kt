@@ -54,6 +54,8 @@ import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildHost
 import org.fcitx.fcitx5.android.input.platform.ImeDialogController
 import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationController
 import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationHost
+import org.fcitx.fcitx5.android.input.platform.InputViewPresentationController
+import org.fcitx.fcitx5.android.input.platform.InputViewPresentationHost
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerController
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
@@ -165,6 +167,32 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     private val inputDeviceMgr = InputDeviceManager(
         ::systemWantsInputView,
         devicePresentation::applyMode
+    )
+    private val inputViewPresentation = InputViewPresentationController(
+        object : InputViewPresentationHost {
+            override fun startVirtualInput(session: org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot) {
+                inputView?.startInput(session)
+            }
+
+            override fun enableCursorMonitoring(): Boolean =
+                currentInputConnection?.monitorCursorAnchor() == true
+
+            override fun showCandidateFallback() = candidateAnchor.showFallback()
+
+            override fun showCurrentStatusIcon() = showStatusIcon(currentStatusIcon())
+
+            override fun invalidateCandidateAnchor() = candidateAnchor.invalidateWindowGeometry()
+
+            override fun finishInputDeviceView() = inputDeviceMgr.onFinishInputView()
+
+            override fun disableCursorMonitoring() {
+                currentInputConnection?.monitorCursorAnchor(false)
+            }
+
+            override fun hideStatusIcon() = this@FcitxInputMethodService.hideStatusIcon()
+
+            override fun dismissDialogs() = dialogs.dismiss()
+        }
     )
 
     private val editor: EditorController = EditorController(
@@ -453,18 +481,10 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         Timber.d("onStartInputView: restarting=$restarting")
         inputLifecycle.startInputView(info.toEditorSnapshot(), restarting)
-        if (inputDeviceMgr.evaluateOnStartInputView(info)) {
-            // because onStartInputView will always be called after onStartInput,
-            // editorInfo and capFlags should be up-to-date
-            inputSession.current.editorSessionOrNull()?.let { inputView?.startInput(it) }
-        } else {
-            if (currentInputConnection?.monitorCursorAnchor() != true) {
-                // anchor CandidatesView to bottom-left corner in case InputConnection does not
-                // support monitoring CursorAnchorInfo
-                candidateAnchor.showFallback()
-            }
-            showStatusIcon(currentStatusIcon())
-        }
+        inputViewPresentation.start(
+            isVirtualKeyboard = inputDeviceMgr.evaluateOnStartInputView(info),
+            session = inputSession.current.editorSessionOrNull()
+        )
     }
 
     override fun onUpdateSelection(
@@ -503,12 +523,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
-        candidateAnchor.invalidateWindowGeometry()
-        inputDeviceMgr.onFinishInputView()
-        inputLifecycle.finishInputView()
-        currentInputConnection?.monitorCursorAnchor(false)
-        hideStatusIcon()
-        dialogs.dismiss()
+        inputViewPresentation.finish(inputLifecycle::finishInputView)
     }
 
     override fun onFinishInput() {

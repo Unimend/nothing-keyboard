@@ -27,6 +27,7 @@ unrepresentable, and a test must prevent it from returning.
 | Input-device presentation | `InputDevicePresentationController` | Independently updating paging, cursor monitoring, status icon or navbar during a mode switch | Complete-transaction tests and Service boundary test |
 | Engine effect routing | `InputEngineEffectRouter` | Service choosing between editor, forwarded-key and platform effects | Priority/routing tests and Service boundary test |
 | Engine context binding | `InputContextLifecycleController` | Service activating/deactivating contexts or reordering subtype synchronization | Bind/unbind sequence tests and Service boundary test |
+| Input-view presentation lifecycle | `InputViewPresentationController` | Service partially starting/cleaning cursor monitoring, candidate anchor, status icon or dialogs | Start/fallback/finish sequence tests and Service boundary test |
 
 ## Removed legacy escape hatches
 
@@ -70,6 +71,9 @@ unrepresentable, and a test must prevent it from returning.
 - Direct engine context activation in `onBindInput`/`onUnbindInput`.
   `InputContextLifecycleController` now activates the UID/package context before platform subtype
   synchronization and treats a missing Android binding as an explicit no-op during unbind.
+- Partial input-view teardown spread across `onFinishInputView`. Candidate geometry invalidation,
+  device-view finish, core lifecycle finish, cursor-monitor shutdown, status icon removal and dialog
+  dismissal are now one ordered `InputViewPresentationController.finish` transaction.
 
 ## Deliberate platform boundaries (not legacy UI)
 
@@ -96,17 +100,14 @@ service. Selection tracking is private, reads return a copy, and lifecycle chang
 startInput, selectionChanged, finishInputView and unbindInput. Cross-editor undo behavior is intentionally preserved.
 Editor effects are interpreted by EditorController. EngineTextRenderer owns semantic span conversion
 for both editor composition and keyboard preedit; lifecycle transitions invalidate queued cursor moves.
-The service still routes engine effects and owns platform view/device orchestration. Stable input
-lifecycle transitions have moved to `InputLifecycleController`; view creation, candidate anchoring
-and input-device presentation remain separate platform boundaries.
+The Service is now the Android composition root rather than the owner of input semantics. Stable
+input lifecycle, view presentation, candidate anchoring, device mode, surface rebuild, engine
+effect and context ordering each have separate controllers.
 
-1. **Service decomposition:** `FcitxInputMethodService` still constructs Android views and owns
-   window/insets/device orchestration. Stable editor/session/engine lifecycle
-   ordering now belongs to `InputLifecycleController`. Command scheduling and
-   subtype synchronization now belong to the engine/platform boundary; editor effects belong to
-   editing. Editor capabilities are semantic values, encoded into native bits only by the adapter.
-   These are permitted
-   platform-boundary operations, but should become separate collaborators before replacing Fcitx.
+1. **Service composition root:** `FcitxInputMethodService` still constructs Android views and must
+   override Android window, input and inline-suggestion callbacks. These callbacks now delegate
+   semantic ordering to collaborators. Remaining direct code is reviewed as platform glue; it
+   should not be extracted unless it owns multi-system policy or state.
 2. **Window-local state:** toolbar and window animation state is still local to its owning surface.
    Move only cross-surface state into the session reducer; ephemeral animation state should remain
    local.

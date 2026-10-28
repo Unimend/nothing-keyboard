@@ -357,7 +357,7 @@ class InputArchitectureBoundaryTest {
         listOf(
             "inputLifecycle.startInput(",
             "inputLifecycle.startInputView(",
-            "inputLifecycle.finishInputView()",
+            "inputLifecycle::finishInputView",
             "inputLifecycle.finishInput()",
             "inputLifecycle.unbindInput()"
         ).forEach { assertTrue("Missing lifecycle delegation: $it", it in service) }
@@ -433,6 +433,22 @@ class InputArchitectureBoundaryTest {
         assertTrue("Unbind callback must enter context controller", "inputContextLifecycle.unbind(" in service)
         assertFalse("Service must not activate engine context directly", "submitEngineCommand(EngineCommand.ActivateContext" in service)
         assertFalse("Service must not deactivate engine context directly", "submitEngineCommand(EngineCommand.DeactivateContext" in service)
+    }
+
+    @Test
+    fun `input view presentation cleanup is one ordered transaction`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("Start presentation must use its controller", "inputViewPresentation.start(" in service)
+        assertTrue(
+            "Finish presentation must wrap lifecycle cleanup",
+            "inputViewPresentation.finish(inputLifecycle::finishInputView)" in service
+        )
+        assertFalse(
+            "Service must not keep the old partial anchor cleanup",
+            "candidateAnchor.invalidateWindowGeometry()\n        inputDeviceMgr.onFinishInputView()" in service
+        )
     }
 
     @Test

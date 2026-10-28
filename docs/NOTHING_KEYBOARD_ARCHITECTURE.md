@@ -242,3 +242,8 @@ host action. The Service supplies those actions but does not reconstruct dispatc
 Android binding creates an engine context transaction through `InputContextLifecycleController`:
 activate the exact UID/package pair, then synchronize the platform subtype. Unbind deactivates only
 when Android still exposes a binding UID; the Service cannot synthesize a replacement identity.
+
+Input-view start and finish presentation enter `InputViewPresentationController`. Hardware-mode
+cursor monitoring and fallback anchoring are paired, while finish cleanup has a fixed order around
+the core lifecycle transition. This prevents a hidden candidate/status/dialog surface surviving
+after the editor lifecycle has ended.
