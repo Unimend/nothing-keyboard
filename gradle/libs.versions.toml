@@ -25,8 +25,6 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version = "1.18.0" }
 androidx-lifecycle-viewmodel = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-livedata = { module = "androidx.lifecycle:lifecycle-livedata-ktx", version.ref = "lifecycle" }
 androidx-lifecycle-runtime = { module = "androidx.lifecycle:lifecycle-runtime-ktx", version.ref = "lifecycle" }
-androidx-lifecycle-common = { module = "androidx.lifecycle:lifecycle-common-java8", version.ref = "lifecycle" }
-androidx-lifecycle-service = { module = "androidx.lifecycle:lifecycle-service", version.ref = "lifecycle" }
 androidx-navigation-fragment = { module = "androidx.navigation:navigation-fragment-ktx", version.ref = "navigation" }
 androidx-navigation-ui = { module = "androidx.navigation:navigation-ui-ktx", version.ref = "navigation" }
 androidx-paging = { module = "androidx.paging:paging-runtime-ktx", version = "3.5.0" }
@@ -41,7 +39,6 @@ androidx-viewpager2 = { module = "androidx.viewpager2:viewpager2", version = "1.
 material = { module = "com.google.android.material:material", version = "1.14.0" }
 arrow-core = { module = "io.arrow-kt:arrow-core", version.ref = "arrow" }
 arrow-functions = { module = "io.arrow-kt:arrow-functions", version.ref = "arrow" }
-imagecropper = { module = "com.vanniktech:android-image-cropper", version = "4.7.0" }
 flexbox = { module = "com.google.android.flexbox:flexbox", version = "3.0.0" }
 dependency = { module = "org.mechdancer:dependency", version = "0.1.2" }
 timber = { module = "com.jakewharton.timber:timber", version = "5.0.1" }
