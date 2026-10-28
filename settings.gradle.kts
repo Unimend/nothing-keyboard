@@ -16,7 +16,7 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "fcitx5-android"
+rootProject.name = "NothingKeyboard"
 
 include(":lib:fcitx5")
 include(":lib:fcitx5-lua")

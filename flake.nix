@@ -1,5 +1,5 @@
 {
-  description = "Dev shell flake for fcitx5-android";
+  description = "Development shell for NothingKeyboard";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
   inputs.flake-compat = {
@@ -19,13 +19,13 @@
         };
       in {
         devShells = {
-          default = pkgs.fcitx5-android.sdk.shell;
+          default = pkgs.nothingKeyboard.sdk.shell;
           noAS =
-            pkgs.fcitx5-android.sdk.shell.override { androidStudio = null; };
+            pkgs.nothingKeyboard.sdk.shell.override { androidStudio = null; };
         };
       }) // {
         overlays.default = final: prev: {
-          fcitx5-android = {
+          nothingKeyboard = {
             sdk = final.lib.makeExtensible (self: {
 
               # Update versions here

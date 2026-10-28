@@ -19,6 +19,7 @@ class FcitxComponentPlugin : Plugin<Project> {
     abstract class FcitxComponentExtension {
         var includeLibs: List<String> = emptyList()
         var excludeFiles: List<String> = emptyList()
+        var includedTranslationLocales: Set<String> = emptySet()
         var modifyFiles: Map<String, (File) -> Unit> = emptyMap()
         var installPrebuiltAssets: Boolean = false
     }
@@ -46,12 +47,18 @@ class FcitxComponentPlugin : Plugin<Project> {
                 registerCMakeTask(target, "generate-desktop-file", "config", project)
                 registerCMakeTask(target, "translation-file", "translation", project)
             }
-            if (ext.excludeFiles.isNotEmpty()) {
+            if (ext.excludeFiles.isNotEmpty() || ext.includedTranslationLocales.isNotEmpty()) {
                 deleteTask.get().apply {
                     dependsOn(installTask)
                     doLast {
                         ext.excludeFiles.forEach {
                             project.assetsDir.resolve(it).delete()
+                        }
+                        if (ext.includedTranslationLocales.isNotEmpty()) {
+                            project.assetsDir.resolve("usr/share/locale")
+                                .listFiles()
+                                ?.filterNot { it.name in ext.includedTranslationLocales }
+                                ?.forEach(File::deleteRecursively)
                         }
                     }
                 }

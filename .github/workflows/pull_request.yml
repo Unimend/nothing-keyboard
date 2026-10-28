@@ -48,7 +48,8 @@ jobs:
       - name: Install system dependencies (macOS)
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
-          brew install extra-cmake-modules
+          brew install extra-cmake-modules gettext
+          echo "$(brew --prefix gettext)/bin" >> "$GITHUB_PATH"
 
       - name: Install system dependencies (Windows)
         if: ${{ startsWith(matrix.os, 'windows') }}

@@ -70,6 +70,9 @@ fcitxComponent {
     excludeFiles = listOf("cangjie", "erbi", "qxm", "wanfeng").map {
         "usr/share/fcitx5/inputmethod/$it.conf"
     }
+    // Android resources and the product UI intentionally ship only English and
+    // Simplified Chinese. English is the untranslated native fallback.
+    includedTranslationLocales = setOf("zh_CN")
     installPrebuiltAssets = true
 }
 
