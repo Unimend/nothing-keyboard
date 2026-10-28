@@ -15,7 +15,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
-import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
 import splitties.views.backgroundColor
 import splitties.views.dsl.coordinatorlayout.coordinatorLayout
@@ -31,11 +31,11 @@ import timber.log.Timber
 
 class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
 
+    private val visualStyle = theme.inputSurfaceStyle
+
     val recyclerView = recyclerView {
-        addItemDecoration(SpacesItemDecoration(dp(
-            if (theme.isNothingStyle) NothingDesignTokens.Clipboard.GridGapDp else 4
-        )))
-        if (theme.isNothingStyle) backgroundColor = NothingDesignTokens.Color.Surface
+        addItemDecoration(SpacesItemDecoration(dp(visualStyle.clipboard.gridGapDp)))
+        if (visualStyle.isNothing) backgroundColor = NothingDesignTokens.Color.Surface
     }
 
     val enableUi = ClipboardInstructionUi.Enable(ctx, theme)
@@ -53,7 +53,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     override val root = coordinatorLayout {
         if (!keyBorder) {
-            backgroundColor = if (theme.isNothingStyle) {
+            backgroundColor = if (visualStyle.isNothing) {
                 NothingDesignTokens.Color.Surface
             } else theme.barColor
         }

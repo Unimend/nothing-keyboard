@@ -21,7 +21,7 @@ import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
-import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -37,8 +37,9 @@ import android.view.animation.LinearInterpolator
 class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
     private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
+    private val visualStyle = theme.inputSurfaceStyle.candidate
 
-    private val nothingMarkerDrawable = if (theme.isNothingStyle) {
+    private val nothingMarkerDrawable = if (visualStyle.showDotMarker) {
         NothingDotMatrixDrawable(
             color = theme.candidateLabelColor,
             columns = 1,
@@ -83,13 +84,12 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
             // A fixed leading rail prevents one- and multi-character candidates from
             // appearing to jump relative to the primary marker.
             leftMargin = dp(
-                if (theme.isNothingStyle) NothingDesignTokens.Candidate.NothingLeadingRailDp
-                else NothingDesignTokens.Candidate.DefaultLeadingRailDp
+                visualStyle.leadingRailDp
             )
         })
         add(primaryMarker, lParams(
-            if (theme.isNothingStyle) dp(NothingDesignTokens.Candidate.MarkerWidthDp) else dp(3),
-            dp(NothingDesignTokens.Candidate.MarkerHeightDp)
+            dp(visualStyle.markerWidthDp),
+            dp(visualStyle.markerHeightDp)
         ) {
             gravity = Gravity.START or Gravity.CENTER_VERTICAL
         })

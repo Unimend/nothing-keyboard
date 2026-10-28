@@ -31,6 +31,7 @@ import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
@@ -68,14 +69,11 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
 
     init {
         val prefs = ThemeManager.prefs
+        val visualStyle = theme.inputSurfaceStyle.keyboard
         bordered = prefs.keyBorder.getValue()
         borderStroke = prefs.keyBorderStroke.getValue()
         rippled = prefs.keyRippleEffect.getValue()
-        radius = if (theme.isNothingStyle) {
-            dp(NothingDesignTokens.Shape.KeyCornerRadiusDp)
-        } else {
-            dp(prefs.keyRadius.getValue().toFloat())
-        }
+        radius = dp(visualStyle.keyCornerRadiusDp ?: prefs.keyRadius.getValue().toFloat())
         val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val hMarginPref =
             if (landscape) prefs.keyHorizontalMarginLandscape else prefs.keyHorizontalMargin
@@ -260,6 +258,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
 @SuppressLint("ViewConstructor")
 open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) :
     KeyView(ctx, theme, def) {
+    private val visualStyle = theme.inputSurfaceStyle.keyboard
     val mainText = view(::AutoScaleTextView) {
         isClickable = false
         isFocusable = false
@@ -288,7 +287,7 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
             add(mainText, lParams(wrapContent, wrapContent) {
                 centerInParent()
             })
-            if (theme.isNothingStyle && def.viewId == R.id.button_space) {
+            if (visualStyle.showSpaceIndicator && def.viewId == R.id.button_space) {
                 add(view(::View).apply {
                     background = NothingDotMatrixDrawable(
                         color = theme.altKeyTextColor,
@@ -317,6 +316,7 @@ open class TextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Text) 
 @SuppressLint("ViewConstructor")
 class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText) :
     TextKeyView(ctx, theme, def) {
+    private val visualStyle = theme.inputSurfaceStyle.keyboard
     val altText = view(::AutoScaleTextView) {
         isClickable = false
         isFocusable = false
@@ -324,7 +324,7 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
         applyNothingTextStyle(
             theme,
             NothingTextStyle.KeyAlternate,
-            sizeSp = if (theme.isNothingStyle) NothingTextStyle.KeyAlternate.sizeSp else 10.666667f
+            sizeSp = visualStyle.alternateTextSizeSp
         )
         textDirection = View.TEXT_DIRECTION_FIRST_STRONG_LTR
         setTextColor(
@@ -336,11 +336,11 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
     }
 
     init {
-        if (theme.isNothingStyle) {
+        if (visualStyle.primaryLabelVerticalOffsetDp != 0) {
             // The top secondary legend makes a mathematically centred letter look too high.
             // Shift only the visual label; keep the touch target and row geometry untouched.
             mainText.translationY = dp(
-                NothingDesignTokens.Keyboard.PrimaryLabelVerticalOffsetDp
+                visualStyle.primaryLabelVerticalOffsetDp
             ).toFloat()
         }
         appearanceView.apply {

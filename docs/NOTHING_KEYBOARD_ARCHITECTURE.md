@@ -65,6 +65,25 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 17. Popups | PopupAction / PopupResult + PopupComponent | Geometry ownership and configuration changes |
 | 18. Settings, persistence and diagnostics | AppPrefs/data layer + InputCoreDiagnostics/tests | Settings/data ownership is not yet fully audited |
 
+### Visual-system upgrade
+
+The visual upgrade starts from semantic resolution, not from changing individual pixels. A surface
+declares that it is a keyboard, candidate row or clipboard entry and consumes the corresponding
+`InputSurfaceStyle`. Only `InputSurfaceStylePolicy` may assemble theme identity, design tokens and
+legacy-theme fallbacks into complete component geometry. Renderers must not repeat that selection
+with local `isNothingStyle` branches for margins, radii, sizing or marker presence.
+
+Migration proceeds from the highest-frequency shared foundations outward:
+
+1. keyboard, candidate and clipboard geometry;
+2. toolbar, editing and picker surfaces;
+3. semantic color roles and state layers;
+4. motion choreography after static geometry is stable.
+
+The first slice covers keyboard height/radius/space treatment, candidate marker geometry and
+clipboard grid/entry geometry. Typography and glyph ownership remain separate systems and are not
+folded into this policy.
+
 The session's general write API is private to the Service composition root and store. Ordinary
 surfaces receive a reader, not a mutable store. Each producer receives only its own sink: engine
 events, surface changes, or punctuation maps. A new producer must not regain general dispatch.

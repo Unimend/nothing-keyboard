@@ -18,7 +18,7 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
-import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -40,12 +40,19 @@ import splitties.views.setPaddingDp
 
 class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radius: Float) : Ui {
 
+    private val visualStyle = theme.inputSurfaceStyle.clipboard
+    private val resolvedRadius = if (visualStyle.entryCornerRadiusDp.isNaN()) {
+        radius
+    } else {
+        ctx.dp(visualStyle.entryCornerRadiusDp)
+    }
+
     val textView = textView {
         minLines = 1
         maxLines = 4
-        textSize = if (theme.isNothingStyle) NothingTextStyle.ClipboardEntry.sizeSp else 14f
+        textSize = visualStyle.entryTextSizeSp ?: 14f
         setPaddingDp(
-            if (theme.isNothingStyle) NothingDesignTokens.Clipboard.EntryStartPaddingDp else 8,
+            visualStyle.entryStartPaddingDp,
             8, 10, 8
         )
         ellipsize = TextUtils.TruncateAt.END
@@ -61,7 +68,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     }
 
     val layout = constraintLayout {
-        if (theme.isNothingStyle) {
+        if (visualStyle.showDotMarker) {
             add(View(ctx).apply {
                 background = NothingDotMatrixDrawable(
                     color = NothingDesignTokens.Color.AccentRed,
@@ -90,19 +97,19 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     override val root = CustomGestureView(ctx).apply {
         isClickable = true
         minimumHeight = dp(
-            if (theme.isNothingStyle) NothingDesignTokens.Clipboard.EntryMinimumHeightDp else 30
+            visualStyle.entryMinimumHeightDp
         )
         foreground = RippleDrawable(
             ColorStateList.valueOf(theme.keyPressHighlightColor), null,
             GradientDrawable().apply {
-                cornerRadius = if (theme.isNothingStyle) dp(NothingDesignTokens.Shape.ClipboardCornerRadiusDp).toFloat() else radius
+                cornerRadius = resolvedRadius
                 setColor(Color.WHITE)
             }
         )
         background = GradientDrawable().apply {
-            cornerRadius = if (theme.isNothingStyle) dp(NothingDesignTokens.Shape.ClipboardCornerRadiusDp).toFloat() else radius
+            cornerRadius = resolvedRadius
             setColor(
-                if (theme.isNothingStyle) NothingDesignTokens.Color.RaisedSurface
+                if (visualStyle.showDotMarker) NothingDesignTokens.Color.RaisedSurface
                 else theme.clipboardEntryColor
             )
         }
