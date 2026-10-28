@@ -6,11 +6,10 @@ package org.fcitx.fcitx5.android.input.navigation
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
 
 import androidx.core.content.ContextCompat
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
 import org.fcitx.fcitx5.android.input.candidates.expanded.window.FlexboxExpandedCandidateWindow
 import org.fcitx.fcitx5.android.input.candidates.expanded.window.GridExpandedCandidateWindow
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.editing.TextEditingWindow
 import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
@@ -20,6 +19,7 @@ import org.fcitx.fcitx5.android.input.mode.InputModeStore
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
+import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
 import org.mechdancer.dependency.manager.ManagedHandler
@@ -29,7 +29,8 @@ import org.mechdancer.dependency.manager.must
 /** The only user-navigation layer allowed to know concrete input-window classes. */
 class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
     ManagedHandler by managedHandler() {
-    private val service: FcitxInputMethodService by manager.inputMethodService()
+    private val context by manager.context()
+    private val editing: InputEditingAccess by manager.must()
     private val windowManager: InputWindowManager by manager.must()
     private val modeStore: InputModeStore by manager.must()
 
@@ -41,7 +42,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             InputNavigationCommand.ShowClipboard ->
                 windowManager.attachWindow(ClipboardWindow())
             InputNavigationCommand.ShowEditing -> {
-                service.editingCommands.execute(EditingCommand.FinishComposition)
+                editing.commands.execute(EditingCommand.FinishComposition)
                 windowManager.attachWindow(TextEditingWindow())
             }
             is InputNavigationCommand.ShowPicker -> {
@@ -73,7 +74,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
         val keyboard = windowManager.getEssentialWindow(KeyboardWindow) as KeyboardWindow
         keyboard.switchLayout(layout)
         // switchLayout posts its layout mutation to the main executor. Queue attachment behind it.
-        ContextCompat.getMainExecutor(service).execute {
+        ContextCompat.getMainExecutor(context).execute {
             if (windowManager.isDisposed) return@execute
             if (!windowManager.isAttached(keyboard)) {
                 windowManager.attachWindow(KeyboardWindow)

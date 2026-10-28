@@ -14,8 +14,6 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -27,14 +25,17 @@ import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
+import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
 import org.mechdancer.dependency.manager.must
 
 class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
 
     override val surface = InputSurface.Editing
 
-    private val service: FcitxInputMethodService by manager.inputMethodService()
     private val inputView by manager.inputView()
+    private val inputSession: InputSessionAccess by manager.must()
+    private val editing: InputEditingAccess by manager.must()
     private val theme by manager.theme()
 
     private val hapticOnRepeat by AppPrefs.getInstance().keyboard.hapticOnRepeat
@@ -44,7 +45,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
     private val buttonRadius by ThemeManager.prefs.textEditingButtonRadius
 
     private val session = EditingSession()
-    private val commandExecutor get() = service.editingCommands
+    private val commandExecutor get() = editing.commands
     private val navigator: InputNavigator by manager.must()
 
     private fun sendDirectionKey(keyEventCode: Int) {
@@ -130,12 +131,12 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
     private var selectionJob: Job? = null
 
     override fun onAttached() {
-        service.inputSession.current.editorSessionOrNull()?.let {
+        inputSession.reader.current.editorSessionOrNull()?.let {
             updateEditorSelection(it)
         }
         selectionJob = inputView.surfaceScope.launch {
-            service.inputSession.state.map { it.selection }.distinctUntilChanged().collect {
-                service.inputSession.current.editorSessionOrNull()?.let(::updateEditorSelection)
+            inputSession.reader.state.map { it.selection }.distinctUntilChanged().collect {
+                inputSession.reader.current.editorSessionOrNull()?.let(::updateEditorSelection)
             }
         }
     }

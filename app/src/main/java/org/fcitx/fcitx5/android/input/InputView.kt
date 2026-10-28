@@ -56,6 +56,13 @@ import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
+import org.fcitx.fcitx5.android.input.runtime.InputEngineAccess
+import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
+import org.fcitx.fcitx5.android.input.runtime.ImePlatformAccess
+import org.fcitx.fcitx5.android.input.runtime.EditorInfoAccess
+import org.fcitx.fcitx5.android.utils.switchToNextIME
+import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleDispatcher
 import org.fcitx.fcitx5.android.utils.unset
@@ -87,11 +94,17 @@ import timber.log.Timber
 
 @SuppressLint("ViewConstructor")
 class InputView(
-    service: FcitxInputMethodService,
+    private val service: FcitxInputMethodService,
     theme: Theme,
     surfaceSink: SurfaceStateSink,
     punctuationSink: PunctuationStateSink
-) : BaseInputView(service, theme) {
+) : BaseInputView(
+    service,
+    theme,
+    service.inputSession,
+    service.engineCommands,
+    service.engineQueries
+) {
 
     private val nothingCompactHeightScale = if (theme.isNothingStyle) {
         NothingDesignTokens.Keyboard.CompactHeightScale
@@ -119,6 +132,18 @@ class InputView(
     }
 
     private val scope = DynamicScope()
+    private val sessionAccess = InputSessionAccess(service.inputSession)
+    private val engineAccess = InputEngineAccess(service.engineCommands, service.engineQueries)
+    private val editingAccess = InputEditingAccess(service.editingCommands)
+    private val editorInfoAccess = EditorInfoAccess { service.currentInputEditorInfo }
+    private val platformAccess = ImePlatformAccess(
+        inputMethods = service.platformInputMethods,
+        hideKeyboardAction = { service.requestHideSelf(0) },
+        switchToNextInputMethodAction = { service.switchToNextIME() },
+        switchToInputMethodAction = { id, subtype ->
+            InputMethodUtil.switchInputMethod(service, id, subtype)
+        }
+    )
     private val popup = PopupComponent()
     private val punctuation = PunctuationController(
         punctuationSink, service.inputSession, service.engineQueries, surfaceScope
@@ -143,6 +168,11 @@ class InputView(
     private fun setupScope() {
         scope += this@InputView.wrapToUniqueComponent()
         scope += service.wrapToUniqueComponent()
+        scope += sessionAccess
+        scope += engineAccess
+        scope += editingAccess
+        scope += editorInfoAccess
+        scope += platformAccess
         scope += service.dialogs
         scope += service.inputMethodPicker
         scope += theme.wrapToUniqueComponent()
@@ -254,7 +284,7 @@ class InputView(
         // show KeyboardWindow by default
         navigator.navigate(InputNavigationCommand.ShowKeyboard())
 
-        service.inputSession.current.engine.inputMethod?.let(keyboardWindow::onImeUpdate)
+        sessionAccess.reader.current.engine.inputMethod?.let(keyboardWindow::onImeUpdate)
 
         customBackground.imageDrawable = theme.backgroundDrawable(keyBorder)
 
@@ -320,7 +350,7 @@ class InputView(
 
     private fun observeSessionDerivedState() {
         sessionStateJob = surfaceScope.launch {
-            service.inputSession.state
+            sessionAccess.reader.state
                 .map { it.punctuationMapping }
                 .distinctUntilChanged()
                 .collect(keyboardWindow::onPunctuationUpdate)
@@ -328,7 +358,7 @@ class InputView(
     }
 
     private fun updateReturnKey() {
-        val snapshot = service.inputSession.current
+        val snapshot = sessionAccess.reader.current
         keyboardWindow.onReturnKeyDrawableUpdate(
             ReturnKeyGlyphPolicy.resolve(
                 snapshot.editor,

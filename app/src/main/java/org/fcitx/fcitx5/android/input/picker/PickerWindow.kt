@@ -9,7 +9,6 @@ import androidx.viewpager2.widget.ViewPager2
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
@@ -25,6 +24,7 @@ import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
 import org.fcitx.fcitx5.android.input.wm.EssentialWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.mechdancer.dependency.manager.must
@@ -52,7 +52,7 @@ class PickerWindow(
     }
 
     private val theme by manager.theme()
-    private val service by manager.inputMethodService()
+    private val inputSession: InputSessionAccess by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
     private val navigator: InputNavigator by manager.must()
@@ -178,7 +178,7 @@ class PickerWindow(
                 pickerLayout.tabsUi.setTabs(pickerPagesAdapter.getCategoryList())
                 restorePosition()
             }
-            val snapshot = service.inputSession.current
+            val snapshot = inputSession.reader.current
             it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
                 snapshot.editor,
                 InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,

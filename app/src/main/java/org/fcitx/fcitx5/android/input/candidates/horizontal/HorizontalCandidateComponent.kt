@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ensureActive
 import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateLoadRequest
+import org.fcitx.fcitx5.android.input.runtime.InputEngineAccess
 import timber.log.Timber
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -35,6 +36,7 @@ class HorizontalCandidateComponent :
     private val theme by manager.theme()
     private val inputView by manager.inputView()
     private val candidateInteraction: CandidateInteractionController by manager.must()
+    private val engine: InputEngineAccess by manager.must()
 
     private val fillStyle by AppPrefs.getInstance().keyboard.horizontalCandidateStyle
     private val maxSpanCountPref by lazy {
@@ -59,7 +61,7 @@ class HorizontalCandidateComponent :
         val pageSize = 32
         loadMoreJob = inputView.surfaceScope.launch {
             try {
-                val next = inputView.service.engineQueries.candidates(request.offset, pageSize)
+                val next = engine.queries.candidates(request.offset, pageSize)
                 ensureActive()
                 val delivery = Runnable {
                     pendingDelivery = null

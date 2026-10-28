@@ -43,7 +43,15 @@ import kotlin.math.roundToInt
 class CandidatesView(
     service: FcitxInputMethodService,
     theme: Theme
-) : BaseInputView(service, theme) {
+) : BaseInputView(
+    service,
+    theme,
+    service.inputSession,
+    service.engineCommands,
+    service.engineQueries
+) {
+
+    private val engineCommands = service.engineCommands
 
     private val ctx = context.withTheme(R.style.Theme_InputViewTheme)
 
@@ -101,11 +109,11 @@ class CandidatesView(
     private val candidatesUi = PagedCandidatesUi(
         ctx, theme, setupTextView,
         onCandidateClick = { index ->
-            service.engineCommands.selectCandidate(index)
+            engineCommands.selectCandidate(index)
         },
         onCandidateAction = { index, text, view -> showCandidateActionMenu(index, text, view) },
-        onPrevPage = { service.engineCommands.offsetCandidatePage(-1) },
-        onNextPage = { service.engineCommands.offsetCandidatePage(1) }
+        onPrevPage = { engineCommands.offsetCandidatePage(-1) },
+        onNextPage = { engineCommands.offsetCandidatePage(1) }
     )
 
     private var previousEngineState: EngineState? = null

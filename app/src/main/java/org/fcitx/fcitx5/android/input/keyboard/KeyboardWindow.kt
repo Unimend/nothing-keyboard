@@ -18,7 +18,7 @@ import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
@@ -42,7 +42,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
 
     override val surface = InputSurface.Keyboard
 
-    private val service by manager.inputMethodService()
+    private val inputSession: InputSessionAccess by manager.must()
     private val theme by manager.theme()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val windowManager: InputWindowManager by manager.must()
@@ -123,20 +123,20 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
             it.popupActionListener = popupActionListener
             keyboardView.apply { add(it, lParams(matchParent, matchParent)) }
             it.onAttach()
-            val snapshot = service.inputSession.current
+            val snapshot = inputSession.reader.current
             it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
                 snapshot.editor,
                 InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,
                 theme.isNothingStyle
             ))
-            service.inputSession.current.engine.inputMethod?.let { inputMethod ->
+            inputSession.reader.current.engine.inputMethod?.let { inputMethod ->
                 it.onInputMethodUpdate(inputMethod)
             }
         }
     }
 
     fun switchLayout(to: KeyboardLayout?, remember: Boolean = true) {
-        ContextCompat.getMainExecutor(service).execute {
+        ContextCompat.getMainExecutor(context).execute {
             if (windowManager.isDisposed) return@execute
             val targetMode = to?.let(InputMode::Keyboard) ?: modeStore.state.rememberedSymbolMode
             if (targetMode is InputMode.Keyboard) {

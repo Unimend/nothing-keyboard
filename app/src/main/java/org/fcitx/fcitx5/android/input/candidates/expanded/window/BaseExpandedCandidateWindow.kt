@@ -22,7 +22,6 @@ import org.fcitx.fcitx5.android.input.candidates.expanded.CandidatesPagingSource
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateLayout
 import org.fcitx.fcitx5.android.input.candidates.expanded.PagingCandidateViewAdapter
 import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
@@ -37,6 +36,8 @@ import org.fcitx.fcitx5.android.input.session.InputPresentationState
 import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
 import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
+import org.fcitx.fcitx5.android.input.runtime.InputEngineAccess
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
@@ -48,9 +49,10 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
 
     override val surface = InputSurface.ExpandedCandidates
 
-    protected val service by manager.inputMethodService()
     protected val theme by manager.theme()
     protected val inputView by manager.inputView()
+    private val inputSession: InputSessionAccess by manager.must()
+    private val engine: InputEngineAccess by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val candidateInteraction: CandidateInteractionController by manager.must()
     private val navigator: InputNavigator by manager.must()
@@ -136,7 +138,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             ),
             pagingSourceFactory = {
                 CandidatesPagingSource(
-                    service.engineQueries,
+                    engine.queries,
                     total = candidateInteraction.state.total,
                     offset = adapter.offset
                 )
@@ -152,7 +154,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
 
     override fun onAttached() {
         candidateLayout.embeddedKeyboard.also {
-            val snapshot = service.inputSession.current
+            val snapshot = inputSession.reader.current
             it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
                 snapshot.editor,
                 InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,
@@ -160,7 +162,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             ))
             it.keyActionListener = keyActionListener
         }
-        updateTabs(service.inputSession.current.engine.inputPanel.tabs)
+        updateTabs(inputSession.reader.current.engine.inputPanel.tabs)
         offsetJob = inputView.surfaceScope.launch {
             candidateInteraction.expandedOffset.collect {
                 if (it <= 0) {
@@ -177,7 +179,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             }
         }
         sessionJob = inputView.surfaceScope.launch {
-            service.inputSession.state.drop(1).collect { snapshot ->
+            inputSession.reader.state.drop(1).collect { snapshot ->
                 val presentation = InputPresentationReducer.reduce(snapshot.engine)
                 if (presentation.preeditEmpty) {
                     navigator.navigate(InputNavigationCommand.ShowKeyboard())

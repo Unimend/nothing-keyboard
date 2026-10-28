@@ -14,11 +14,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
 import org.mechdancer.dependency.manager.ManagedHandler
@@ -33,8 +33,8 @@ import java.util.LinkedList
 class PopupComponent :
     UniqueComponent<PopupComponent>(), Dependent, ManagedHandler by managedHandler() {
 
-    private val service by manager.inputMethodService()
     private val inputView by manager.inputView()
+    private val inputSession: InputSessionAccess by manager.must()
     private val context by manager.context()
     private val theme by manager.theme()
 
@@ -123,7 +123,7 @@ class PopupComponent :
                 val preset = PopupPreset[keyboard.label] ?: return
                 keys = preset
                 labels = if (keyboard.transformPunctuation) {
-                    val mapping = service.inputSession.current.punctuationMapping
+                    val mapping = inputSession.reader.current.punctuationMapping
                     Array(keys.size) { mapping.getOrDefault(keys[it], keys[it]) }
                 } else keys
             }

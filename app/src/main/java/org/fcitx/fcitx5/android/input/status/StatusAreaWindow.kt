@@ -18,9 +18,7 @@ import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
@@ -33,6 +31,9 @@ import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeL
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EngineStatusAction
+import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
+import org.fcitx.fcitx5.android.input.runtime.InputEngineAccess
+import org.fcitx.fcitx5.android.input.runtime.ImePlatformAccess
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 import org.fcitx.fcitx5.android.utils.alpha
@@ -50,8 +51,10 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
 
     override val surface = InputSurface.Status
 
-    private val service: FcitxInputMethodService by manager.inputMethodService()
     private val inputView by manager.inputView()
+    private val inputSession: InputSessionAccess by manager.must()
+    private val engine: InputEngineAccess by manager.must()
+    private val platform: ImePlatformAccess by manager.must()
     private val theme by manager.theme()
     private val navigator: InputNavigator by manager.must()
 
@@ -83,7 +86,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     }
 
     private fun activateAction(action: EngineStatusAction) {
-        service.engineCommands.submit(EngineCommand.ActivateStatusAction(action.id))
+        engine.commands.submit(EngineCommand.ActivateStatusAction(action.id))
     }
 
     var popupMenu: PopupMenu? = null
@@ -136,19 +139,19 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
                         popup.show()
                     }
                     is StatusAreaEntry.Android -> when (entry.type) {
-                        InputMethod -> service.inputSession.current.engine.inputMethod?.let {
+                        InputMethod -> inputSession.reader.current.engine.inputMethod?.let {
                             AppUtil.launchMainToInputMethodConfig(
                                 context, it.uniqueName, it.nativeName.ifEmpty { it.name }
                             )
                         }
                         ReloadConfig -> {
-                            service.engineCommands.submit(EngineCommand.ReloadConfiguration)
+                            engine.commands.submit(EngineCommand.ReloadConfiguration)
                                 .invokeOnCompletion { failure ->
                                     if (failure != null) return@invokeOnCompletion
                                     inputView.surfaceScope.launch {
-                                        service.platformInputMethods.synchronize()
+                                        platform.inputMethods.synchronize()
                                         Toast.makeText(
-                                            service,
+                                            context,
                                             R.string.done,
                                             Toast.LENGTH_SHORT
                                         ).show()
@@ -214,9 +217,9 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     private var statusJob: Job? = null
 
     override fun onAttached() {
-        renderStatusActions(service.inputSession.current.engine.statusActions)
+        renderStatusActions(inputSession.reader.current.engine.statusActions)
         statusJob = inputView.surfaceScope.launch {
-            service.inputSession.state.map { it.engine.statusActions }.distinctUntilChanged()
+            inputSession.reader.state.map { it.engine.statusActions }.distinctUntilChanged()
                 .collect(::renderStatusActions)
         }
     }

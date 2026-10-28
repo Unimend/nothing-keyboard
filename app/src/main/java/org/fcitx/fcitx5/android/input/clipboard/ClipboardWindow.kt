@@ -31,13 +31,12 @@ import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.SurfaceAttachment
 import org.fcitx.fcitx5.android.utils.AppUtil
@@ -52,8 +51,8 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
 
     override val surface = InputSurface.Clipboard
 
-    private val service: FcitxInputMethodService by manager.inputMethodService()
     private val inputView by manager.inputView()
+    private val editing: InputEditingAccess by manager.must()
     private val theme by manager.theme()
     private val navigator: InputNavigator by manager.must()
     private val interaction: ClipboardInteractionController by manager.must()
@@ -117,7 +116,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
                 val chooser = Intent.createChooser(target, null).apply {
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 }
-                service.startActivity(chooser)
+                context.startActivity(chooser)
             }
 
             override fun onDelete(id: Int) {
@@ -125,7 +124,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             }
 
             override fun onPaste(entry: ClipboardItem) {
-                service.editingCommands.execute(EditingCommand.CommitText(entry.text))
+                editing.commands.execute(EditingCommand.CommitText(entry.text))
                 if (clipboardReturnAfterPaste) {
                     navigator.navigate(InputNavigationCommand.ShowKeyboard())
                 }

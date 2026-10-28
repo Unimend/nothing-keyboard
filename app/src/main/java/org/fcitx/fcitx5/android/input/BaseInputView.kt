@@ -5,6 +5,7 @@
 
 package org.fcitx.fcitx5.android.input
 
+import android.content.Context
 import android.view.View
 import android.view.WindowInsets
 import android.widget.PopupMenu
@@ -24,6 +25,9 @@ import org.fcitx.fcitx5.android.data.theme.ThemePrefs
 import org.fcitx.fcitx5.android.input.candidates.interaction.triggerCandidateAction
 import org.fcitx.fcitx5.android.input.lifecycle.InputSurfaceLifetime
 import org.fcitx.fcitx5.android.input.session.EngineState
+import org.fcitx.fcitx5.android.input.session.InputSessionReader
+import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
+import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.utils.item
 import org.fcitx.fcitx5.android.utils.navbarFrameHeight
 import org.fcitx.fcitx5.android.utils.styledColorOrDefault
@@ -31,9 +35,12 @@ import splitties.views.dsl.core.withTheme
 import kotlin.math.max
 
 abstract class BaseInputView(
-    val service: FcitxInputMethodService,
-    val theme: Theme
-) : ConstraintLayout(service) {
+    context: Context,
+    val theme: Theme,
+    private val inputSession: InputSessionReader,
+    private val engineCommands: EngineCommandPort,
+    private val engineQueries: InputEngineQueries
+) : ConstraintLayout(context) {
 
     private val surfaceLifetime = InputSurfaceLifetime()
     val surfaceScope get() = surfaceLifetime.scope
@@ -44,7 +51,7 @@ abstract class BaseInputView(
 
     private fun setupEngineStateCollector() {
         eventHandlerJob = surfaceScope.launch {
-            service.inputSession.state.collect { handleEngineState(it.engine) }
+            inputSession.state.collect { handleEngineState(it.engine) }
         }
     }
 
@@ -62,7 +69,7 @@ abstract class BaseInputView(
         }
 
     private fun triggerCandidateAction(idx: Int, actionIdx: Int) {
-        service.engineCommands.triggerCandidateAction(idx, actionIdx)
+        engineCommands.triggerCandidateAction(idx, actionIdx)
     }
 
     private var candidateActionMenu: PopupMenu? = null
@@ -73,7 +80,7 @@ abstract class BaseInputView(
         candidateActionMenu?.dismiss()
         candidateActionMenu = null
         surfaceScope.launch {
-            val actions = service.engineQueries.candidateActions(idx)
+            val actions = engineQueries.candidateActions(idx)
             if (actions.isEmpty()) return@launch
             InputFeedbacks.hapticFeedback(view, longPress = true)
             candidateActionMenu = PopupMenu(themedContext, view).apply {

@@ -330,3 +330,18 @@ Input-method picker UI now receives resolved entries, current selection and an `
 It cannot read engine state or submit commands. `InputMethodPickerController` coordinates the query,
 engine activation and Android IME switching at the system boundary. Architecture tests prevent the
 concrete service, session and command dispatcher from returning to the dialog renderer.
+
+## Explicit runtime ports replace service lookup
+
+Input surfaces now receive four distinct runtime capabilities from the composition root:
+`InputSessionAccess`, `InputEngineAccess`, `InputEditingAccess` and `ImePlatformAccess`.
+Editor-info inspection has its own `EditorInfoAccess`. Keyboard routing, toolbar, editing,
+clipboard, status, popup, picker, navigation and candidate surfaces no longer retrieve the concrete
+service and then choose arbitrary members from it. The platform voice-input switch, keyboard hide
+and next-IME actions are explicit intents on the platform port.
+
+`BaseInputView` now accepts Context plus session/engine ports instead of a service object. Only the
+Android composition roots (`FcitxInputMethodService`, `InputView`, `CandidatesView` and the legacy
+dependency binding helper) may mention the concrete service, enforced by a source boundary test.
+This makes Fcitx and Android replacement points visible in constructors and prevents a feature
+system from silently expanding its authority through a service reference.

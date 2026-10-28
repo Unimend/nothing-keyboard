@@ -6,12 +6,12 @@ package org.fcitx.fcitx5.android.input.editorinfo
 
 import android.content.ClipData
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.runtime.EditorInfoAccess
+import org.mechdancer.dependency.manager.must
 import org.fcitx.fcitx5.android.utils.clipboardManager
 import org.fcitx.fcitx5.android.utils.toast
 import splitties.dimensions.dp
@@ -23,7 +23,7 @@ class EditorInfoWindow : InputWindow.ExtendedInputWindow<EditorInfoWindow>() {
 
     override val surface = InputSurface.EditorInfo
 
-    private val service: FcitxInputMethodService by manager.inputMethodService()
+    private val editorInfo: EditorInfoAccess by manager.must()
     private val theme by manager.theme()
 
     private var propertyMap = mapOf<String, String>()
@@ -67,7 +67,7 @@ class EditorInfoWindow : InputWindow.ExtendedInputWindow<EditorInfoWindow>() {
     override fun onCreateBarExtension() = barExtension
 
     override fun onAttached() {
-        propertyMap = EditorInfoParser.parse(service.currentInputEditorInfo)
+        propertyMap = EditorInfoParser.parse(editorInfo.current())
         ui.setValues(propertyMap)
     }
 

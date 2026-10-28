@@ -52,7 +52,6 @@ import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEve
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesDetached
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
@@ -65,6 +64,8 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleObserver
+import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
+import org.fcitx.fcitx5.android.input.runtime.ImePlatformAccess
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.mechdancer.dependency.manager.must
@@ -84,8 +85,9 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private val context by manager.context()
     private val theme by manager.theme()
-    private val service by manager.inputMethodService()
     private val inputView by manager.inputView()
+    private val editing: InputEditingAccess by manager.must()
+    private val platform: ImePlatformAccess by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
@@ -178,12 +180,12 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     }
 
     private val hideKeyboardCallback = View.OnClickListener {
-        service.requestHideSelf(0)
+        platform.hideKeyboard()
     }
 
     private val swipeDownExpandCallback = CustomGestureView.OnGestureListener { _, e ->
         if (e.type == CustomGestureView.GestureType.Up && e.totalY > 0) {
-            service.requestHideSelf(0)
+            platform.hideKeyboard()
             true
         } else false
     }
@@ -214,7 +216,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                 CustomGestureView.GestureType.Up -> {
                     val handled = when (angle) {
                         in -45f..45f if distance > v.swipeThresholdX -> {
-                            service.requestHideSelf(0)
+                            platform.hideKeyboard()
                             true
                         }
                         !in -45f..45f if distance > v.swipeThresholdY -> {
@@ -232,7 +234,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         }
 
         if (e.type == CustomGestureView.GestureType.Up && abs(e.totalY) > abs(e.totalX) && e.totalY > 0) {
-            service.requestHideSelf(0)
+            platform.hideKeyboard()
             true
         } else false
     }
@@ -241,7 +243,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
 
     private val switchToVoiceInputCallback = View.OnClickListener {
         val (id, subtype) = voiceInputSubtype ?: return@OnClickListener
-        InputMethodUtil.switchInputMethod(service, id, subtype)
+        platform.switchToInputMethod(id, subtype)
     }
 
     private val idleUi: IdleUi by lazy {
@@ -262,10 +264,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             }
             buttonsUi.apply {
                 undoButton.setOnClickListener {
-                    service.editingCommands.execute(EditingCommand.ApplicationUndo)
+                    editing.commands.execute(EditingCommand.ApplicationUndo)
                 }
                 redoButton.setOnClickListener {
-                    service.editingCommands.execute(EditingCommand.ApplicationRedo)
+                    editing.commands.execute(EditingCommand.ApplicationRedo)
                 }
                 cursorMoveButton.setOnClickListener {
                     navigator.navigate(InputNavigationCommand.ShowEditing)
@@ -280,7 +282,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
             clipboardUi.suggestionView.apply {
                 setOnClickListener {
                     clipboardHistory.lastItem?.let {
-                        service.editingCommands.execute(EditingCommand.CommitText(it.text))
+                        editing.commands.execute(EditingCommand.CommitText(it.text))
                     }
                     clipboardTimeoutJob?.cancel()
                     clipboardTimeoutJob = null

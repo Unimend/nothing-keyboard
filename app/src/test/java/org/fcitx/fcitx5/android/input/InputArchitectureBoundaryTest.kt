@@ -100,6 +100,25 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `concrete input service is visible only at Android composition roots`() {
+        val allowed = setOf(
+            "FcitxInputMethodService.kt",
+            "InputView.kt",
+            "CandidatesView.kt",
+            "dependency/Functions.kt"
+        )
+        val root = sourceRoot.resolve("org/fcitx/fcitx5/android/input")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(root).invariantSeparatorsPath
+            relative !in allowed && (
+                "FcitxInputMethodService" in file.readText() ||
+                    "inputMethodService()" in file.readText()
+                )
+        }
+        assertTrue("Concrete service escaped composition root: $violations", violations.isEmpty())
+    }
+
+    @Test
     fun `input device policy cannot depend on concrete input method service`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/InputDeviceManager.kt"
