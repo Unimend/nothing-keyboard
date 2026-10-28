@@ -59,6 +59,8 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
+import org.fcitx.fcitx5.android.input.engine.InputEngineEffectHost
+import org.fcitx.fcitx5.android.input.engine.InputEngineEffectRouter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputLifecycleController
 import org.fcitx.fcitx5.android.input.session.InputLifecycleSessionSink
@@ -205,6 +207,33 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         )
     }
 
+    private val engineEffectRouter by lazy {
+        InputEngineEffectRouter(
+            handleEditorEffect = editor::handleEngineEffect,
+            host = object : InputEngineEffectHost {
+                override fun forwardKey(effect: EngineEffect.ForwardKey) {
+                    keyEvents.handleForwarded(effect)
+                }
+
+                override fun inputMethodChanged(effect: EngineEffect.InputMethodChanged) {
+                    subtypeController.onEngineInputMethodChanged(effect.inputMethod.uniqueName)
+                    if (inputDeviceMgr.evaluateOnInputMethodActivate()) {
+                        showStatusIcon(StatusIconMapping.fromEntry(effect.inputMethod))
+                    }
+                }
+
+                override fun inputMethodSwitched(effect: EngineEffect.InputMethodSwitched) {
+                    if (effect.reason != EngineSwitchReason.CapabilityChanged &&
+                        effect.reason != EngineSwitchReason.Other &&
+                        inputDeviceMgr.evaluateOnInputMethodSwitch()
+                    ) {
+                        forceShowSelf()
+                    }
+                }
+            }
+        )
+    }
+
     private val prefs = AppPrefs.getInstance()
     private val inlineSuggestions by prefs.keyboard.inlineSuggestions
     private val ignoreSystemCursor by prefs.advanced.ignoreSystemCursor
@@ -274,7 +303,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
             switchSubtype = { switchInputMethod(InputMethodUtil.componentName, it) })
         engineBridge = FcitxEngineBridge(fcitx, inputSession,
             publish = { sessionStore.dispatch(InputSessionEvent.EngineChanged(it)) },
-            effectSink = ::handleEngineEffect)
+            effectSink = engineEffectRouter::handle)
         engineBridge.startIn(lifecycleScope)
         lifecycleScope.launch {
             inputSession.state.collect(InputCoreDiagnostics::publishSession)
@@ -293,34 +322,6 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         contentView.setBackgroundColor(Color.TRANSPARENT)
         lastKnownConfig = resources.configuration
     }
-
-    private fun handleEngineEffect(effect: EngineEffect) {
-        if (editor.handleEngineEffect(effect)) return
-        when (effect) {
-            is EngineEffect.ForwardKey -> handleForwardedEngineKey(effect)
-            is EngineEffect.InputMethodChanged -> {
-                subtypeController.onEngineInputMethodChanged(effect.inputMethod.uniqueName)
-                if (inputDeviceMgr.evaluateOnInputMethodActivate()) {
-                    showStatusIcon(StatusIconMapping.fromEntry(effect.inputMethod))
-                }
-            }
-            is EngineEffect.InputMethodSwitched -> {
-                if (effect.reason != EngineSwitchReason.CapabilityChanged &&
-                    effect.reason != EngineSwitchReason.Other
-                ) {
-                    if (inputDeviceMgr.evaluateOnInputMethodSwitch()) {
-                        // show inputView for [CandidatesView] when input method switched by user
-                        forceShowSelf()
-                    }
-                }
-            }
-            else -> Unit // Editor effects were consumed above.
-        }
-    }
-
-    private fun handleForwardedEngineKey(effect: EngineEffect.ForwardKey) =
-        keyEvents.handleForwarded(effect)
-
 
     private lateinit var lastKnownConfig: Configuration
 

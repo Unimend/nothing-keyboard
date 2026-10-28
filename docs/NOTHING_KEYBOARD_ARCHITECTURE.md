@@ -230,3 +230,7 @@ keyboard surface, candidate preferences rebuild only candidates, and theme chang
 An input-device mode change is one presentation transaction. Candidate paging, cursor-anchor
 monitoring, status-icon visibility and navigation-bar styling must all enter through
 `InputDevicePresentationController`; no renderer may update only a subset.
+
+Project-owned engine effects enter `InputEngineEffectRouter`. Editor effects get first refusal;
+forwarded keys, input-method changes and switch notifications then route to exactly one Android
+host action. The Service supplies those actions but does not reconstruct dispatch priority.

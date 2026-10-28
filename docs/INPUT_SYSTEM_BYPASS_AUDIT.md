@@ -25,6 +25,7 @@ unrepresentable, and a test must prevent it from returning.
 | Android input lifecycle | `InputLifecycleController` | Service independently ordering session, editor and engine focus transitions | Sequence tests and lifecycle-delegation boundary test |
 | Input-surface rebuild | `InputSurfaceRebuildController` + Android signal adapter | Service registering theme/preference listeners or guessing partial rebuild scope | Scope test and listener-lifetime boundary test |
 | Input-device presentation | `InputDevicePresentationController` | Independently updating paging, cursor monitoring, status icon or navbar during a mode switch | Complete-transaction tests and Service boundary test |
+| Engine effect routing | `InputEngineEffectRouter` | Service choosing between editor, forwarded-key and platform effects | Priority/routing tests and Service boundary test |
 
 ## Removed legacy escape hatches
 
@@ -60,6 +61,9 @@ unrepresentable, and a test must prevent it from returning.
 - The inline `InputDeviceManager` callback that independently changed four presentation systems.
   `InputDevicePresentationController.applyMode` now applies paging mode, cursor monitoring, status
   icon and navigation bar as one ordered transaction for every virtual/hardware mode transition.
+- The Service-level `handleEngineEffect` dispatcher. `InputEngineEffectRouter` now guarantees that
+  editor effects receive first refusal and that each remaining platform effect reaches exactly one
+  host callback. The Android Service supplies actions but no longer owns dispatch semantics.
 
 ## Deliberate platform boundaries (not legacy UI)
 

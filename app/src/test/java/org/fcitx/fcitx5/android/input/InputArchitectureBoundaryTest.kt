@@ -400,6 +400,16 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `service delegates engine effect dispatch to router`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue("Engine bridge must target the router", "effectSink = engineEffectRouter::handle" in service)
+        assertFalse("Legacy Service router must stay deleted", "private fun handleEngineEffect" in service)
+        assertFalse("Service must not reconstruct top-level effect dispatch", "when (effect)" in service)
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",
