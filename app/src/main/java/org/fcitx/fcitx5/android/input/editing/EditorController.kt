@@ -95,6 +95,8 @@ class EditorController(
                 get() = selection.latest
             override val editingComposition: CursorRange
                 get() = CursorRange(composing.start, composing.end)
+            override val editingCompositionText: String
+                get() = composingText.plainText
             override val hasActiveComposition: Boolean
                 get() = composing.isNotEmpty()
             override val shouldSimulateBackspaceKey: Boolean
@@ -116,6 +118,13 @@ class EditorController(
 
             override fun resetInputEngine() {
                 submitEngineCommand(EngineCommand.Reset)
+            }
+
+            override fun restoreInputComposition(text: String) {
+                submitEngineCommand(EngineCommand.Reset)
+                text.codePoints().forEach { codePoint ->
+                    submitEngineCommand(EngineCommand.SendKeyText(Character.toString(codePoint)))
+                }
             }
         }
     )

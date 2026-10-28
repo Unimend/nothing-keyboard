@@ -14,6 +14,7 @@ interface DestructiveEditingHost {
     val editingConnection: InputConnection?
     val editingSelection: CursorRange
     val editingComposition: CursorRange
+    val editingCompositionText: String
     val hasActiveComposition: Boolean
     val shouldSimulateBackspaceKey: Boolean
 
@@ -22,6 +23,7 @@ interface DestructiveEditingHost {
     fun resetEditingComposition()
     fun sendBackspaceKey()
     fun resetInputEngine()
+    fun restoreInputComposition(text: String)
 }
 
 /**
@@ -90,6 +92,27 @@ class DestructiveEditingController(
         val hasValidComposition = host.hasActiveComposition &&
             composition.start >= 0 && composition.end >= composition.start &&
             composition.end <= editorText.length
+        if (hasValidComposition) {
+            val preedit = host.editingCompositionText.ifEmpty {
+                editorText.substring(composition.start, composition.end)
+            }
+            history.record(
+                DestructiveEditTransaction.RestoreComposition(
+                    deletedText = preedit,
+                    cursorAfterRestore = composition.start
+                )
+            )
+            connection.finishComposingText()
+            connection.withBatchEdit {
+                setSelection(composition.start, composition.end)
+                commitText("", 1)
+                setSelection(composition.start, composition.start)
+            }
+            host.resetEditingComposition()
+            host.resetEditingSelection(composition.start)
+            host.resetInputEngine()
+            return
+        }
         val committedText = if (hasValidComposition) {
             editorText.removeRange(composition.start, composition.end)
         } else {
@@ -127,6 +150,14 @@ class DestructiveEditingController(
     fun undo() {
         val connection = host.editingConnection ?: return
         val edit = history.consume() ?: return
+        if (edit is DestructiveEditTransaction.RestoreComposition) {
+            connection.finishComposingText()
+            host.resetEditingComposition()
+            host.resetEditingSelection(edit.cursorAfterRestore)
+            connection.setSelection(edit.cursorAfterRestore, edit.cursorAfterRestore)
+            host.restoreInputComposition(edit.deletedText)
+            return
+        }
         connection.finishComposingText()
         host.resetEditingComposition()
         connection.withBatchEdit {
@@ -135,6 +166,7 @@ class DestructiveEditingController(
                     performContextMenuAction(android.R.id.selectAll)
                 is DestructiveEditTransaction.RestoreRange ->
                     setSelection(edit.start, edit.start)
+                is DestructiveEditTransaction.RestoreComposition -> error("handled above")
             }
             commitText(edit.deletedText, 1)
             setSelection(edit.cursorAfterRestore, edit.cursorAfterRestore)

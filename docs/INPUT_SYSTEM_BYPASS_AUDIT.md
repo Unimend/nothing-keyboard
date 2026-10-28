@@ -195,6 +195,13 @@ the latest APK smoke test: English input/Return, Editing select/delete/undo, Emo
 delete/undo and Pinyin composition. Candidate font measurement was visually checked in the
 expanded Chinese grid; exhaustive mixed-script/density checks remain pending.
 
+Post-refactor home-device smoke exposed three cross-system contracts that are now explicit. A clear
+gesture during active engine preedit deletes only that preedit; undo replays it through the engine
+instead of restoring raw pinyin as committed document text. Clipboard navigation captures its source
+surface and returns to the same keyboard layout, picker, or editing surface. The toolbar hide-keyboard
+icon resolves through `NothingGlyphRegistry`, like every other semantic function glyph. Regression
+tests cover composition-only clear/undo and clipboard return routing.
+
 ## Gesture cancellation closure
 
 Android ACTION_CANCEL previously reused Up, allowing an interrupted gesture to commit a deletion

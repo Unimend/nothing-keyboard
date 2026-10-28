@@ -34,6 +34,8 @@ class InputWindowManager(private val surfaceSink: SurfaceStateSink) : UniqueView
     private val essentialWindows = mutableMapOf<EssentialWindow.Key, Pair<InputWindow, View?>>()
 
     private var currentWindow: InputWindow? = null
+    val currentSurface
+        get() = currentWindow?.surface
     private var currentView: View? = null
     var isDisposed: Boolean = false
         private set

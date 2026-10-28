@@ -11,6 +11,7 @@ sealed interface InputNavigationCommand {
 
     data class ShowKeyboard(val layout: KeyboardLayout? = null) : InputNavigationCommand
     data object ShowClipboard : InputNavigationCommand
+    data object ReturnFromClipboard : InputNavigationCommand
     data object ShowEditing : InputNavigationCommand
     data class ShowPicker(val kind: PickerKind? = null) : InputNavigationCommand
     data object ShowStatus : InputNavigationCommand

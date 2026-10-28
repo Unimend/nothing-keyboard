@@ -16,8 +16,13 @@ class DestructiveEditingControllerTest {
         var sentBackspace = 0
         var simulateBackspace = true
         var finishedComposition = 0
+        var restoredComposition = ""
         override val editingSelection = CursorRange(0, 3)
         override val editingComposition = CursorRange()
+        override val editingCompositionText: String
+            get() = if (editingComposition.isEmpty()) "" else text.substring(
+                editingComposition.start, editingComposition.end
+            )
         override val hasActiveComposition: Boolean
             get() = editingComposition.isNotEmpty()
         override val shouldSimulateBackspaceKey: Boolean
@@ -68,6 +73,7 @@ class DestructiveEditingControllerTest {
         override fun resetEditingComposition() = editingComposition.clear()
         override fun sendBackspaceKey() { sentBackspace++ }
         override fun resetInputEngine() = Unit
+        override fun restoreInputComposition(text: String) { restoredComposition = text }
     }
 
     @Test
@@ -102,7 +108,7 @@ class DestructiveEditingControllerTest {
     }
 
     @Test
-    fun `clear during pinyin composition restores only committed text at its original cursor`() {
+    fun `clear during pinyin composition affects only preedit and undo restores it through engine`() {
         val editor = Editor().apply {
             text = "abcni"
             start = 5
@@ -113,14 +119,14 @@ class DestructiveEditingControllerTest {
         val controller = DestructiveEditingController(editor)
 
         controller.clearAll()
-        assertEquals("", editor.text)
+        assertEquals("abc", editor.text)
         assertEquals(1, editor.finishedComposition)
-        assertEquals(0, editor.start)
-        assertEquals(0, editor.end)
+        assertEquals(3, editor.start)
+        assertEquals(3, editor.end)
 
         controller.undo()
         assertEquals("abc", editor.text)
-        assertEquals(2, editor.finishedComposition)
+        assertEquals("ni", editor.restoredComposition)
         assertEquals(3, editor.start)
         assertEquals(3, editor.end)
     }
@@ -137,14 +143,9 @@ class DestructiveEditingControllerTest {
         val controller = DestructiveEditingController(editor)
 
         controller.clearAll()
-        // Simulate a late client-preedit callback arriving after the Android clear transaction.
-        editor.text = "ni"
-        editor.start = 2
-        editor.end = 2
-        editor.editingSelection.update(2, 2)
-
         controller.undo()
         assertEquals("abc", editor.text)
+        assertEquals("ni", editor.restoredComposition)
         assertEquals(3, editor.start)
         assertEquals(3, editor.end)
         controller.undo()
@@ -185,6 +186,7 @@ class DestructiveEditingControllerTest {
         controller.undo()
 
         assertEquals("前后", editor.text)
+        assertEquals("ni", editor.restoredComposition)
         assertEquals(1, editor.start)
         assertEquals(editor.start, editor.end)
     }

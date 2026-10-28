@@ -127,7 +127,7 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
             override fun onPaste(entry: ClipboardItem) {
                 editing.commands.execute(EditingCommand.CommitText(entry.text))
                 if (clipboardReturnAfterPaste) {
-                    navigator.navigate(InputNavigationCommand.ShowKeyboard())
+                    navigator.navigate(InputNavigationCommand.ReturnFromClipboard)
                 }
             }
         }

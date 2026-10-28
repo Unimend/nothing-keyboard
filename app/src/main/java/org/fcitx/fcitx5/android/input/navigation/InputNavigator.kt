@@ -20,6 +20,7 @@ import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
+import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
 import org.mechdancer.dependency.manager.ManagedHandler
@@ -33,14 +34,18 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
     private val editing: InputEditingAccess by manager.must()
     private val windowManager: InputWindowManager by manager.must()
     private val modeStore: InputModeStore by manager.must()
+    private var clipboardReturnTarget: InputNavigationCommand = InputNavigationCommand.ShowKeyboard()
 
     fun navigate(command: InputNavigationCommand) {
         if (windowManager.isDisposed) return
         InputCoreDiagnostics.recordNavigation(command.diagnosticName)
         when (command) {
             is InputNavigationCommand.ShowKeyboard -> showKeyboard(command.layout)
-            InputNavigationCommand.ShowClipboard ->
+            InputNavigationCommand.ShowClipboard -> {
+                clipboardReturnTarget = currentReturnTarget()
                 windowManager.attachWindow(ClipboardWindow())
+            }
+            InputNavigationCommand.ReturnFromClipboard -> navigate(clipboardReturnTarget)
             InputNavigationCommand.ShowEditing -> {
                 editing.commands.execute(EditingCommand.FinishComposition)
                 windowManager.attachWindow(TextEditingWindow())
@@ -87,11 +92,31 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             is InputNavigationCommand.ShowKeyboard ->
                 layout?.let { "Keyboard($it)" } ?: "Keyboard"
             InputNavigationCommand.ShowClipboard -> "Clipboard"
+            InputNavigationCommand.ReturnFromClipboard -> "ClipboardReturn"
             InputNavigationCommand.ShowEditing -> "Editing"
             is InputNavigationCommand.ShowPicker -> "Picker(${kind?.name ?: "remembered"})"
             InputNavigationCommand.ShowStatus -> "Status"
             InputNavigationCommand.ShowEditorInfo -> "EditorInfo"
             is InputNavigationCommand.ShowExpandedCandidates ->
                 "ExpandedCandidates(${layout.name})"
+        }
+
+    private fun currentReturnTarget(): InputNavigationCommand = ClipboardReturnPolicy.target(
+        windowManager.currentSurface,
+        modeStore.state.currentKeyboardLayout
+    )
+}
+
+internal object ClipboardReturnPolicy {
+    fun target(surface: InputSurface?, keyboardLayout: KeyboardLayout): InputNavigationCommand =
+        when (surface) {
+            InputSurface.Keyboard -> InputNavigationCommand.ShowKeyboard(keyboardLayout)
+            InputSurface.Editing -> InputNavigationCommand.ShowEditing
+            is InputSurface.Picker -> InputNavigationCommand.ShowPicker(
+                org.fcitx.fcitx5.android.input.mode.PickerKind.fromStorage(surface.kind)
+            )
+            InputSurface.Status -> InputNavigationCommand.ShowStatus
+            InputSurface.EditorInfo -> InputNavigationCommand.ShowEditorInfo
+            else -> InputNavigationCommand.ShowKeyboard(keyboardLayout)
         }
 }

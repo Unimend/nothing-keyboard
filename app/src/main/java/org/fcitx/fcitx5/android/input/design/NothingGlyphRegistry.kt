@@ -25,6 +25,7 @@ object NothingGlyphRegistry {
         R.drawable.ic_baseline_tag_faces_24 -> R.drawable.ic_pixel_face
         R.drawable.ic_baseline_format_quote_24 -> R.drawable.ic_pixel_quote
         R.drawable.ic_baseline_space_bar_24 -> R.drawable.ic_pixel_space
+        R.drawable.ic_baseline_arrow_drop_down_24 -> R.drawable.ic_pixel_hide_keyboard
         else -> source
     }
 }

@@ -17,6 +17,12 @@ sealed interface DestructiveEditTransaction {
         override val deletedText: String,
         override val cursorAfterRestore: Int
     ) : DestructiveEditTransaction
+
+    /** Restores engine-owned preedit through the engine, never as committed document text. */
+    data class RestoreComposition(
+        override val deletedText: String,
+        override val cursorAfterRestore: Int
+    ) : DestructiveEditTransaction
 }
 
 /** One-level undo history owned by our destructive gestures, independent of app/system Undo. */
