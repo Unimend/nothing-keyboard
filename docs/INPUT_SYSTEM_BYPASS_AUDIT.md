@@ -151,3 +151,11 @@ On the Android 12 device, injected DOWN/MOVE/CANCEL sequences on the Emoji backs
 `abc😀` for both upward clear and horizontal range gestures; the cursor ended at 5..5. Normal
 horizontal deletion followed by down-swipe undo also restored `abc😀` at 5..5. These are separate
 from long-press repeat semantics, which may already have committed before cancellation.
+
+## Editor batch boundary
+
+All editor batch operations now use the shared exception-safe `withBatchEdit` helper. Composition
+updates no longer manually pair begin/end. Tests cover normal completion, editor-operation failure,
+and editors that report batching unsupported; a source guard rejects new manual batches inside input
+systems. This closes batches on failure; it does not claim to roll back text already accepted by an
+external application's InputConnection.

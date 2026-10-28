@@ -295,53 +295,53 @@ class EditorController(
     fun updateComposingText(text: EngineText) {
         val ic = connection() ?: return
         val lastSelection = selection.latest
-        ic.beginBatchEdit()
-        if ((composingText.segments == text.segments)) {
-            // composing text content is up-to-date
-            // update cursor only when it's not empty AND cursor position is valid
-            if (text.plainText.length > 0 && text.cursor >= 0) {
-                val p = text.cursor + composing.start
-                if (p != lastSelection.start) {
-                    Timber.d("updateComposingText: set Android selection ($p, $p)")
-                    ic.setSelection(p, p)
-                    selection.predict(p)
-                }
-            }
-        } else {
-            // composing text content changed
-            Timber.d("updateComposingText: '$text' lastSelection=$lastSelection")
-            if (text.isEmpty) {
-                if (composing.isEmpty()) {
-                    // do not reset saved selection range when incoming composing
-                    // and saved composing range are both empty:
-                    // composing.start is invalid when it's empty.
-                    selection.predict(lastSelection.start)
-                } else {
-                    // clear composing text, put cursor at start of original composing
-                    selection.predict(composing.start)
-                    composing.clear()
-                }
-                ic.setComposingText("", 1)
-            } else {
-                val start = if (composing.isEmpty()) lastSelection.start else composing.start
-                composing.update(start, start + text.plainText.length)
-                // skip cursor reposition when:
-                // - preedit cursor is at the end
-                // - cursor position is invalid
-                if (text.cursor == text.plainText.length || text.cursor < 0) {
-                    selection.predict(composing.end)
-                    ic.setComposingText(renderEngineText(text, highlightColor), 1)
-                } else {
+        ic.withBatchEdit {
+            if ((composingText.segments == text.segments)) {
+                // composing text content is up-to-date
+                // update cursor only when it's not empty AND cursor position is valid
+                if (text.plainText.length > 0 && text.cursor >= 0) {
                     val p = text.cursor + composing.start
-                    selection.predict(p)
-                    ic.setComposingText(renderEngineText(text, highlightColor), 1)
-                    ic.setSelection(p, p)
+                    if (p != lastSelection.start) {
+                        Timber.d("updateComposingText: set Android selection ($p, $p)")
+                        ic.setSelection(p, p)
+                        selection.predict(p)
+                    }
                 }
+            } else {
+                // composing text content changed
+                Timber.d("updateComposingText: '$text' lastSelection=$lastSelection")
+                if (text.isEmpty) {
+                    if (composing.isEmpty()) {
+                        // do not reset saved selection range when incoming composing
+                        // and saved composing range are both empty:
+                        // composing.start is invalid when it's empty.
+                        selection.predict(lastSelection.start)
+                    } else {
+                        // clear composing text, put cursor at start of original composing
+                        selection.predict(composing.start)
+                        composing.clear()
+                    }
+                    ic.setComposingText("", 1)
+                } else {
+                    val start = if (composing.isEmpty()) lastSelection.start else composing.start
+                    composing.update(start, start + text.plainText.length)
+                    // skip cursor reposition when:
+                    // - preedit cursor is at the end
+                    // - cursor position is invalid
+                    if (text.cursor == text.plainText.length || text.cursor < 0) {
+                        selection.predict(composing.end)
+                        ic.setComposingText(renderEngineText(text, highlightColor), 1)
+                    } else {
+                        val p = text.cursor + composing.start
+                        selection.predict(p)
+                        ic.setComposingText(renderEngineText(text, highlightColor), 1)
+                        ic.setSelection(p, p)
+                    }
+                }
+                Timber.d("updateComposingText: composing=$composing")
             }
-            Timber.d("updateComposingText: composing=$composing")
+            composingText = text
         }
-        composingText = text
-        ic.endBatchEdit()
     }
 
     /**

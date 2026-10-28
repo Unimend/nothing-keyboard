@@ -11,6 +11,14 @@ import org.junit.Test
 /** Prevents legacy UI code from regaining direct access to centralized input systems. */
 class InputArchitectureBoundaryTest {
     @Test
+    fun `editor operations use the exception-safe batch boundary`() {
+        val violations = inputSources().filter {
+            Regex("""\b(beginBatchEdit|endBatchEdit)\s*\(""").containsMatchIn(it.readText())
+        }
+        assertTrue("Unmanaged editor batch: $violations", violations.isEmpty())
+    }
+
+    @Test
     fun `touch cancellation has a non-committing shared cleanup path`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/keyboard/CustomGestureView.kt"

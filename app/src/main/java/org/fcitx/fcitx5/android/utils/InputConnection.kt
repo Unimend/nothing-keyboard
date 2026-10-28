@@ -10,8 +10,11 @@ import android.view.inputmethod.InputConnection
 
 fun InputConnection.withBatchEdit(block: InputConnection.() -> Unit) {
     beginBatchEdit()
-    block.invoke(this)
-    endBatchEdit()
+    try {
+        block.invoke(this)
+    } finally {
+        endBatchEdit()
+    }
 }
 
 fun InputConnection.monitorCursorAnchor(enable: Boolean = true): Boolean {
