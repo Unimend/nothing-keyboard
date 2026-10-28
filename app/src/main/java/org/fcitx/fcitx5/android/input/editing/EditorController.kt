@@ -123,7 +123,7 @@ class EditorController(
 
             override fun restoreInputComposition(text: String) {
                 submitEngineCommand(EngineCommand.Reset)
-                text.codePoints().forEach { codePoint ->
+                text.forEachCodePointCompat { codePoint ->
                     submitEngineCommand(EngineCommand.SendKeyText(Character.toString(codePoint)))
                 }
             }

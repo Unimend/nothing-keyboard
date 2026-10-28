@@ -68,10 +68,6 @@
     <string name="reload_config">Recargar configuración</string>
     <string name="input_method_options">Opciones de método de entrada</string>
     <string name="theme">Tema</string>
-    <string name="brightness">Brillo</string>
-    <string name="configure">Configurar</string>
-    <string name="choose_image">Elegir imagen...</string>
-    <string name="dark_keys">Teclas oscuras</string>
     <string name="navbar_background">Fondo de barra de navegación</string>
     <string name="navbar_bkg_none">Sin fondo</string>
     <string name="navbar_bkg_color_only">Seguir color de teclado</string>
@@ -80,12 +76,8 @@
     <string name="expand_toolbar_by_default">Expandir barra de htas. de manera predeterminada</string>
     <string name="disable_animation">Desactivar animación</string>
     <string name="import_from_file">Importar desde archivo...</string>
-    <string name="light_mode_theme">Tema en modo claro</string>
-    <string name="dark_mode_theme">Tema en modo oscuro</string>
-    <string name="new_theme">Tema nuevo</string>
     <string name="skip">Omitir</string>
     <string name="none">Ninguno</string>
-    <string name="theme_migrated">El tema se migró a la versión actual</string>
     <string name="edit_clipboard">Editar portapapeles</string>
     <string name="clipboard_edit_text_hint">Contenido del portapapeles</string>
     <string name="portrait">Vertical</string>
@@ -103,12 +95,9 @@
     <string name="table_dict_select_title">Diccionario de tablas (.dict o .txt)</string>
     <string name="space_behavior_none">Ninguno</string>
     <string name="space_behavior_enumerate">Enumerar métodos de entrada</string>
-    <string name="delete_theme">Eliminar tema</string>
-    <string name="delete_theme_msg">¿Realmente quiere eliminar el tema «%1$s»?</string>
     <string name="plugins">Complementos</string>
     <string name="plugins_failed">Falló la carga</string>
     <string name="main_program">programa principal</string>
-    <string name="edit_theme">Editar tema</string>
     <string name="show_voice_input_button">Mostrar botón de entrada por voz</string>
     <string name="no_plugins">No hay ningún complemento disponible</string>
     <string name="whether_reset_switch_preference">¿Quiere restablecer la preferencia a su valor predeterminado?</string>
@@ -116,7 +105,6 @@
     <string name="following_system_settings">Seguir configuración del sistema</string>
     <string name="button_sound">Sonido al presionar teclas</string>
     <string name="button_sound_volume">Volumen de sonido al presionar teclas</string>
-    <string name="disable_it">Desactivarlo</string>
     <string name="export_user_data">Exportar datos de uso</string>
     <string name="import_user_data">Importar datos de uso</string>
     <string name="restart_channel">Reinicio de aplicación</string>
