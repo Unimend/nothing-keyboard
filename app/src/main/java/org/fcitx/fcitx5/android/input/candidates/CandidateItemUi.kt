@@ -15,7 +15,6 @@ import androidx.core.text.color
 import org.fcitx.fcitx5.android.input.session.EngineCandidate
 import org.fcitx.fcitx5.android.input.candidates.model.commentForDisplay
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
@@ -24,7 +23,7 @@ import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
-import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
 import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import splitties.dimensions.dp
@@ -39,7 +38,6 @@ import android.view.animation.LinearInterpolator
 
 class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
-    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
     private val visualStyle = theme.inputSurfaceStyle.candidate
     private val colors = theme.toInputColorScheme()
 
@@ -104,13 +102,13 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         if (index == 0 && candidate.text.isNotEmpty() && candidate.text != lastPrimaryText) {
             lastPrimaryText = candidate.text
             markerAnimator?.cancel()
-            if (disableAnimation) {
+            if (!InputMotionSystem.enabled) {
                 nothingMarkerDrawable?.setActiveDots(NothingDesignTokens.Candidate.MarkerRows)
             } else {
                 markerAnimator = ValueAnimator.ofInt(
                     0, NothingDesignTokens.Candidate.MarkerRows
                 ).apply {
-                    duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
+                    duration = InputMotionSystem.duration(InputMotionRole.QuickFeedback)
                     interpolator = LinearInterpolator()
                     addUpdateListener {
                         nothingMarkerDrawable?.setActiveDots(it.animatedValue as Int)

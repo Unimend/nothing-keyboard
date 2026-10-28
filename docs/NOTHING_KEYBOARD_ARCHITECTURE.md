@@ -60,9 +60,9 @@ but that does not mean the entire product has passed every device/lifecycle case
 | 12. Gestures | KeyboardGesturePolicy + shared bindings | Cancel verified on device; multi-touch matrix remains |
 | 13. Typography | NothingTypography + shared measurer/renderer | Font scale and fallback matrix |
 | 14. Functional glyphs | NothingGlyphRegistry | Missing custom assets remain explicit fallbacks |
-| 15. Layout/theme | NothingDesignTokens + semantic styles | Scattered dimensions/preferences audit |
-| 16. Motion/feedback | InputMotionPolicy + KeyboardFeedback | Remaining surface-local animator cleanup |
-| 17. Popups | PopupAction / PopupResult + PopupComponent | Geometry ownership and configuration changes |
+| 15. Layout/theme | NothingDesignTokens + semantic surface/color styles | Device/font-scale visual matrix |
+| 16. Motion/feedback | InputMotionSystem + InputMotionPolicy + KeyboardFeedback | Device refresh-rate feel tuning |
+| 17. Popups | Popup contract + PopupComponent + PopupGeometry | Multi-window and unusual inset device matrix |
 | 18. Settings, persistence and diagnostics | AppPrefs/data layer + InputCoreDiagnostics/tests | Settings/data ownership is not yet fully audited |
 
 ### 当前完整架构树与完成状态
@@ -174,25 +174,28 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
 │   │   ├── ReturnKeyGlyphPolicy：按编辑器语义选择图标
 │   │   └── 未定制图标明确回退原资源，不在界面私自替换
 │   │
-│   ├── 15. 🟡 布局、主题与颜色系统
+│   ├── 15. ✅ 布局、主题与颜色系统
 │   │   ├── NothingDesignTokens：基础设计令牌
 │   │   ├── InputSurfaceStyle：各类界面的完整语义几何
 │   │   ├── InputColorScheme：输入界面专用颜色角色
 │   │   ├── Theme → InputColorScheme：旧主题唯一兼容入口
 │   │   ├── 主键盘、候选、编辑、剪贴板、Picker、弹窗已接入
-│   │   └── 待完成：少量平台边界与散落尺寸/偏好审计
+│   │   ├── 弹窗尺寸同样由 PopupSurfaceStyle 统一提供
+│   │   └── 架构测试禁止普通渲染器重新读取旧 Theme 颜色字段
 │   │
-│   ├── 16. 🟡 动画与反馈系统
+│   ├── 16. ✅ 动画与反馈系统
 │   │   ├── InputMotionRole：语义动效类型
 │   │   ├── InputMotionPolicy：统一时长与禁用策略
+│   │   ├── InputMotionSystem：动画设置唯一运行时入口
 │   │   ├── KeyboardFeedback：点阵反馈与触觉反馈入口
-│   │   └── 待完成：界面局部 Animator 清理与整体动画编排
+│   │   └── 所有界面动画、滚动和延时反馈均读取同一套开关与时长
 │   │
-│   └── 17. 🟡 弹窗系统
+│   └── 17. ✅ 弹窗系统
 │       ├── PopupAction / PopupResult：弹窗语义模型
 │       ├── PopupComponent：弹窗生命周期所有者
-│       ├── 长按字符、按键菜单和候选菜单
-│       └── 待完成：几何计算、屏幕边缘与配置变化审计
+│       ├── PopupGeometry：纯函数计算并限制四个屏幕边缘
+│       ├── 长按字符、按键菜单和候选菜单统一使用同一放置规则
+│       └── 尺寸变化时销毁旧弹窗，禁止继续使用失效坐标
 │
 └── 应用支持层
     │
@@ -204,9 +207,9 @@ Nothing Keyboard（Fcitx 只保留最底层输入引擎边界）
         └── 待完成：设置职责、持久化边界和诊断入口整体审计
 ```
 
-当前共计：`12 个已完成`、`6 个进行中`、`0 个未开始`。下一批优先完成 15 号视觉
-系统的剩余边界，然后处理 17 号弹窗几何与 16 号动画编排；Android 生命周期和设置
-系统保持为独立后续阶段，不为了增加绿色数量而混入当前视觉改造。
+当前共计：`15 个已完成`、`3 个进行中`、`0 个未开始`。当前仍在进行的是 01 号
+Android 生命周期、04 号编辑器平台兼容矩阵和 18 号设置/持久化/诊断系统；它们保持
+为独立后续阶段，不为了增加绿色数量而混入本轮视觉与交互改造。
 
 ### Visual-system upgrade
 

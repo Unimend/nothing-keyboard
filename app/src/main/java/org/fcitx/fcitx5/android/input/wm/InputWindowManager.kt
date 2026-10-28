@@ -10,10 +10,9 @@ import androidx.transition.Transition
 import androidx.transition.TransitionManager
 import androidx.transition.TransitionSet
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
-import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
 import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.session.SurfaceStateSink
 import org.mechdancer.dependency.DynamicScope
@@ -39,22 +38,20 @@ class InputWindowManager(private val surfaceSink: SurfaceStateSink) : UniqueView
     var isDisposed: Boolean = false
         private set
 
-    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
-
     private fun prepareAnimation(
         exitAnimation: Transition?,
         enterAnimation: Transition?,
         remove: View,
         add: View
     ) {
-        if (disableAnimation)
+        if (!InputMotionSystem.enabled)
             return
         enterAnimation?.addTarget(add)
         exitAnimation?.addTarget(remove)
         TransitionManager.beginDelayedTransition(view, TransitionSet().apply {
             enterAnimation?.let { addTransition(it) }
             exitAnimation?.let { addTransition(it) }
-            duration = InputMotionPolicy.duration(true, InputMotionRole.WindowTransition)
+            duration = InputMotionSystem.duration(InputMotionRole.WindowTransition)
         })
     }
 

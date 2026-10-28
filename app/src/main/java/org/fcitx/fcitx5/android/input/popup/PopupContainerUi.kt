@@ -28,12 +28,26 @@ abstract class PopupContainerUi(
     /**
      * Offset on X axis to put this [PopupKeyboardUi] relative to popup trigger view [triggerBounds]
      */
-    abstract val offsetX: Int
+    protected abstract val desiredOffsetX: Int
 
     /**
      * Offset on Y axis to put this [PopupKeyboardUi] relative to popup trigger view [triggerBounds]
      */
-    abstract val offsetY: Int
+    protected abstract val desiredOffsetY: Int
+
+    protected abstract val popupWidth: Int
+    protected abstract val popupHeight: Int
+
+    private val placement by lazy {
+        PopupGeometry.place(
+            outerBounds.left, outerBounds.top, outerBounds.right, outerBounds.bottom,
+            triggerBounds.left, triggerBounds.top,
+            desiredOffsetX, desiredOffsetY, popupWidth, popupHeight
+        )
+    }
+
+    val offsetX get() = placement.offsetX
+    val offsetY get() = placement.offsetY
 
     fun calcInitialFocusedColumn(
         columnCount: Int,

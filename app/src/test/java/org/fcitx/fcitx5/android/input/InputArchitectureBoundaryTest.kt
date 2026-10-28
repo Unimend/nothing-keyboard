@@ -272,6 +272,63 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `input renderers cannot bypass semantic color roles`() {
+        val allowed = setOf(
+            "design/InputColorScheme.kt",
+            // Android navigation-bar compatibility depends on persisted built-in theme identity.
+            "NavigationBarManager.kt"
+        )
+        val rawColor = Regex(
+            """theme\.(backgroundColor|keyboardColor|barColor|keyBackgroundColor|keyTextColor|""" +
+                """altKeyBackgroundColor|altKeyTextColor|accentKeyBackgroundColor|""" +
+                """accentKeyTextColor|spaceBarColor|keyPressHighlightColor|keyShadowColor|""" +
+                """dividerColor|candidateTextColor|candidateLabelColor|candidateCommentColor|""" +
+                """popupBackgroundColor|popupTextColor|clipboardEntryColor|""" +
+                """genericActiveBackgroundColor|genericActiveForegroundColor)\b"""
+        )
+        val root = sourceRoot.resolve("org/fcitx/fcitx5/android/input")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(root).invariantSeparatorsPath
+            relative !in allowed && rawColor.containsMatchIn(file.readText())
+        }
+        assertTrue("Raw theme colors escaped semantic adapter: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `popup geometry and dimensions have centralized owners`() {
+        val component = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/popup/PopupComponent.kt"
+        ).readText()
+        val container = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/popup/PopupContainerUi.kt"
+        ).readText()
+        assertFalse("Popup component embeds visual dp literals", Regex("""context\.dp\(-?\d+""")
+            .containsMatchIn(component))
+        assertTrue("Popup containers must use edge-safe geometry", "PopupGeometry.place(" in container)
+        assertTrue("Configuration changes must clear stale popup coordinates",
+            "v.post(::dismissAll)" in component)
+    }
+
+    @Test
+    fun `motion preference and timing have one runtime gateway`() {
+        val allowed = setOf(
+            "FcitxInputMethodService.kt", // observes preference only to rebuild the input surface
+            "feedback/InputMotionPolicy.kt"
+        )
+        val root = sourceRoot.resolve("org/fcitx/fcitx5/android/input")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(root).invariantSeparatorsPath
+            relative !in allowed && "disableAnimation" in file.readText()
+        }
+        assertTrue("Animation preference escaped motion gateway: $violations", violations.isEmpty())
+        val directTiming = inputSources().filter { file ->
+            file.name != "InputMotionPolicy.kt" &&
+                "NothingDesignTokens.Motion" in file.readText()
+        }
+        assertTrue("Motion timing escaped semantic gateway: $directTiming", directTiming.isEmpty())
+    }
+
+    @Test
     fun `service cannot implement native engine command execution`() {
         val source = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"

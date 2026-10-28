@@ -18,6 +18,7 @@ import org.fcitx.fcitx5.android.input.dependency.inputView
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.runtime.InputSessionAccess
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
@@ -37,6 +38,7 @@ class PopupComponent :
     private val inputSession: InputSessionAccess by manager.must()
     private val context by manager.context()
     private val theme by manager.theme()
+    private val style by lazy { theme.inputSurfaceStyle.popup }
 
     private val showingEntryUi = HashMap<Int, PopupEntryUi>()
     private val dismissJobs = HashMap<Int, Job>()
@@ -49,13 +51,13 @@ class PopupComponent :
         context.dp(ThemeManager.prefs.keyVerticalMargin.getValue())
     }
     private val popupWidth by lazy {
-        context.dp(38)
+        context.dp(style.previewWidthDp)
     }
     private val popupHeight by lazy {
-        context.dp(116)
+        context.dp(style.previewHeightDp)
     }
     private val popupKeyHeight by lazy {
-        context.dp(48)
+        context.dp(style.keySizeDp)
     }
     private val popupRadius by lazy {
         context.dp(ThemeManager.prefs.keyRadius.getValue()).toFloat()
@@ -73,10 +75,15 @@ class PopupComponent :
             isFocusable = false
 
             addOnLayoutChangeListener { v, left, top, right, bottom, _, _, _, _ ->
+                val previous = Rect(rootBounds)
                 val (x, y) = rootLocation.also { v.getLocationInWindow(it) }
                 val width = right - left
                 val height = bottom - top
                 rootBounds.set(x, y, x + width, y + height)
+                if (!previous.isEmpty && previous != rootBounds &&
+                    (showingEntryUi.isNotEmpty() || showingContainerUi.isNotEmpty())) {
+                    v.post(::dismissAll)
+                }
             }
         }
     }

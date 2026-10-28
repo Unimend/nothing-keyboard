@@ -6,7 +6,6 @@ package org.fcitx.fcitx5.android.input.feedback
 import android.view.View
 import android.view.Gravity
 import android.graphics.drawable.Drawable
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
@@ -17,8 +16,6 @@ import java.util.WeakHashMap
 
 /** Shared visual and haptic language for gestures on every keyboard surface. */
 object KeyboardFeedback {
-    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
-
     private data class ActiveEffect(
         val drawable: Drawable,
         val step: Runnable,
@@ -40,10 +37,7 @@ object KeyboardFeedback {
     fun afterConfirmation(view: View, theme: Theme, action: () -> Unit) {
         confirmation(view, theme)
         pendingActions.remove(view)?.let(view::removeCallbacks)
-        val delay = InputMotionPolicy.confirmationActionDelay(
-            enabled = !disableAnimation,
-            nothingStyle = theme.isNothingStyle
-        )
+        val delay = InputMotionSystem.confirmationActionDelay(theme)
         if (delay == 0L) {
             action()
             return
@@ -66,7 +60,7 @@ object KeyboardFeedback {
     }
 
     private fun showNothingConfirmation(view: View, theme: Theme) {
-        if (disableAnimation || !theme.isNothingStyle || view.width <= 0 || view.height <= 0) return
+        if (!InputMotionSystem.enabled || !theme.isNothingStyle || view.width <= 0 || view.height <= 0) return
         cancelVisual(view)
         val tokens = NothingDesignTokens.GestureFeedback
         val dots = NothingDotMatrixDrawable(
@@ -93,9 +87,9 @@ object KeyboardFeedback {
                 active += 1
                 dots.setActiveDots(active)
                 if (active < tokens.Columns * tokens.Rows) {
-                    view.postDelayed(this, NothingDesignTokens.Motion.DotStepMs)
+                    view.postDelayed(this, InputMotionSystem.duration(InputMotionRole.DotStep))
                 } else {
-                    view.postDelayed(removal, NothingDesignTokens.Motion.QuickFeedbackMs)
+                    view.postDelayed(removal, InputMotionSystem.duration(InputMotionRole.QuickFeedback))
                 }
             }
         }

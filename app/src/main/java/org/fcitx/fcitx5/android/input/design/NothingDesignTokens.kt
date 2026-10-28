@@ -85,6 +85,16 @@ object NothingDesignTokens {
         const val MarkerDotGapDp = 2
     }
 
+    object Popup {
+        const val PreviewWidthDp = 38
+        const val PreviewHeightDp = 116
+        const val KeySizeDp = 48
+        const val MenuIconDiameterDp = 33
+        const val MenuFocusedIconDiameterDp = 34
+        const val MenuOffsetYDp = -52
+        const val ElevationDp = 2f
+    }
+
     object Candidate {
         const val ExpandedRowHeightDp = 48
         const val MinimumItemWidthDp = 48

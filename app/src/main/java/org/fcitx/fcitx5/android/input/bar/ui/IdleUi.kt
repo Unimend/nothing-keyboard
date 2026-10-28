@@ -16,10 +16,9 @@ import android.view.animation.TranslateAnimation
 import android.widget.Space
 import android.widget.ViewAnimator
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
-import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
 import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.bar.ui.idle.ButtonsBarUi
 import org.fcitx.fcitx5.android.input.bar.ui.idle.ClipboardSuggestionUi
@@ -58,7 +57,6 @@ class IdleUi(
     var currentState = State.Empty
         private set
 
-    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
 
     private var inPrivate = false
 
@@ -93,7 +91,7 @@ class IdleUi(
 
     private val inAnimation by lazy {
         AnimationSet(true).apply {
-            duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
+            duration = InputMotionSystem.duration(InputMotionRole.QuickFeedback)
             addAnimation(AlphaAnimation(0f, 1f))
             // 2 stands for Animation.RELATIVE_TO_PARENT
             addAnimation(TranslateAnimation(2, -0.3f * translateDirection, 2, 0f, 0, 0f, 0, 0f))
@@ -102,7 +100,7 @@ class IdleUi(
 
     private val outAnimation by lazy {
         AnimationSet(true).apply {
-            duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
+            duration = InputMotionSystem.duration(InputMotionRole.QuickFeedback)
             addAnimation(AlphaAnimation(1f, 0f))
             addAnimation(TranslateAnimation(2, 0f, 2, -0.3f * translateDirection, 0, 0f, 0, 0f))
         }
@@ -185,7 +183,7 @@ class IdleUi(
     }
 
     private fun enableSlideTransition(inTarget: View, outTarget: View, inGravity: Int, outGravity: Int) {
-        val duration = InputMotionPolicy.duration(true, InputMotionRole.QuickFeedback)
+        val duration = InputMotionSystem.duration(InputMotionRole.QuickFeedback)
         val slideIn = Slide(inGravity).apply { this.duration = duration }
         val slideOut = Slide(outGravity).apply { this.duration = duration }
         slideIn.addTarget(inTarget)
@@ -202,7 +200,7 @@ class IdleUi(
         Timber.d("Switch idle ui to $state")
         if (
             !fromUser ||
-            disableAnimation ||
+            !InputMotionSystem.enabled ||
             (state == State.InlineSuggestion || currentState == State.InlineSuggestion) ||
             (state == State.NumberRow || currentState == State.NumberRow)
         ) {
@@ -220,13 +218,13 @@ class IdleUi(
         if (state == State.NumberRow) {
             numberRow.keyActionListener = commonKeyActionListener.listener
             numberRow.popupActionListener = popup.listener
-            if (fromUser && !disableAnimation) {
+            if (fromUser && InputMotionSystem.enabled) {
                 enableSlideTransition(numberRow, idleBody, Gravity.END, Gravity.START)
             }
             numberRow.visibility = View.VISIBLE
             idleBody.visibility = View.GONE
         } else if (currentState == State.NumberRow) {
-            if (fromUser && !disableAnimation) {
+            if (fromUser && InputMotionSystem.enabled) {
                 enableSlideTransition(idleBody, numberRow, Gravity.START, Gravity.END)
             }
             idleBody.visibility = View.VISIBLE

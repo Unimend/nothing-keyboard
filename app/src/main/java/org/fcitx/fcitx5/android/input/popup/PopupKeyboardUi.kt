@@ -54,7 +54,7 @@ class PopupKeyboardUi(
     private val radius: Float,
     private val keyWidth: Int,
     private val keyHeight: Int,
-    private val popupHeight: Int,
+    private val previewHeight: Int,
     private val keys: Array<String>,
     private val labels: Array<String>
 ) : PopupContainerUi(ctx, theme, outerBounds, triggerBounds, onDismissSelf) {
@@ -134,8 +134,10 @@ class PopupKeyboardUi(
      * Applying only `1.` parts of both X and Y offset, the origin should transform from `o` to `p`.
      * `2.` parts of both offset transform it from `p` to `c`.
      */
-    override val offsetX = ((triggerBounds.width() - keyWidth) / 2) - (keyWidth * focusColumn)
-    override val offsetY = (triggerBounds.height() - popupHeight) - (keyHeight * (rowCount - 1))
+    override val desiredOffsetX = ((triggerBounds.width() - keyWidth) / 2) - (keyWidth * focusColumn)
+    override val desiredOffsetY = (triggerBounds.height() - previewHeight) - (keyHeight * (rowCount - 1))
+    override val popupWidth = keyWidth * columnCount
+    override val popupHeight = keyHeight * rowCount
 
     private val columnOrder = createColumnOrder(columnCount, focusColumn)
 

@@ -3,10 +3,14 @@
  */
 package org.fcitx.fcitx5.android.input.feedback
 
+import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.data.theme.Theme
 
 enum class InputMotionRole(val durationMs: Long) {
     InstantFeedback(NothingDesignTokens.Motion.InstantFeedbackMs),
+    DotStep(NothingDesignTokens.Motion.DotStepMs),
     QuickFeedback(NothingDesignTokens.Motion.QuickFeedbackMs),
     WindowTransition(NothingDesignTokens.Motion.WindowTransitionMs),
     CapsStateChange(NothingDesignTokens.Motion.CapsFeedbackMs),
@@ -24,4 +28,16 @@ object InputMotionPolicy {
         enabled && nothingStyle,
         InputMotionRole.DestructiveConfirmation.durationMs
     )
+}
+
+/** The single runtime gateway for animation preference and semantic motion timing. */
+object InputMotionSystem {
+    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
+
+    val enabled: Boolean get() = !disableAnimation
+
+    fun duration(role: InputMotionRole): Long = InputMotionPolicy.duration(enabled, role)
+
+    fun confirmationActionDelay(theme: Theme): Long =
+        InputMotionPolicy.confirmationActionDelay(enabled, theme.isNothingStyle)
 }

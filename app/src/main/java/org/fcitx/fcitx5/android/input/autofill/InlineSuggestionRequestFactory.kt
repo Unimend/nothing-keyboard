@@ -18,6 +18,7 @@ import androidx.autofill.inline.common.ViewStyle
 import androidx.autofill.inline.v1.InlineSuggestionUi
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import splitties.dimensions.dp
 
 /** Android autofill presentation construction, independent of IME lifecycle orchestration. */
@@ -25,9 +26,10 @@ object InlineSuggestionRequestFactory {
     @SuppressLint("RestrictedApi")
     @RequiresApi(Build.VERSION_CODES.R)
     fun create(context: Context, theme: Theme): InlineSuggestionsRequest {
+        val colors = theme.toInputColorScheme()
         val chipDrawable =
             if (theme.isDark) R.drawable.bkg_inline_suggestion_dark else R.drawable.bkg_inline_suggestion_light
-        val chipBg = Icon.createWithResource(context, chipDrawable).setTint(theme.keyTextColor)
+        val chipBg = Icon.createWithResource(context, chipDrawable).setTint(colors.keyContent)
         val style = InlineSuggestionUi.newStyleBuilder()
             .setSingleIconChipStyle(
                 ViewStyle.Builder()
@@ -44,24 +46,24 @@ object InlineSuggestionRequestFactory {
             .setTitleStyle(
                 TextViewStyle.Builder()
                     .setLayoutMargin(context.dp(4), 0, context.dp(4), 0)
-                    .setTextColor(theme.keyTextColor)
+                    .setTextColor(colors.keyContent)
                     .setTextSize(14f)
                     .build()
             )
             .setSubtitleStyle(
                 TextViewStyle.Builder()
-                    .setTextColor(theme.altKeyTextColor)
+                    .setTextColor(colors.alternateKeyContent)
                     .setTextSize(12f)
                     .build()
             )
             .setStartIconStyle(
                 ImageViewStyle.Builder()
-                    .setTintList(ColorStateList.valueOf(theme.altKeyTextColor))
+                    .setTintList(ColorStateList.valueOf(colors.alternateKeyContent))
                     .build()
             )
             .setEndIconStyle(
                 ImageViewStyle.Builder()
-                    .setTintList(ColorStateList.valueOf(theme.altKeyTextColor))
+                    .setTintList(ColorStateList.valueOf(colors.alternateKeyContent))
                     .build()
             )
             .build()

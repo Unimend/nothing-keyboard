@@ -11,7 +11,6 @@ import android.view.View
 import android.widget.ImageView
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
@@ -20,6 +19,7 @@ import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
+import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
 import org.fcitx.fcitx5.android.utils.borderlessRippleDrawable
 import org.fcitx.fcitx5.android.utils.circlePressHighlightDrawable
 import splitties.dimensions.dp
@@ -33,10 +33,6 @@ import splitties.views.imageResource
 import splitties.views.padding
 
 class ToolButton(context: Context) : CustomGestureView(context) {
-
-    companion object {
-        val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
-    }
 
     private val image = imageView {
         isClickable = false
@@ -99,7 +95,7 @@ class ToolButton(context: Context) : CustomGestureView(context) {
     }
 
     fun setPressHighlightColor(@ColorInt color: Int) {
-        background = if (disableAnimation) {
+        background = if (!InputMotionSystem.enabled) {
             circlePressHighlightDrawable(color)
         } else {
             borderlessRippleDrawable(

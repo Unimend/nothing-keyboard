@@ -17,7 +17,7 @@ import org.fcitx.fcitx5.android.input.engine.EngineKeyModifier
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
+import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
 import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
@@ -33,7 +33,6 @@ class TextKeyboard(
     theme: Theme
 ) : BaseKeyboard(context, theme, Layout) {
 
-    private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
     private val colors = theme.toInputColorScheme()
 
     enum class CapsState { None, Once, Lock }
@@ -275,7 +274,7 @@ class TextKeyboard(
                     else colors.accentContainer
                 )
                 animate().cancel()
-                if (disableAnimation) {
+                if (!InputMotionSystem.enabled) {
                     alpha = 1f
                     scaleX = 1f
                     scaleY = 1f
@@ -287,7 +286,7 @@ class TextKeyboard(
                         .alpha(1f)
                         .scaleX(1f)
                         .scaleY(1f)
-                        .setDuration(InputMotionPolicy.duration(true, InputMotionRole.CapsStateChange))
+                        .setDuration(InputMotionSystem.duration(InputMotionRole.CapsStateChange))
                         .setInterpolator(DecelerateInterpolator())
                         .start()
                 }

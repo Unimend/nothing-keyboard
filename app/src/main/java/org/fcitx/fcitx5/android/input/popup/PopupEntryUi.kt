@@ -13,6 +13,7 @@ import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.centerHorizontally
 import splitties.views.dsl.constraintlayout.constraintLayout
@@ -27,6 +28,7 @@ import splitties.views.gravityCenter
 class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeight: Int, radius: Float) : Ui {
 
     private val colors = theme.toInputColorScheme()
+    private val style = theme.inputSurfaceStyle.popup
 
     val textView = view(::AutoScaleTextView) {
         gravity = gravityCenter
@@ -39,7 +41,7 @@ class PopupEntryUi(override val ctx: Context, private val theme: Theme, keyHeigh
             setColor(this@PopupEntryUi.colors.popupContainer)
         }
         outlineProvider = ViewOutlineProvider.BACKGROUND
-        elevation = dp(2f)
+        elevation = dp(style.elevationDp)
         add(textView, lParams(matchParent, keyHeight) {
             topOfParent()
             centerHorizontally()

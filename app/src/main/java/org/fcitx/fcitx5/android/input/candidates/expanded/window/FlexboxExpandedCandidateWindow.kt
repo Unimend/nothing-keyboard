@@ -84,7 +84,7 @@ class FlexboxExpandedCandidateWindow :
             startSmoothScroll(object : LinearSmoothScroller(context) {
                 override fun getVerticalSnapPreference() = SNAP_TO_END
                 override fun calculateSpeedPerPixel(dm: DisplayMetrics?) =
-                    if (disableAnimation) Float.MIN_VALUE else super.calculateSpeedPerPixel(dm)
+                    if (!motionEnabled) Float.MIN_VALUE else super.calculateSpeedPerPixel(dm)
             }.apply { targetPosition = prev })
         }
     }
@@ -96,7 +96,7 @@ class FlexboxExpandedCandidateWindow :
             startSmoothScroll(object : LinearSmoothScroller(context) {
                 override fun getVerticalSnapPreference() = SNAP_TO_START
                 override fun calculateSpeedPerPixel(dm: DisplayMetrics?) =
-                    if (disableAnimation) Float.MIN_VALUE else super.calculateSpeedPerPixel(dm)
+                    if (!motionEnabled) Float.MIN_VALUE else super.calculateSpeedPerPixel(dm)
             }.apply { targetPosition = next })
         }
     }

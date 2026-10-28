@@ -14,6 +14,7 @@ import androidx.core.graphics.ColorUtils
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
+import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.core.add
@@ -32,14 +33,15 @@ class PopupMenuUi(
     private val items: Array<KeyDef.Popup.Menu.Item>
 ) : PopupContainerUi(ctx, theme, outerBounds, triggerBounds, onDismissSelf) {
 
-    private val keySize = ctx.dp(48)
+    private val style = theme.inputSurfaceStyle.popup
+    private val keySize = ctx.dp(style.keySizeDp)
     private val colors = theme.toInputColorScheme()
 
     private val inactiveBackground = InsetDrawable(
         ShapeDrawable(OvalShape()).apply {
             paint.color = colors.accentContainer
         },
-        (keySize - ctx.dp(33)) / 2
+        (keySize - ctx.dp(style.menuIconDiameterDp)) / 2
     )
 
     private val activeBackground = InsetDrawable(
@@ -49,15 +51,17 @@ class PopupMenuUi(
                 colors.accentContainer
             )
         },
-        (keySize - ctx.dp(34)) / 2
+        (keySize - ctx.dp(style.menuFocusedIconDiameterDp)) / 2
     )
 
     private val columnCount = items.size
     private val focusColumn =
         calcInitialFocusedColumn(columnCount, keySize, outerBounds, triggerBounds)
 
-    override val offsetX = ((triggerBounds.width() - keySize) / 2) - (keySize * focusColumn)
-    override val offsetY = ctx.dp(-52)
+    override val desiredOffsetX = ((triggerBounds.width() - keySize) / 2) - (keySize * focusColumn)
+    override val desiredOffsetY = ctx.dp(style.menuOffsetYDp)
+    override val popupWidth = keySize * columnCount
+    override val popupHeight = keySize
 
     private val columnOrder = createColumnOrder(columnCount, focusColumn)
 

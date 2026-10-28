@@ -57,12 +57,23 @@ data class PickerSurfaceStyle(
     val embeddedKeyboardHeightFraction: Float
 )
 
+data class PopupSurfaceStyle(
+    val previewWidthDp: Int,
+    val previewHeightDp: Int,
+    val keySizeDp: Int,
+    val menuIconDiameterDp: Int,
+    val menuFocusedIconDiameterDp: Int,
+    val menuOffsetYDp: Int,
+    val elevationDp: Float
+)
+
 data class InputSurfaceStyle(
     val isNothing: Boolean,
     val keyboard: KeyboardSurfaceStyle,
     val toolbar: ToolbarSurfaceStyle,
     val editing: EditingSurfaceStyle,
     val picker: PickerSurfaceStyle,
+    val popup: PopupSurfaceStyle,
     val candidate: CandidateSurfaceStyle,
     val clipboard: ClipboardSurfaceStyle
 )
@@ -98,6 +109,15 @@ object InputSurfaceStylePolicy {
                 paginationHeightDp = NothingDesignTokens.Picker.PaginationHeightDp,
                 embeddedKeyboardHeightFraction =
                     NothingDesignTokens.Picker.EmbeddedKeyboardHeightFraction
+            ),
+            popup = PopupSurfaceStyle(
+                previewWidthDp = NothingDesignTokens.Popup.PreviewWidthDp,
+                previewHeightDp = NothingDesignTokens.Popup.PreviewHeightDp,
+                keySizeDp = NothingDesignTokens.Popup.KeySizeDp,
+                menuIconDiameterDp = NothingDesignTokens.Popup.MenuIconDiameterDp,
+                menuFocusedIconDiameterDp = NothingDesignTokens.Popup.MenuFocusedIconDiameterDp,
+                menuOffsetYDp = NothingDesignTokens.Popup.MenuOffsetYDp,
+                elevationDp = NothingDesignTokens.Popup.ElevationDp
             ),
             candidate = CandidateSurfaceStyle(
                 showDotMarker = true,
@@ -143,6 +163,15 @@ object InputSurfaceStylePolicy {
                 punctuationTextSizeSp = 23f,
                 paginationHeightDp = 2,
                 embeddedKeyboardHeightFraction = 0.25f
+            ),
+            popup = PopupSurfaceStyle(
+                previewWidthDp = 38,
+                previewHeightDp = 116,
+                keySizeDp = 48,
+                menuIconDiameterDp = 33,
+                menuFocusedIconDiameterDp = 34,
+                menuOffsetYDp = -52,
+                elevationDp = 2f
             ),
             candidate = CandidateSurfaceStyle(
                 showDotMarker = false,
