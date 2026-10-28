@@ -38,7 +38,8 @@ class InputArchitectureBoundaryTest {
         val allowed = setOf(
             "FcitxInputMethodService.kt",
             "editing/AndroidEditingCommandExecutor.kt",
-            "editing/DestructiveEditingController.kt"
+            "editing/DestructiveEditingController.kt",
+            "engine/AndroidKeyEventController.kt"
         )
         val mutation = Regex(
             """currentInputConnection|import android\.view\.inputmethod\.InputConnection"""
@@ -129,5 +130,19 @@ class InputArchitectureBoundaryTest {
                     .containsMatchIn(file.readText())
         }
         assertTrue("Unowned session mutation: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `hardware key correlation has one owner`() {
+        val allowed = setOf(
+            "engine/AndroidKeyEventController.kt",
+            "engine/FcitxEngineCommandAdapter.kt"
+        )
+        val hardwareState = Regex("""LruCache<Int, KeyEvent>|ScancodeMapping|clearMetaKeyStates""")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            allowed.none(relative::endsWith) && hardwareState.containsMatchIn(file.readText())
+        }
+        assertTrue("Hardware key state escaped its controller: ${violations.joinToString()}", violations.isEmpty())
     }
 }

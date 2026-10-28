@@ -19,6 +19,7 @@ unrepresentable, and a test must prevent it from returning.
 | Candidate data | Candidate session/model reducers | Views inferring engine indices or paging boundaries | Pure model tests |
 | Input session | `InputSessionStore` snapshot | UI state sourced from parallel broadcasts | Legacy broadcast API deleted; boundary test forbids its return |
 | Engine key protocol | `EngineKey` + `EngineKeyModifier` | Views constructing native symbols, flags or scan codes | Translation exists only in `FcitxEngineCommandAdapter` |
+| Hardware key events | `AndroidKeyEventController` | Service/UI caching native events or synthesizing modifier sequences | Static ownership test |
 
 ## Removed legacy escape hatches
 
@@ -39,6 +40,9 @@ unrepresentable, and a test must prevent it from returning.
   adapter can encode them into native protocol values.
 - The engine-branded `FcitxKeyAction` UI model. It is now `TextKeyAction`, which describes intent
   without naming or depending on the current engine implementation.
+- Hardware-key correlation caches, sticky-modifier cleanup and synthetic key sequences formerly
+  spread across `FcitxInputMethodService`. They now have one owner in
+  `AndroidKeyEventController`.
 
 ## Deliberate platform boundaries (not legacy UI)
 

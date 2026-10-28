@@ -20,6 +20,23 @@ serializes Fcitx commands, translates Android IME lifecycle callbacks, and produ
 6. **Visual system** — tokens, typography, glyphs, color roles and motion specifications.
 7. **Surfaces** — keyboard, candidate rail, expanded candidates, editing panel and pickers.
 
+Having several files inside one system is intentional when they represent different layers
+(model, policy, controller, Android renderer). A feature is considered fragmented only when more
+than one file owns mutable state, applies the same rule, or talks to a lower platform API. Each
+system must therefore have exactly one state owner and one platform adapter; renderers may remain
+small, separate files.
+
+Current ownership:
+
+| System | State/rule owner | Platform boundary |
+|---|---|---|
+| Engine session | `InputSessionStore` | `FcitxEngineBridge` / Fcitx adapters |
+| Semantic keys | `EngineKey` and keyboard actions | `FcitxEngineCommandAdapter` |
+| Hardware keys | `AndroidKeyEventController` | Android `KeyEvent` + Fcitx adapter |
+| Editing | `DestructiveEditingController` and `EditingSession` | `AndroidEditingCommandExecutor` |
+| Navigation | `InputNavigator` | `InputWindowManager` |
+| Visual language | design tokens, typography and glyph registry | Android Views/drawables |
+
 ## Dependency direction
 
 ```text

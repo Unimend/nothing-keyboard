@@ -16,11 +16,8 @@ import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.text.InputType
-import android.util.LruCache
 import android.util.Size
-import android.view.KeyCharacterMap
 import android.view.KeyEvent
 import android.view.View
 import android.view.ViewGroup
@@ -53,7 +50,6 @@ import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.core.CapabilityFlag
 import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.core.FormattedText
-import org.fcitx.fcitx5.android.core.ScancodeMapping
 import org.fcitx.fcitx5.android.core.SubtypeManager
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.daemon.FcitxDaemon
@@ -69,6 +65,7 @@ import org.fcitx.fcitx5.android.input.editing.DestructiveEditingController
 import org.fcitx.fcitx5.android.input.editing.DestructiveEditingHost
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineBridge
+import org.fcitx.fcitx5.android.input.engine.AndroidKeyEventController
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
@@ -108,21 +105,18 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     private var jobs = Channel<Job>(capacity = Channel.UNLIMITED)
 
-    private val cachedKeyEvents = LruCache<Int, KeyEvent>(78)
-    private var cachedKeyEventIndex = 0
-
-    /**
-     * Saves MetaState produced by hardware keyboard with "sticky" modifier keys, to clear them in order.
-     * See also [InputConnection#clearMetaKeyStates(int)](https://developer.android.com/reference/android/view/inputmethod/InputConnection#clearMetaKeyStates(int))
-     */
-    private var lastMetaState: Int = 0
-
     private lateinit var pkgNameCache: PackageNameCache
 
     private lateinit var decorView: View
     private lateinit var contentView: FrameLayout
     private var inputView: InputView? = null
     private var candidatesView: CandidatesView? = null
+
+    private val keyEvents = AndroidKeyEventController(
+        connection = { currentInputConnection },
+        submitHardwareKey = ::submitHardwareKey,
+        commitText = ::commitText
+    )
 
     private fun currentStatusIcon() = inputSession.current.engine.inputMethod?.let(
         StatusIconMapping::fromEntry
@@ -177,7 +171,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
             override fun resetEditingComposition() = resetComposingState()
 
-            override fun sendBackspaceKey() = sendDownUpKeyEvents(KeyEvent.KEYCODE_DEL)
+            override fun sendBackspaceKey() = keyEvents.sendDownUp(KeyEvent.KEYCODE_DEL)
 
             override fun resetInputEngine() {
                 submitEngineCommand(EngineCommand.Reset)
@@ -257,6 +251,14 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         }
         jobs.trySend(job)
         return job
+    }
+
+    private fun submitHardwareKey(event: KeyEvent, eventId: Int) {
+        postFcitxJob {
+            if (!FcitxEngineCommandAdapter.executeHardwareKey(this, event, eventId)) {
+                Timber.d("Skipped KeyEvent: $event")
+            }
+        }
     }
 
     /** Serializes project-owned commands on the engine connection queue. */
@@ -355,45 +357,8 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         }
     }
 
-    private fun handleForwardedEngineKey(effect: EngineEffect.ForwardKey) {
-        cachedKeyEvents.remove(effect.timestamp)?.let { keyEvent ->
-            if (keyEvent.unicodeChar == KeyCharacterMap.PICKER_DIALOG_INPUT.code) {
-                currentInputConnection?.sendKeyEvent(
-                    KeyEvent(
-                        keyEvent.downTime, keyEvent.eventTime, keyEvent.action, keyEvent.keyCode,
-                        keyEvent.repeatCount, keyEvent.metaState, -1, keyEvent.scanCode,
-                        keyEvent.flags, keyEvent.source
-                    )
-                )
-                return
-            }
-            currentInputConnection?.sendKeyEvent(keyEvent)
-            if (KeyEvent.isModifierKey(keyEvent.keyCode)) {
-                when (keyEvent.action) {
-                    KeyEvent.ACTION_DOWN -> lastMetaState = keyEvent.metaState
-                    KeyEvent.ACTION_UP -> {
-                        currentInputConnection?.clearMetaKeyStates(
-                            lastMetaState xor keyEvent.metaState
-                        )
-                        lastMetaState = keyEvent.metaState
-                    }
-                }
-            }
-            return
-        }
-        if (effect.androidKeyCode != KeyEvent.KEYCODE_UNKNOWN) {
-            val eventTime = SystemClock.uptimeMillis()
-            if (effect.keyUp) {
-                sendUpKeyEvent(eventTime, effect.androidKeyCode, effect.androidMetaState)
-            } else {
-                sendDownKeyEvent(eventTime, effect.androidKeyCode, effect.androidMetaState)
-            }
-        } else if (!effect.keyUp && effect.unicode > 0) {
-            commitText(Character.toString(effect.unicode))
-        } else {
-            Timber.w("Unhandled forwarded engine key: $effect")
-        }
-    }
+    private fun handleForwardedEngineKey(effect: EngineEffect.ForwardKey) =
+        keyEvents.handleForwarded(effect)
 
     private fun handleDeleteSurrounding(before: Int, after: Int) {
         val ic = currentInputConnection ?: return
@@ -416,7 +381,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
             if (inputType and InputType.TYPE_MASK_CLASS == InputType.TYPE_NULL ||
                 imeOptions.hasFlag(EditorInfo.IME_FLAG_NO_ENTER_ACTION)
             ) {
-                sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
+                keyEvents.sendDownUp(KeyEvent.KEYCODE_ENTER)
                 return
             }
             if (actionLabel?.isNotEmpty() == true && actionId != EditorInfo.IME_ACTION_UNSPECIFIED) {
@@ -425,7 +390,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
             }
             when (val action = imeOptions and EditorInfo.IME_MASK_ACTION) {
                 EditorInfo.IME_ACTION_UNSPECIFIED,
-                EditorInfo.IME_ACTION_NONE -> sendDownUpKeyEvents(KeyEvent.KEYCODE_ENTER)
+                EditorInfo.IME_ACTION_NONE -> keyEvents.sendDownUp(KeyEvent.KEYCODE_ENTER)
                 else -> currentInputConnection.performEditorAction(action)
             }
         }
@@ -438,7 +403,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
             // confirm URL suggestion in browser location bar, see also https://bugzilla.mozilla.org/show_bug.cgi?id=1999915
             type == InputType.TYPE_CLASS_TEXT && variation == InputType.TYPE_TEXT_VARIATION_URI
         ) {
-            sendDownUpKeyEvents(keyCode)
+            keyEvents.sendDownUp(keyCode)
             return
         }
         val (start, end) = currentInputSelection
@@ -493,38 +458,6 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         destructiveEditing.undo()
     }
 
-    private fun sendDownKeyEvent(eventTime: Long, keyEventCode: Int, metaState: Int = 0) {
-        currentInputConnection?.sendKeyEvent(
-            KeyEvent(
-                eventTime,
-                eventTime,
-                KeyEvent.ACTION_DOWN,
-                keyEventCode,
-                0,
-                metaState,
-                KeyCharacterMap.VIRTUAL_KEYBOARD,
-                ScancodeMapping.keyCodeToScancode(keyEventCode),
-                KeyEvent.FLAG_SOFT_KEYBOARD or KeyEvent.FLAG_KEEP_TOUCH_MODE
-            )
-        )
-    }
-
-    private fun sendUpKeyEvent(eventTime: Long, keyEventCode: Int, metaState: Int = 0) {
-        currentInputConnection?.sendKeyEvent(
-            KeyEvent(
-                eventTime,
-                SystemClock.uptimeMillis(),
-                KeyEvent.ACTION_UP,
-                keyEventCode,
-                0,
-                metaState,
-                KeyCharacterMap.VIRTUAL_KEYBOARD,
-                ScancodeMapping.keyCodeToScancode(keyEventCode),
-                KeyEvent.FLAG_SOFT_KEYBOARD or KeyEvent.FLAG_KEEP_TOUCH_MODE
-            )
-        )
-    }
-
     fun deleteSelection() {
         destructiveEditing.deleteSelection()
     }
@@ -538,21 +471,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         alt: Boolean = false,
         ctrl: Boolean = false,
         shift: Boolean = false
-    ) {
-        var metaState = 0
-        if (alt) metaState = KeyEvent.META_ALT_ON or KeyEvent.META_ALT_LEFT_ON
-        if (ctrl) metaState = metaState or KeyEvent.META_CTRL_ON or KeyEvent.META_CTRL_LEFT_ON
-        if (shift) metaState = metaState or KeyEvent.META_SHIFT_ON or KeyEvent.META_SHIFT_LEFT_ON
-        val eventTime = SystemClock.uptimeMillis()
-        if (alt) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_ALT_LEFT)
-        if (ctrl) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_CTRL_LEFT)
-        if (shift) sendDownKeyEvent(eventTime, KeyEvent.KEYCODE_SHIFT_LEFT)
-        sendDownKeyEvent(eventTime, keyEventCode, metaState)
-        sendUpKeyEvent(eventTime, keyEventCode, metaState)
-        if (shift) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_SHIFT_LEFT)
-        if (ctrl) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_CTRL_LEFT)
-        if (alt) sendUpKeyEvent(eventTime, KeyEvent.KEYCODE_ALT_LEFT)
-    }
+    ) = keyEvents.sendCombination(keyEventCode, alt, ctrl, shift)
 
     fun applySelectionOffset(offsetStart: Int, offsetEnd: Int = 0) {
         val lastSelection = selection.latest
@@ -665,30 +584,17 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
 
     override fun onEvaluateFullscreenMode() = false
 
-    private fun forwardKeyEvent(event: KeyEvent): Boolean {
-        // reason to use a self increment index rather than timestamp:
-        // KeyUp and KeyDown events actually can happen on the same time
-        val timestamp = cachedKeyEventIndex++
-        cachedKeyEvents.put(timestamp, event)
-        postFcitxJob {
-            if (!FcitxEngineCommandAdapter.executeHardwareKey(this, event, timestamp)) {
-                Timber.d("Skipped KeyEvent: $event")
-            }
-        }
-        return true
-    }
-
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         // request to show floating CandidatesView when pressing physical keyboard
         if (inputDeviceMgr.evaluateOnKeyDown(event, this)) {
             submitEngineCommand(EngineCommand.Focus(true))
             forceShowSelf()
         }
-        return forwardKeyEvent(event) || super.onKeyDown(keyCode, event)
+        return keyEvents.forwardToEngine(event) || super.onKeyDown(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent): Boolean {
-        return forwardKeyEvent(event) || super.onKeyUp(keyCode, event)
+        return keyEvents.forwardToEngine(event) || super.onKeyUp(keyCode, event)
     }
 
     // Added in API level 14, deprecated in 29
@@ -1086,8 +992,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
     }
 
     override fun onUnbindInput() {
-        cachedKeyEvents.evictAll()
-        cachedKeyEventIndex = 0
+        keyEvents.reset()
         cursorUpdateIndex = 0
         // currentInputBinding can be null on some devices under some special Multi-screen mode
         val uid = currentInputBinding?.uid ?: return
