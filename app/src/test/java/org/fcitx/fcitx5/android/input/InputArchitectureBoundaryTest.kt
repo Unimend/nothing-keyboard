@@ -385,6 +385,21 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `input device transitions use one presentation controller`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue(
+            "Device changes must enter the presentation transaction",
+            "devicePresentation::applyMode" in service
+        )
+        assertFalse(
+            "InputDeviceManager callback must not regain an inline side-effect block",
+            Regex("InputDeviceManager\\([^)]*\\)\\s*\\{").containsMatchIn(service)
+        )
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",

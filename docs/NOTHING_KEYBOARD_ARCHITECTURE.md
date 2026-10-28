@@ -226,3 +226,7 @@ Renderers must not reconstruct lifecycle command order.
 Input-surface rebuild reasons are also centralized. Keyboard-layout preferences rebuild only the
 keyboard surface, candidate preferences rebuild only candidates, and theme changes rebuild both.
 `AndroidInputSurfaceRebuildSignals` is the sole owner of the corresponding listener lifetime.
+
+An input-device mode change is one presentation transaction. Candidate paging, cursor-anchor
+monitoring, status-icon visibility and navigation-bar styling must all enter through
+`InputDevicePresentationController`; no renderer may update only a subset.

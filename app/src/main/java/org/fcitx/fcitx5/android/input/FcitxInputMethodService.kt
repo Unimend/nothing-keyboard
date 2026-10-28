@@ -52,6 +52,8 @@ import org.fcitx.fcitx5.android.input.wm.AndroidInputSurfaceRebuildSignals
 import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildController
 import org.fcitx.fcitx5.android.input.wm.InputSurfaceRebuildHost
 import org.fcitx.fcitx5.android.input.platform.ImeDialogController
+import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationController
+import org.fcitx.fcitx5.android.input.platform.InputDevicePresentationHost
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerController
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
@@ -138,20 +140,29 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     ) ?: R.drawable.ic_baseline_keyboard_24
 
     private val navbarMgr = NavigationBarManager()
-    private val inputDeviceMgr = InputDeviceManager(::systemWantsInputView) { isVirtualKeyboard ->
-        submitEngineCommand(
-            EngineCommand.SetCandidatePagingMode(if (isVirtualKeyboard) 0 else 1)
-        )
-        currentInputConnection?.monitorCursorAnchor(!isVirtualKeyboard)
-        if (isVirtualKeyboard) {
-            hideStatusIcon()
-        } else {
-            showStatusIcon(currentStatusIcon())
+    private val devicePresentation = InputDevicePresentationController(
+        object : InputDevicePresentationHost {
+            override fun setCandidatePagingMode(mode: Int) {
+                submitEngineCommand(EngineCommand.SetCandidatePagingMode(mode))
+            }
+
+            override fun monitorCursorAnchor(enabled: Boolean) {
+                currentInputConnection?.monitorCursorAnchor(enabled)
+            }
+
+            override fun hideStatusIcon() = this@FcitxInputMethodService.hideStatusIcon()
+
+            override fun showCurrentStatusIcon() = showStatusIcon(currentStatusIcon())
+
+            override fun updateNavigationBar(isVirtualKeyboard: Boolean) {
+                window.window?.let { navbarMgr.evaluate(it, isVirtualKeyboard) }
+            }
         }
-        window.window?.let {
-            navbarMgr.evaluate(it, isVirtualKeyboard)
-        }
-    }
+    )
+    private val inputDeviceMgr = InputDeviceManager(
+        ::systemWantsInputView,
+        devicePresentation::applyMode
+    )
 
     private val editor: EditorController = EditorController(
         connection = { currentInputConnection },

@@ -24,6 +24,7 @@ unrepresentable, and a test must prevent it from returning.
 | Engine command scheduling | `FcitxCommandDispatcher` + `SerialCommandQueue` | Service managing native jobs; caller join starting queued work | Queue behavior tests and Service boundary test |
 | Android input lifecycle | `InputLifecycleController` | Service independently ordering session, editor and engine focus transitions | Sequence tests and lifecycle-delegation boundary test |
 | Input-surface rebuild | `InputSurfaceRebuildController` + Android signal adapter | Service registering theme/preference listeners or guessing partial rebuild scope | Scope test and listener-lifetime boundary test |
+| Input-device presentation | `InputDevicePresentationController` | Independently updating paging, cursor monitoring, status icon or navbar during a mode switch | Complete-transaction tests and Service boundary test |
 
 ## Removed legacy escape hatches
 
@@ -56,6 +57,9 @@ unrepresentable, and a test must prevent it from returning.
 - Theme and preference listener ownership formerly split between `onCreate`, three Service fields
   and `onDestroy`. `AndroidInputSurfaceRebuildSignals` now owns the symmetric registration lifetime;
   `InputSurfaceRebuildController` maps each reason to keyboard-only, candidates-only or full rebuild.
+- The inline `InputDeviceManager` callback that independently changed four presentation systems.
+  `InputDevicePresentationController.applyMode` now applies paging mode, cursor monitoring, status
+  icon and navigation bar as one ordered transaction for every virtual/hardware mode transition.
 
 ## Deliberate platform boundaries (not legacy UI)
 
