@@ -22,6 +22,7 @@ import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.feedback.InputMotionPolicy
 import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
@@ -40,10 +41,11 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
 
     private val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
     private val visualStyle = theme.inputSurfaceStyle.candidate
+    private val colors = theme.toInputColorScheme()
 
     private val nothingMarkerDrawable = if (visualStyle.showDotMarker) {
         NothingDotMatrixDrawable(
-            color = theme.candidateLabelColor,
+            color = colors.candidateMarker,
             columns = 1,
             rows = NothingDesignTokens.Candidate.MarkerRows,
             dotDiameter = ctx.dp(NothingDesignTokens.Candidate.MarkerDotDiameterDp).toFloat(),
@@ -57,7 +59,7 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
     private var lastPrimaryText = ""
 
     private val primaryMarker = view(::View) {
-        background = nothingMarkerDrawable ?: ColorDrawable(theme.candidateLabelColor)
+        background = nothingMarkerDrawable ?: ColorDrawable(colors.candidateMarker)
         visibility = View.GONE
     }
 
@@ -68,13 +70,13 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
         applyNothingTextStyle(theme, NothingTextStyle.Candidate)
         isSingleLine = true
         gravity = Gravity.START or Gravity.CENTER_VERTICAL
-        setTextColor(theme.candidateTextColor)
+        setTextColor(colors.candidateContent)
         // Chinese candidates use the crisp system CJK font. Latin/pinyin is switched to Doto
         // when content is bound, instead of forcing the whole mixed line through font fallback.
     }
 
     override val root = view(::CustomGestureView) {
-        background = pressHighlightDrawable(theme.keyPressHighlightColor)
+        background = pressHighlightDrawable(colors.pressed)
 
         /**
          * candidate long press feedback is handled by [org.fcitx.fcitx5.android.input.BaseInputView.showCandidateActionMenu]
@@ -121,8 +123,8 @@ class CandidateItemUi(override val ctx: Context, val theme: Theme) : Ui {
             nothingMarkerDrawable?.setActiveDots(0)
             lastPrimaryText = ""
         }
-        val fg = theme.candidateTextColor
-        val altFg = theme.candidateCommentColor
+        val fg = colors.candidateContent
+        val altFg = colors.candidateComment
         text.text = buildSpannedString {
             color(fg) {
                 append(candidate.text)

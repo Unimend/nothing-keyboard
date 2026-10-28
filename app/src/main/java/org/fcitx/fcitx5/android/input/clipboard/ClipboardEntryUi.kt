@@ -19,6 +19,7 @@ import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import splitties.dimensions.dp
 import splitties.resources.drawable
@@ -41,6 +42,7 @@ import splitties.views.setPaddingDp
 class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radius: Float) : Ui {
 
     private val visualStyle = theme.inputSurfaceStyle.clipboard
+    private val colors = theme.toInputColorScheme()
     private val resolvedRadius = if (visualStyle.entryCornerRadiusDp.isNaN()) {
         radius
     } else {
@@ -56,13 +58,13 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
             8, 10, 8
         )
         ellipsize = TextUtils.TruncateAt.END
-        setTextColor(theme.keyTextColor)
+        setTextColor(colors.keyContent)
         applyNothingTextStyle(theme, NothingTextStyle.ClipboardEntry, sizeSp = null)
     }
 
     val pin = imageView {
         imageDrawable = drawable(R.drawable.ic_baseline_push_pin_24)!!.apply {
-            setTint(theme.altKeyTextColor)
+            setTint(colors.alternateKeyContent)
             setAlpha(0.3f)
         }
     }
@@ -71,7 +73,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
         if (visualStyle.showDotMarker) {
             add(View(ctx).apply {
                 background = NothingDotMatrixDrawable(
-                    color = NothingDesignTokens.Color.AccentRed,
+                    color = colors.accentContainer,
                     columns = 1,
                     rows = NothingDesignTokens.Clipboard.MarkerRows,
                     dotDiameter = dp(NothingDesignTokens.Clipboard.MarkerDotDiameterDp).toFloat(),
@@ -100,7 +102,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
             visualStyle.entryMinimumHeightDp
         )
         foreground = RippleDrawable(
-            ColorStateList.valueOf(theme.keyPressHighlightColor), null,
+            ColorStateList.valueOf(colors.pressed), null,
             GradientDrawable().apply {
                 cornerRadius = resolvedRadius
                 setColor(Color.WHITE)
@@ -109,8 +111,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
         background = GradientDrawable().apply {
             cornerRadius = resolvedRadius
             setColor(
-                if (visualStyle.showDotMarker) NothingDesignTokens.Color.RaisedSurface
-                else theme.clipboardEntryColor
+                this@ClipboardEntryUi.colors.clipboardContainer
             )
         }
         add(layout, lParams(matchParent, matchParent))

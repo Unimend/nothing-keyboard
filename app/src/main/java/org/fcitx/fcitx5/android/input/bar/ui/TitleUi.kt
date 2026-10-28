@@ -13,6 +13,7 @@ import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.after
 import splitties.views.dsl.constraintlayout.bottomOfParent
@@ -33,6 +34,7 @@ import splitties.views.gravityVerticalCenter
 class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     private val visualStyle = theme.inputSurfaceStyle.toolbar
+    private val colors = theme.toInputColorScheme()
 
     private val backButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_back_24, theme).apply {
         contentDescription = ctx.getString(R.string.back_to_keyboard)
@@ -40,7 +42,7 @@ class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
 
     private val titleText = textView {
         applyNothingTextStyle(theme, NothingTextStyle.ControlLabel)
-        setTextColor(theme.altKeyTextColor)
+        setTextColor(colors.alternateKeyContent)
         gravity = gravityVerticalCenter
     }
 

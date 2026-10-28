@@ -90,6 +90,11 @@ the Android animation primitive and targets, but it must not choose an unrelated
 This preserves one timing vocabulary across candidates, toolbar transitions, caps feedback and
 window changes while keeping the global disable-animation preference authoritative.
 
+Input surfaces consume `InputColorScheme` roles rather than the persisted `Theme` schema directly.
+`Theme.toInputColorScheme()` is the compatibility boundary for old and custom themes. This keeps
+container/content, alternate, accent, pressed, candidate and active-state meanings stable even if
+theme storage or the Nothing palette changes later.
+
 The session's general write API is private to the Service composition root and store. Ordinary
 surfaces receive a reader, not a mutable store. Each producer receives only its own sink: engine
 events, surface changes, or punctuation maps. A new producer must not regain general dispatch.

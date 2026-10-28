@@ -17,6 +17,7 @@ import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.keyboard.shadowedKeyBackgroundDrawable
 import org.fcitx.fcitx5.android.input.keyboard.insetRadiusDrawable
@@ -44,6 +45,7 @@ class TextEditingButton(
 ) : CustomGestureView(ctx) {
 
     private val visualStyle = theme.inputSurfaceStyle.editing
+    private val colors = theme.toInputColorScheme()
 
     // bordered
     private val shadowWidth = dp(visualStyle.shadowWidthDp)
@@ -55,29 +57,29 @@ class TextEditingButton(
 
     init {
         if (bordered) {
-            val bkgColor = if (altStyle) theme.altKeyBackgroundColor else theme.keyBackgroundColor
+            val bkgColor = if (altStyle) colors.alternateKeyContainer else colors.keyContainer
             background = shadowedKeyBackgroundDrawable(
-                bkgColor, theme.keyShadowColor,
+                bkgColor, colors.shadow,
                 radius, shadowWidth, hInset, vInset
             )
             foreground = if (rippled) {
                 RippleDrawable(
-                    ColorStateList.valueOf(theme.keyPressHighlightColor), null,
+                    ColorStateList.valueOf(colors.pressed), null,
                     insetRadiusDrawable(hInset, vInset, radius)
                 )
             } else {
                 StateListDrawable().apply {
                     addState(
                         intArrayOf(android.R.attr.state_pressed),
-                        insetRadiusDrawable(hInset, vInset, radius, theme.keyPressHighlightColor)
+                        insetRadiusDrawable(hInset, vInset, radius, colors.pressed)
                     )
                 }
             }
         } else {
-            background = borderDrawable(lineWidth, theme.dividerColor)
+            background = borderDrawable(lineWidth, colors.divider)
             foreground =
-                if (rippled) rippleDrawable(theme.keyPressHighlightColor)
-                else pressHighlightDrawable(theme.keyPressHighlightColor)
+                if (rippled) rippleDrawable(colors.pressed)
+                else pressHighlightDrawable(colors.pressed)
         }
     }
 
@@ -85,13 +87,13 @@ class TextEditingButton(
         isClickable = false
         isFocusable = false
         background = null
-        setTextColor(if (altStyle) theme.altKeyTextColor else theme.keyTextColor)
+        setTextColor(if (altStyle) colors.alternateKeyContent else colors.keyContent)
     }
 
     val imageView = imageView {
         isClickable = false
         isFocusable = false
-        imageTintList = ColorStateList.valueOf(theme.altKeyTextColor)
+        imageTintList = ColorStateList.valueOf(colors.alternateKeyContent)
     }
 
     fun setText(id: Int) {
@@ -117,8 +119,8 @@ class TextEditingButton(
                     intArrayOf(android.R.attr.state_enabled)
                 ),
                 intArrayOf(
-                    theme.genericActiveForegroundColor,
-                    if (altStyle) theme.altKeyTextColor else theme.keyTextColor
+                    colors.activeContent,
+                    if (altStyle) colors.alternateKeyContent else colors.keyContent
                 )
             )
         )
@@ -128,8 +130,8 @@ class TextEditingButton(
                 intArrayOf(android.R.attr.state_enabled)
             ),
             intArrayOf(
-                theme.genericActiveForegroundColor,
-                theme.altKeyTextColor
+                colors.activeContent,
+                colors.alternateKeyContent
             )
         )
         background = if (bordered) {
@@ -137,14 +139,14 @@ class TextEditingButton(
                 addState(
                     intArrayOf(android.R.attr.state_activated),
                     shadowedKeyBackgroundDrawable(
-                        theme.genericActiveBackgroundColor, theme.keyShadowColor,
+                        colors.activeContainer, colors.shadow,
                         radius, shadowWidth, hInset, vInset
                     )
                 )
                 addState(
                     intArrayOf(android.R.attr.state_enabled),
                     shadowedKeyBackgroundDrawable(
-                        theme.keyBackgroundColor, theme.keyShadowColor,
+                        colors.keyContainer, colors.shadow,
                         radius, shadowWidth, hInset, vInset
                     )
                 )
@@ -155,13 +157,13 @@ class TextEditingButton(
                     intArrayOf(android.R.attr.state_activated),
                     borderDrawable(
                         lineWidth,
-                        theme.dividerColor,
-                        theme.genericActiveBackgroundColor
+                        colors.divider,
+                        colors.activeContainer
                     )
                 )
                 addState(
                     intArrayOf(android.R.attr.state_enabled),
-                    borderDrawable(lineWidth, theme.dividerColor)
+                    borderDrawable(lineWidth, colors.divider)
                 )
             }
         }

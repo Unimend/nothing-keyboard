@@ -73,10 +73,10 @@ object KeyboardFeedback {
             color = NothingDesignTokens.Color.AccentRed,
             columns = tokens.Columns,
             rows = tokens.Rows,
-            dotDiameter = view.dp(tokens.DotDiameterDp).toFloat(),
-            dotGap = view.dp(tokens.DotGapDp).toFloat(),
+            dotDiameter = view.dp(tokens.DotDiameterDp),
+            dotGap = view.dp(tokens.DotGapDp),
             gravity = Gravity.LEFT or Gravity.CENTER_VERTICAL,
-            horizontalPadding = view.dp(tokens.EdgePaddingDp).toFloat(),
+            horizontalPadding = view.dp(tokens.EdgePaddingDp),
             initialActiveDots = 0,
             inactiveAlpha = tokens.InactiveAlpha
         ).apply { setBounds(0, 0, view.width, view.height) }

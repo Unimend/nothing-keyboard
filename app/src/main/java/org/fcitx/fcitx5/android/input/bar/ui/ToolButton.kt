@@ -19,6 +19,7 @@ import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
+import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.utils.borderlessRippleDrawable
 import org.fcitx.fcitx5.android.utils.circlePressHighlightDrawable
 import splitties.dimensions.dp
@@ -65,10 +66,11 @@ class ToolButton(context: Context) : CustomGestureView(context) {
     constructor(context: Context, @DrawableRes icon: Int, theme: Theme) : this(context) {
         glyphTheme = theme
         val visualStyle = theme.inputSurfaceStyle.toolbar
+        val colors = theme.toInputColorScheme()
         image.padding = dp(visualStyle.iconPaddingDp)
-        image.imageTintList = ColorStateList.valueOf(theme.altKeyTextColor)
+        image.imageTintList = ColorStateList.valueOf(colors.alternateKeyContent)
         setIcon(icon)
-        setPressHighlightColor(theme.keyPressHighlightColor)
+        setPressHighlightColor(colors.pressed)
         add(image, lParams(wrapContent, wrapContent, gravityCenter))
         add(label, lParams(wrapContent, wrapContent, gravityCenter))
     }
@@ -87,7 +89,7 @@ class ToolButton(context: Context) : CustomGestureView(context) {
     fun setText(value: CharSequence, theme: Theme) {
         image.visibility = View.GONE
         label.visibility = View.VISIBLE
-        label.setTextColor(theme.altKeyTextColor)
+        label.setTextColor(theme.toInputColorScheme().alternateKeyContent)
         label.setNothingText(
             value,
             theme,
