@@ -12,14 +12,15 @@ import androidx.core.text.buildSpannedString
 import androidx.core.text.color
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.SubtypeManager
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
@@ -32,7 +33,6 @@ import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeL
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EngineStatusAction
-import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 import org.fcitx.fcitx5.android.utils.alpha
@@ -46,8 +46,7 @@ import splitties.views.dsl.core.lParams
 import splitties.views.dsl.recyclerview.recyclerView
 import splitties.views.recyclerview.gridLayoutManager
 
-class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
-    InputBroadcastReceiver {
+class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
 
     override val surface = InputSurface.Status
 
@@ -146,13 +145,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
                                 .invokeOnCompletion { failure ->
                                     if (failure != null) return@invokeOnCompletion
                                     service.lifecycleScope.launch {
-                                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-                                            SubtypeManager.syncWith(
-                                                service.engineQueries.enabledInputMethods().map(
-                                                    LegacyEngineStateAdapter::inputMethod
-                                                ).toTypedArray()
-                                            )
-                                        }
+                                        service.syncPlatformInputMethodSubtypes()
                                         Toast.makeText(
                                             service,
                                             R.string.done,
@@ -183,7 +176,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
         }
     }
 
-    override fun onStatusAreaUpdate(actions: List<EngineStatusAction>) {
+    private fun renderStatusActions(actions: List<EngineStatusAction>) {
         adapter.entries = arrayOf(
             *staticEntries,
             *Array(actions.size) { StatusAreaEntry.fromAction(actions[it]) }
@@ -217,12 +210,20 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
 
     override fun onCreateBarExtension() = barExtension
 
+    private var statusJob: Job? = null
+
     override fun onAttached() {
-        onStatusAreaUpdate(service.inputSession.current.engine.statusActions)
+        renderStatusActions(service.inputSession.current.engine.statusActions)
+        statusJob = service.lifecycleScope.launch {
+            service.inputSession.state.map { it.engine.statusActions }.distinctUntilChanged()
+                .collect(::renderStatusActions)
+        }
     }
 
     override fun onDetached() {
         popupMenu?.dismiss()
         popupMenu = null
+        statusJob?.cancel()
+        statusJob = null
     }
 }

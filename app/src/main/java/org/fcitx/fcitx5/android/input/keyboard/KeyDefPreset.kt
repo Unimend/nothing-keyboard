@@ -7,18 +7,14 @@ package org.fcitx.fcitx5.android.input.keyboard
 import android.graphics.Typeface
 import androidx.annotation.DrawableRes
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.FcitxKeyMapping
-import org.fcitx.fcitx5.android.core.KeyState
-import org.fcitx.fcitx5.android.core.KeyStates
-import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.data.InputFeedbacks
+import org.fcitx.fcitx5.android.input.engine.EngineKey
+import org.fcitx.fcitx5.android.input.engine.VirtualNumLockModifiers
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Border
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef.Appearance.Variant
 import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
 import org.fcitx.fcitx5.android.input.mode.PickerKind
 import org.fcitx.fcitx5.android.input.mode.InputMode
-
-val NumLockState = KeyStates(KeyState.NumLock, KeyState.Virtual)
 
 class SymbolKey(
     val symbol: String,
@@ -33,7 +29,7 @@ class SymbolKey(
         variant = variant
     ),
     setOf(
-        Behavior.Press(KeyAction.FcitxKeyAction(symbol))
+        Behavior.Press(KeyAction.TextKeyAction(symbol))
     ),
     popup ?: arrayOf(
         Popup.Preview(symbol),
@@ -54,8 +50,8 @@ class AlphabetKey(
         variant = variant
     ),
     setOf(
-        Behavior.Press(KeyAction.FcitxKeyAction(character)),
-        Behavior.Swipe(KeyAction.FcitxKeyAction(punctuation))
+        Behavior.Press(KeyAction.TextKeyAction(character)),
+        Behavior.Swipe(KeyAction.TextKeyAction(punctuation))
     ),
     popup ?: arrayOf(
         Popup.AltPreview(character, punctuation),
@@ -66,7 +62,7 @@ class AlphabetKey(
 class AlphabetDigitKey(
     val character: String,
     altText: String,
-    val sym: Int,
+    val digit: Int,
     popup: Array<Popup>? = null
 ) : KeyDef(
     Appearance.AltText(
@@ -75,8 +71,8 @@ class AlphabetDigitKey(
         textSize = 23f
     ),
     setOf(
-        Behavior.Press(KeyAction.FcitxKeyAction(character)),
-        Behavior.Swipe(KeyAction.SymAction(KeySym(sym), NumLockState))
+        Behavior.Press(KeyAction.TextKeyAction(character)),
+        Behavior.Swipe(KeyAction.SymAction(EngineKey.KeypadDigit(digit), VirtualNumLockModifiers))
     ),
     popup ?: arrayOf(
         Popup.AltPreview(character, altText),
@@ -90,7 +86,7 @@ class AlphabetDigitKey(
     ) : this(
         char,
         digit.toString(),
-        FcitxKeyMapping.FcitxKey_KP_0 + digit,
+        digit,
         popup
     )
 }
@@ -139,8 +135,8 @@ class BackspaceKey(
         soundEffect = InputFeedbacks.SoundEffect.Delete
     ),
     setOf(
-        Behavior.Press(KeyAction.SymAction(KeySym(FcitxKeyMapping.FcitxKey_BackSpace))),
-        Behavior.Repeat(KeyAction.SymAction(KeySym(FcitxKeyMapping.FcitxKey_BackSpace)))
+        Behavior.Press(KeyAction.SymAction(EngineKey.Backspace)),
+        Behavior.Repeat(KeyAction.SymAction(EngineKey.Backspace))
     )
 )
 
@@ -168,7 +164,7 @@ class CommaKey(
         src = R.drawable.ic_baseline_tag_faces_24
     ),
     setOf(
-        Behavior.Press(KeyAction.FcitxKeyAction(","))
+        Behavior.Press(KeyAction.TextKeyAction(","))
     ),
     arrayOf(
         Popup.Preview(","),
@@ -216,7 +212,7 @@ class SpaceKey : KeyDef(
         soundEffect = InputFeedbacks.SoundEffect.SpaceBar
     ),
     setOf(
-        Behavior.Press(KeyAction.SymAction(KeySym(FcitxKeyMapping.FcitxKey_space))),
+        Behavior.Press(KeyAction.SymAction(EngineKey.Space)),
         Behavior.LongPress(KeyAction.SpaceLongPressAction)
     )
 )
@@ -231,7 +227,7 @@ class ReturnKey(percentWidth: Float = 0.15f) : KeyDef(
         soundEffect = InputFeedbacks.SoundEffect.Return
     ),
     setOf(
-        Behavior.Press(KeyAction.SymAction(KeySym(FcitxKeyMapping.FcitxKey_Return)))
+        Behavior.Press(KeyAction.SymAction(EngineKey.Return))
     ),
     arrayOf(
         Popup.Menu(
@@ -329,13 +325,13 @@ class MiniSpaceKey : KeyDef(
         viewId = R.id.button_mini_space
     ),
     setOf(
-        Behavior.Press(KeyAction.SymAction(KeySym(FcitxKeyMapping.FcitxKey_space)))
+        Behavior.Press(KeyAction.SymAction(EngineKey.Space))
     )
 )
 
 class NumPadKey(
     displayText: String,
-    val sym: Int,
+    val key: EngineKey,
     textSize: Float = 16f,
     percentWidth: Float = 0.1f,
     variant: Variant = Variant.Normal
@@ -347,6 +343,6 @@ class NumPadKey(
         variant = variant
     ),
     setOf(
-        Behavior.Press(KeyAction.SymAction(KeySym(sym), NumLockState))
+        Behavior.Press(KeyAction.SymAction(key, VirtualNumLockModifiers))
     )
 )

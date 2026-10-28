@@ -44,6 +44,7 @@ data class InputSessionSnapshot(
     val previousSurface: InputSurface = InputSurface.None,
     val restarting: Boolean = false,
     val engine: EngineState = EngineState(),
+    val punctuationMapping: Map<String, String> = emptyMap(),
     val revision: Long = 0
 )
 
@@ -63,6 +64,7 @@ sealed interface InputSessionEvent {
     data class SelectionChanged(val start: Int, val end: Int) : InputSessionEvent
     data class SurfaceChanged(val surface: InputSurface) : InputSessionEvent
     data class EngineChanged(val event: EngineStateEvent) : InputSessionEvent
+    data class PunctuationChanged(val mapping: Map<String, String>) : InputSessionEvent
     data object InputViewFinished : InputSessionEvent
     data object InputFinished : InputSessionEvent
 }
@@ -93,6 +95,9 @@ object InputSessionReducer {
             }
             is InputSessionEvent.EngineChanged ->
                 state.copy(engine = EngineStateReducer.reduce(state.engine, event.event))
+            is InputSessionEvent.PunctuationChanged -> state.copy(
+                punctuationMapping = event.mapping
+            )
             InputSessionEvent.InputViewFinished -> state.copy(
                 lifecycle = InputLifecycle.InputStarted,
                 surface = InputSurface.None,

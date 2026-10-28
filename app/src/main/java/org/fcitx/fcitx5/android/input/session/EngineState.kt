@@ -3,7 +3,12 @@
  */
 package org.fcitx.fcitx5.android.input.session
 
-data class EngineTextSegment(val text: String, val formatFlags: Int)
+enum class EngineTextStyle { Underline, Highlight, DontCommit, Bold, Strike, Italic }
+
+data class EngineTextSegment(
+    val text: String,
+    val styles: Set<EngineTextStyle> = emptySet()
+)
 
 data class EngineText(
     val segments: List<EngineTextSegment> = emptyList(),

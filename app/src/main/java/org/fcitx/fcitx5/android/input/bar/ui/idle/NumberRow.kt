@@ -6,7 +6,7 @@ package org.fcitx.fcitx5.android.input.bar.ui.idle
 
 import android.annotation.SuppressLint
 import android.content.Context
-import org.fcitx.fcitx5.android.core.KeySym
+import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.data.theme.Theme
 import android.view.MotionEvent
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
@@ -89,7 +89,7 @@ class NumberRow(ctx: Context, theme: Theme) : BaseKeyboard(ctx, theme, Layout) {
                         margin = false
                     ),
                     setOf(
-                        KeyDef.Behavior.Press(KeyAction.SymAction(KeySym(digit.codePointAt(0))))
+                        KeyDef.Behavior.Press(KeyAction.SymAction(EngineKey.Unicode(digit.codePointAt(0))))
                     ),
                     arrayOf(KeyDef.Popup.Preview(digit))
                 )

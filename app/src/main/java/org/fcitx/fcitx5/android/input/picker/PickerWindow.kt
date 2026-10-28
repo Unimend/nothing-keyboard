@@ -7,7 +7,8 @@ package org.fcitx.fcitx5.android.input.picker
 import androidx.transition.Transition
 import androidx.viewpager2.widget.ViewPager2
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
+import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
@@ -22,6 +23,7 @@ import org.fcitx.fcitx5.android.input.popup.PopupAction
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
+import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
 import org.fcitx.fcitx5.android.input.wm.EssentialWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.mechdancer.dependency.manager.must
@@ -52,7 +54,6 @@ class PickerWindow(
     private val service by manager.inputMethodService()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
-    private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
     private val navigator: InputNavigator by manager.must()
     private val interactionStore: PickerInteractionStore by manager.must()
 
@@ -91,7 +92,7 @@ class PickerWindow(
                 }
             }
 
-            is KeyAction.FcitxKeyAction -> {
+            is KeyAction.TextKeyAction -> {
                 // we want the behavior of CommitAction (commit the character as-is),
                 // but don't want to include it in recently used list
                 commonKeyActionListener.listener.onKeyAction(KeyAction.CommitAction(it.act), source)
@@ -176,7 +177,12 @@ class PickerWindow(
                 pickerLayout.tabsUi.setTabs(pickerPagesAdapter.getCategoryList())
                 restorePosition()
             }
-            it.onReturnDrawableUpdate(returnKeyDrawable.resourceId)
+            val snapshot = service.inputSession.current
+            it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
+                snapshot.editor,
+                InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,
+                theme.isNothingStyle
+            ))
             it.keyActionListener = keyActionListener
         }
     }

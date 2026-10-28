@@ -7,6 +7,7 @@ import org.fcitx.fcitx5.android.core.CandidateAction
 import org.fcitx.fcitx5.android.core.CandidateWord
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.core.FormattedText
+import org.fcitx.fcitx5.android.input.engine.FcitxEngineStateAdapter
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -26,7 +27,10 @@ class FcitxEngineStateAdapterTest {
         val mapped = FcitxEngineStateAdapter.map(event) as EngineStateEvent.InputPanelChanged
 
         assertEquals("ni", mapped.value.preedit.plainText)
-        assertEquals(8, mapped.value.preedit.segments.single().formatFlags)
+        assertEquals(
+            setOf(EngineTextStyle.Underline),
+            mapped.value.preedit.segments.single().styles
+        )
         assertEquals(3, mapped.value.tabs.single().id)
         assertEquals(true, mapped.value.tabs.single().checked)
     }

@@ -14,9 +14,9 @@ class InputPresentationReducerTest {
 
     @Test
     fun clientAndPanelPreeditShareOneEmptyState() {
-        val client = EngineState(clientPreedit = EngineText(listOf(EngineTextSegment("ni", 0))))
+        val client = EngineState(clientPreedit = EngineText(listOf(EngineTextSegment("ni"))))
         val panel = EngineState(
-            inputPanel = EngineInputPanel(preedit = EngineText(listOf(EngineTextSegment("hao", 0))))
+            inputPanel = EngineInputPanel(preedit = EngineText(listOf(EngineTextSegment("hao"))))
         )
 
         assertEquals(false, InputPresentationReducer.reduce(client).preeditEmpty)

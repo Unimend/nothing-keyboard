@@ -13,7 +13,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.broadcast.PunctuationComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
@@ -36,7 +35,6 @@ class PopupComponent :
     private val service by manager.inputMethodService()
     private val context by manager.context()
     private val theme by manager.theme()
-    private val punctuation: PunctuationComponent by manager.must()
 
     private val showingEntryUi = HashMap<Int, PopupEntryUi>()
     private val dismissJobs = HashMap<Int, Job>()
@@ -122,8 +120,9 @@ class PopupComponent :
             is KeyDef.Popup.Keyboard.Preset -> {
                 val preset = PopupPreset[keyboard.label] ?: return
                 keys = preset
-                labels = if (keyboard.transformPunctuation && punctuation.enabled) {
-                    Array(keys.size) { punctuation.transform(keys[it]) }
+                labels = if (keyboard.transformPunctuation) {
+                    val mapping = service.inputSession.current.punctuationMapping
+                    Array(keys.size) { mapping.getOrDefault(keys[it], keys[it]) }
                 } else keys
             }
             is KeyDef.Popup.Keyboard.Explicit -> {

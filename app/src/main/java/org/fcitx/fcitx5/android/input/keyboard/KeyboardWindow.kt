@@ -15,8 +15,9 @@ import org.fcitx.fcitx5.android.input.session.EditorInputKind
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
-import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
+import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
@@ -37,8 +38,7 @@ import splitties.views.dsl.core.frameLayout
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.matchParent
 
-class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), EssentialWindow,
-    InputBroadcastReceiver {
+class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), EssentialWindow {
 
     override val surface = InputSurface.Keyboard
 
@@ -50,7 +50,6 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     private val modeStore: InputModeStore by manager.must()
     private val popup: PopupComponent by manager.must()
     private val bar: KawaiiBarComponent by manager.must()
-    private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
 
     companion object : EssentialWindow.Key
 
@@ -124,7 +123,12 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
             it.popupActionListener = popupActionListener
             keyboardView.apply { add(it, lParams(matchParent, matchParent)) }
             it.onAttach()
-            it.onReturnDrawableUpdate(returnKeyDrawable.resourceId)
+            val snapshot = service.inputSession.current
+            it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
+                snapshot.editor,
+                InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,
+                theme.isNothingStyle
+            ))
             service.inputSession.current.engine.inputMethod?.let { inputMethod ->
                 it.onInputMethodUpdate(inputMethod)
             }
@@ -160,7 +164,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
         }
     }
 
-    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
+    fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
         if (change != EditorSessionChange.Started) return
         val targetLayout = when (session.editor.inputKind) {
             EditorInputKind.Number, EditorInputKind.Phone -> KeyboardLayout.Number
@@ -169,15 +173,15 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
         switchLayout(targetLayout, remember = false)
     }
 
-    override fun onImeUpdate(ime: EngineInputMethod) {
+    fun onImeUpdate(ime: EngineInputMethod) {
         currentKeyboard.onInputMethodUpdate(ime)
     }
 
-    override fun onPunctuationUpdate(mapping: Map<String, String>) {
+    fun onPunctuationUpdate(mapping: Map<String, String>) {
         currentKeyboard.onPunctuationUpdate(mapping)
     }
 
-    override fun onReturnKeyDrawableUpdate(resourceId: Int) {
+    fun onReturnKeyDrawableUpdate(resourceId: Int) {
         currentKeyboard.onReturnDrawableUpdate(resourceId)
     }
 

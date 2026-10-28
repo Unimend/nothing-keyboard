@@ -6,12 +6,16 @@ package org.fcitx.fcitx5.android.input.editing
 
 import android.view.KeyEvent
 import android.view.View
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -25,8 +29,7 @@ import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.mechdancer.dependency.manager.must
 
-class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
-    InputBroadcastReceiver {
+class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
 
     override val surface = InputSurface.Editing
 
@@ -119,16 +122,25 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
 
     override fun onCreateView(): View = ui.root
 
+    private var selectionJob: Job? = null
+
     override fun onAttached() {
         service.inputSession.current.editorSessionOrNull()?.let {
-            onEditorSessionUpdate(it, EditorSessionChange.Selection)
+            updateEditorSelection(it)
+        }
+        selectionJob = service.lifecycleScope.launch {
+            service.inputSession.state.map { it.selection }.distinctUntilChanged().collect {
+                service.inputSession.current.editorSessionOrNull()?.let(::updateEditorSelection)
+            }
         }
     }
 
-    override fun onDetached() {}
+    override fun onDetached() {
+        selectionJob?.cancel()
+        selectionJob = null
+    }
 
-    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
-        if (change != EditorSessionChange.Selection) return
+    private fun updateEditorSelection(session: EditorSessionSnapshot) {
         this.session.updateSelection(session.selection.start, session.selection.end)
         ui.updateSelection(this.session.hasSelection, this.session.userSelection)
     }

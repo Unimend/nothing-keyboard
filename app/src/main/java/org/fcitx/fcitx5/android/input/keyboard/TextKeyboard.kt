@@ -13,8 +13,7 @@ import androidx.annotation.Keep
 import androidx.core.view.allViews
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
-import org.fcitx.fcitx5.android.core.KeyState
-import org.fcitx.fcitx5.android.core.KeyStates
+import org.fcitx.fcitx5.android.input.engine.EngineKeyModifier
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
@@ -124,7 +123,7 @@ class TextKeyboard(
     override fun onAction(action: KeyAction, source: KeyActionListener.Source) {
         var transformed = action
         when (action) {
-            is KeyAction.FcitxKeyAction -> when (source) {
+            is KeyAction.TextKeyAction -> when (source) {
                 KeyActionListener.Source.Keyboard -> {
                     when (capsState) {
                         CapsState.None -> {
@@ -133,14 +132,14 @@ class TextKeyboard(
                         CapsState.Once -> {
                             transformed = action.copy(
                                 act = action.act.uppercase(),
-                                states = KeyStates(KeyState.Virtual, KeyState.Shift)
+                                modifiers = setOf(EngineKeyModifier.Virtual, EngineKeyModifier.Shift)
                             )
                             switchCapsState()
                         }
                         CapsState.Lock -> {
                             transformed = action.copy(
                                 act = action.act.uppercase(),
-                                states = KeyStates(KeyState.Virtual, KeyState.CapsLock)
+                                modifiers = setOf(EngineKeyModifier.Virtual, EngineKeyModifier.CapsLock)
                             )
                         }
                     }

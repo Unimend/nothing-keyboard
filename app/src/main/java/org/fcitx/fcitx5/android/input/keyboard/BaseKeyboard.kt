@@ -12,10 +12,8 @@ import androidx.annotation.DrawableRes
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.children
 import androidx.core.view.updateLayoutParams
-import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
-import org.fcitx.fcitx5.android.core.KeyStates
-import org.fcitx.fcitx5.android.core.KeySym
+import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.data.InputFeedbacks
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
@@ -189,12 +187,12 @@ abstract class BaseKeyboard(
                     )
                     when (val action = decision.action) {
                         is KeyboardGestureAction.MoveCursor -> {
-                            val sym = if (action.steps > 0) {
-                                FcitxKeyMapping.FcitxKey_Right
+                            val key = if (action.steps > 0) {
+                                EngineKey.ArrowRight
                             } else {
-                                FcitxKeyMapping.FcitxKey_Left
+                                EngineKey.ArrowLeft
                             }
-                            val keyAction = KeyAction.SymAction(KeySym(sym), KeyStates.Virtual)
+                            val keyAction = KeyAction.SymAction(key)
                             repeat(action.steps.absoluteValue) {
                                 onAction(keyAction)
                                 KeyboardFeedback.step(view, hapticOnRepeat)

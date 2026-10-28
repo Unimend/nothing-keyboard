@@ -16,7 +16,6 @@ import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.BooleanKey.ExpandedCandidatesEmpty
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesUpdated
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.AutoFillWidth
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateMode.NeverFillWidth
@@ -30,7 +29,7 @@ import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
 
 class HorizontalCandidateComponent :
-    UniqueViewComponent<HorizontalCandidateComponent, RecyclerView>(), InputBroadcastReceiver {
+    UniqueViewComponent<HorizontalCandidateComponent, RecyclerView>() {
 
     private val context by manager.context()
     private val theme by manager.theme()
@@ -134,7 +133,7 @@ class HorizontalCandidateComponent :
         }
     }
 
-    override fun onCandidateUpdate(data: EngineCandidateList) {
+    fun onCandidateUpdate(data: EngineCandidateList) {
         // A new composition starts a new search, so its candidate rail must start at the primary
         // candidate. Subsequent user drags remain untouched until the candidate data changes.
         val previousCandidates = adapter.candidates

@@ -4,21 +4,23 @@
  */
 package org.fcitx.fcitx5.android.input.keyboard
 
-import org.fcitx.fcitx5.android.core.KeyStates
-import org.fcitx.fcitx5.android.core.KeySym
-import org.fcitx.fcitx5.android.core.ScancodeMapping
+import org.fcitx.fcitx5.android.input.engine.EngineKey
+import org.fcitx.fcitx5.android.input.engine.EngineKeyModifier
+import org.fcitx.fcitx5.android.input.engine.VirtualKeyModifiers
 import org.fcitx.fcitx5.android.input.mode.InputMode
 import org.fcitx.fcitx5.android.input.mode.PickerKind
 
 sealed class KeyAction {
 
-    data class FcitxKeyAction(
+    data class TextKeyAction(
         val act: String,
-        val code: Int = ScancodeMapping.charToScancode(act[0]),
-        val states: KeyStates = KeyStates.Virtual
+        val modifiers: Set<EngineKeyModifier> = VirtualKeyModifiers
     ) : KeyAction()
 
-    data class SymAction(val sym: KeySym, val states: KeyStates = KeyStates.Virtual) : KeyAction()
+    data class SymAction(
+        val key: EngineKey,
+        val modifiers: Set<EngineKeyModifier> = VirtualKeyModifiers
+    ) : KeyAction()
 
     data class CommitAction(val text: String) : KeyAction()
 

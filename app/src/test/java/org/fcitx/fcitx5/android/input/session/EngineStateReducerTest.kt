@@ -22,7 +22,7 @@ class EngineStateReducerTest {
 
     @Test
     fun eachEngineEventOnlyChangesItsOwnedState() {
-        val preedit = EngineText(listOf(EngineTextSegment("ni", 0)), 2)
+        val preedit = EngineText(listOf(EngineTextSegment("ni")), 2)
         val candidates = EngineCandidateList(
             total = 1,
             items = listOf(EngineCandidate("1", "你", "", true))
@@ -66,7 +66,7 @@ class EngineStateReducerTest {
     fun resetDropsEveryEngineOwnedValue() {
         val dirty = EngineState(
             ready = true,
-            clientPreedit = EngineText(listOf(EngineTextSegment("abc", 0)), 3),
+            clientPreedit = EngineText(listOf(EngineTextSegment("abc")), 3),
             candidates = EngineCandidateList(2, listOf(EngineCandidate("1", "a", "", true)))
         )
 

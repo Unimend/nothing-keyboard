@@ -21,13 +21,12 @@ import android.view.View
 import android.widget.TextView
 import androidx.annotation.ColorInt
 import androidx.core.text.buildSpannedString
-import org.fcitx.fcitx5.android.core.TextFormatFlag
-import org.fcitx.fcitx5.android.core.hasFlag
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.session.EngineText
+import org.fcitx.fcitx5.android.input.session.EngineTextStyle
 import splitties.dimensions.dp
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
@@ -84,12 +83,12 @@ open class PreeditUi(
             val start = length
             append(segment.text)
             val end = length
-            val flags = segment.formatFlags
-            if (flags.hasFlag(TextFormatFlag.Underline)) setSpan(UnderlineSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-            if (flags.hasFlag(TextFormatFlag.HighLight)) setSpan(BackgroundColorSpan(highlightColor), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-            if (flags.hasFlag(TextFormatFlag.Bold)) setSpan(StyleSpan(BOLD), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-            if (flags.hasFlag(TextFormatFlag.Strike)) setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
-            if (flags.hasFlag(TextFormatFlag.Italic)) setSpan(StyleSpan(ITALIC), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            val styles = segment.styles
+            if (EngineTextStyle.Underline in styles) setSpan(UnderlineSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (EngineTextStyle.Highlight in styles) setSpan(BackgroundColorSpan(highlightColor), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (EngineTextStyle.Bold in styles) setSpan(StyleSpan(BOLD), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (EngineTextStyle.Strike in styles) setSpan(StrikethroughSpan(), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
+            if (EngineTextStyle.Italic in styles) setSpan(StyleSpan(ITALIC), start, end, Spanned.SPAN_INCLUSIVE_EXCLUSIVE)
         }
     }
 

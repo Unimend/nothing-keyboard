@@ -76,4 +76,58 @@ class InputArchitectureBoundaryTest {
         assertFalse("Picker tabs must not branch around typography", "category.icon" in tabs)
         assertTrue("Picker labels must use the shared typography API", "setNothingText(" in tabs)
     }
+
+    @Test
+    fun `legacy input broadcast API cannot return`() {
+        val violations = inputSources().filter {
+            val source = it.readText()
+            "InputBroadcaster" in source || "InputBroadcastReceiver" in source ||
+                "input.broadcast" in source
+        }
+        assertTrue("Legacy input broadcast API: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `Fcitx protocol types stay inside engine platform boundary`() {
+        val allowed = setOf(
+            "FcitxInputMethodService.kt",
+            "engine/"
+        )
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            val permitted = allowed.any { token ->
+                if (token.endsWith("/")) "/$token" in relative else relative.endsWith(token)
+            }
+            !permitted && "org.fcitx.fcitx5.android.core" in file.readText()
+        }
+        assertTrue("Fcitx type leaked downstream: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `legacy engine vocabulary cannot shape keyboard actions`() {
+        val keyboardRoot = sourceRoot.resolve("org/fcitx/fcitx5/android/input/keyboard")
+        val forbidden = Regex("""\b(FcitxKeyAction|FcitxKeyMapping|KeySym|KeyStates|ScancodeMapping)\b""")
+        val violations = keyboardRoot.walkTopDown()
+            .filter { it.isFile && it.extension == "kt" && forbidden.containsMatchIn(it.readText()) }
+            .toList()
+        assertTrue("Legacy engine vocabulary in keyboard model: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `session mutations have explicit owners`() {
+        val allowed = setOf(
+            "FcitxInputMethodService.kt",
+            "engine/FcitxEngineBridge.kt",
+            "engine/PunctuationController.kt",
+            "wm/InputWindowManager.kt",
+            "session/InputSessionStore.kt"
+        )
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            allowed.none(relative::endsWith) &&
+                Regex("""inputSession\.dispatch|session\.dispatch\(InputSessionEvent""")
+                    .containsMatchIn(file.readText())
+        }
+        assertTrue("Unowned session mutation: ${violations.joinToString()}", violations.isEmpty())
+    }
 }

@@ -14,6 +14,7 @@ import androidx.paging.PagingConfig
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.drop
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -21,8 +22,6 @@ import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.BooleanKey.Ex
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesAttached
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.TransitionEvent.ExpandedCandidatesDetached
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
-import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.expanded.CandidateTabActionsAdapter
 import org.fcitx.fcitx5.android.input.candidates.expanded.CandidatesPagingSource
@@ -42,6 +41,9 @@ import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.input.session.InputPresentationState
+import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
+import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
+import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
@@ -49,7 +51,7 @@ import splitties.views.recyclerview.verticalLayoutManager
 import kotlin.math.max
 
 abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
-    InputWindow.SimpleInputWindow<T>(), InputBroadcastReceiver {
+    InputWindow.SimpleInputWindow<T>() {
 
     override val surface = InputSurface.ExpandedCandidates
 
@@ -60,7 +62,6 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     private val bar: KawaiiBarComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val candidateInteraction: CandidateInteractionController by manager.must()
-    private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
     private val navigator: InputNavigator by manager.must()
 
     protected val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
@@ -152,6 +153,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         )
     }
     private var candidatesSubmitJob: Job? = null
+    private var sessionJob: Job? = null
 
     abstract fun prevPage()
 
@@ -160,7 +162,12 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     override fun onAttached() {
         bar.expandButtonStateMachine.push(ExpandedCandidatesAttached)
         candidateLayout.embeddedKeyboard.also {
-            it.onReturnDrawableUpdate(returnKeyDrawable.resourceId)
+            val snapshot = service.inputSession.current
+            it.onReturnDrawableUpdate(ReturnKeyGlyphPolicy.resolve(
+                snapshot.editor,
+                InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,
+                theme.isNothingStyle
+            ))
             it.keyActionListener = keyActionListener
         }
         updateTabs(service.inputSession.current.engine.inputPanel.tabs)
@@ -177,6 +184,21 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         candidatesSubmitJob = service.lifecycleScope.launch {
             candidatesPager.flow.collectLatest {
                 adapter.submitData(it)
+            }
+        }
+        sessionJob = service.lifecycleScope.launch {
+            service.inputSession.state.drop(1).collect { snapshot ->
+                val presentation = InputPresentationReducer.reduce(snapshot.engine)
+                if (presentation.preeditEmpty) {
+                    navigator.navigate(InputNavigationCommand.ShowKeyboard())
+                } else {
+                    updateTabs(snapshot.engine.inputPanel.tabs)
+                    candidateLayout.embeddedKeyboard.onReturnDrawableUpdate(
+                        ReturnKeyGlyphPolicy.resolve(
+                            snapshot.editor, presentation.preeditEmpty, theme.isNothingStyle
+                        )
+                    )
+                }
             }
         }
     }
@@ -205,17 +227,9 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         )
         candidatesSubmitJob?.cancel()
         offsetJob?.cancel()
+        sessionJob?.cancel()
+        sessionJob = null
         candidateLayout.embeddedKeyboard.keyActionListener = null
-    }
-
-    override fun onInputPresentationUpdate(state: InputPresentationState) {
-        if (state.preeditEmpty) {
-            navigator.navigate(InputNavigationCommand.ShowKeyboard())
-        }
-    }
-
-    override fun onInputPanelUpdate(data: EngineInputPanel) {
-        updateTabs(data.tabs)
     }
 
 }

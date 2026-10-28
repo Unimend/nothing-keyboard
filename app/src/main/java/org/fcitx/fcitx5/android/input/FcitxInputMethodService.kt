@@ -53,8 +53,6 @@ import org.fcitx.fcitx5.android.core.CapabilityFlags
 import org.fcitx.fcitx5.android.core.CapabilityFlag
 import org.fcitx.fcitx5.android.core.FcitxAPI
 import org.fcitx.fcitx5.android.core.FormattedText
-import org.fcitx.fcitx5.android.core.KeyStates
-import org.fcitx.fcitx5.android.core.KeySym
 import org.fcitx.fcitx5.android.core.ScancodeMapping
 import org.fcitx.fcitx5.android.core.SubtypeManager
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
@@ -81,7 +79,7 @@ import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
-import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
+import org.fcitx.fcitx5.android.input.engine.FcitxPlatformAdapter
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
@@ -261,13 +259,22 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         return job
     }
 
-    /** Serializes project-owned commands on the same queue as remaining legacy operations. */
+    /** Serializes project-owned commands on the engine connection queue. */
     override fun submit(command: EngineCommand): Job = postFcitxJob {
         InputCoreDiagnostics.recordEngineCommand(command::class.simpleName ?: "EngineCommand")
         FcitxEngineCommandAdapter.execute(this, command)
     }
 
     fun submitEngineCommand(command: EngineCommand): Job = submit(command)
+
+    suspend fun syncPlatformInputMethodSubtypes() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            SubtypeManager.syncWith(
+                engineQueries.enabledInputMethods().map(FcitxPlatformAdapter::inputMethod)
+                    .toTypedArray()
+            )
+        }
+    }
 
     private fun submitEngineCommand(command: EngineCommand, guard: () -> Boolean): Job =
         postFcitxJob {
@@ -293,15 +300,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         }
         prefs.candidates.registerOnChangeListener(recreateCandidatesViewListener)
         ThemeManager.addOnChangedListener(onThemeChangeListener)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            lifecycleScope.launch {
-                SubtypeManager.syncWith(
-                    engineQueries.enabledInputMethods().map(
-                        LegacyEngineStateAdapter::inputMethod
-                    ).toTypedArray()
-                )
-            }
-        }
+        lifecycleScope.launch { syncPlatformInputMethodSubtypes() }
         super.onCreate()
         window.window!!.apply {
             setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
@@ -328,7 +327,7 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
             }
             is EngineEffect.ForwardKey -> handleForwardedEngineKey(effect)
             is EngineEffect.UpdateClientPreedit ->
-                updateComposingText(LegacyEngineStateAdapter.text(effect.text))
+                updateComposingText(FcitxPlatformAdapter.text(effect.text))
             is EngineEffect.DeleteSurrounding ->
                 handleDeleteSurrounding(effect.before, effect.after)
             is EngineEffect.InputMethodChanged -> {
@@ -671,17 +670,12 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
         // KeyUp and KeyDown events actually can happen on the same time
         val timestamp = cachedKeyEventIndex++
         cachedKeyEvents.put(timestamp, event)
-        val sym = KeySym.fromKeyEvent(event)
-        if (sym != null) {
-            val states = KeyStates.fromKeyEvent(event)
-            val up = event.action == KeyEvent.ACTION_UP
-            submitEngineCommand(
-                EngineCommand.SendKey(sym.sym, states.states, event.scanCode, up, timestamp)
-            )
-            return true
+        postFcitxJob {
+            if (!FcitxEngineCommandAdapter.executeHardwareKey(this, event, timestamp)) {
+                Timber.d("Skipped KeyEvent: $event")
+            }
         }
-        Timber.d("Skipped KeyEvent: $event")
-        return false
+        return true
     }
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
@@ -825,7 +819,6 @@ class FcitxInputMethodService : LifecycleInputMethodService(), EngineCommandPort
             candidatesEnd,
             cursorUpdateIndex
         )
-        inputView?.updateSelection(newSelStart, newSelEnd)
     }
 
     private val contentSize = floatArrayOf(0f, 0f)

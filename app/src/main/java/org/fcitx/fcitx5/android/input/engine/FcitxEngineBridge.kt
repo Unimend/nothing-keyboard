@@ -12,7 +12,6 @@ import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.session.EngineStateEvent
-import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
 

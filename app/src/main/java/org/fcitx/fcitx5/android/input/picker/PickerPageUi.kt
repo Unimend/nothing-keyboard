@@ -10,8 +10,7 @@ import android.view.ViewGroup
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.updateLayoutParams
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.core.FcitxKeyMapping
-import org.fcitx.fcitx5.android.core.KeySym
+import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
@@ -24,7 +23,7 @@ import org.fcitx.fcitx5.android.input.keyboard.ImageKeyView
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
-import org.fcitx.fcitx5.android.input.keyboard.KeyAction.FcitxKeyAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.TextKeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.MoveSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SymAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UndoAction
@@ -115,7 +114,7 @@ class PickerPageUi(
     )
 
     private val backspaceKey by lazy {
-        val backspaceAction = SymAction(KeySym(FcitxKeyMapping.FcitxKey_BackSpace))
+        val backspaceAction = SymAction(EngineKey.Backspace)
         val action: (View) -> Unit = {
             keyActionListener?.onKeyAction(backspaceAction, Source.Keyboard)
         }
@@ -301,7 +300,7 @@ class PickerPageUi(
     private fun onPopupTrigger(viewId: Int): Boolean {
         val triggerAction = PopupAction.TriggerAction(viewId)
         onPopupAction(triggerAction)
-        val action = triggerAction.outAction as? FcitxKeyAction ?: return false
+        val action = triggerAction.outAction as? TextKeyAction ?: return false
         onItemClick(action.act)
         onPopupAction(PopupAction.DismissAction(viewId))
         return true

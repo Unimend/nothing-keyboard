@@ -16,18 +16,20 @@ import android.widget.ImageView
 import androidx.annotation.Keep
 import androidx.annotation.RequiresApi
 import androidx.core.view.updateLayoutParams
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.data.prefs.ManagedPreferenceProvider
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcaster
-import org.fcitx.fcitx5.android.input.broadcast.InputPresentationComponent
-import org.fcitx.fcitx5.android.input.broadcast.PunctuationComponent
-import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.design.NothingDesignTokens
+import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.DisplayMetrics
@@ -36,6 +38,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.mode.InputModeStore
+import org.fcitx.fcitx5.android.input.engine.PunctuationController
 import org.fcitx.fcitx5.android.input.candidates.interaction.CandidateInteractionController
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardInteractionController
 import org.fcitx.fcitx5.android.input.picker.emojiPicker
@@ -48,6 +51,7 @@ import org.fcitx.fcitx5.android.input.session.EngineState
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
 import org.fcitx.fcitx5.android.input.session.editorSessionOrNull
+import org.fcitx.fcitx5.android.input.session.InputPresentationReducer
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.wm.InputWindowLifecycleDispatcher
 import org.fcitx.fcitx5.android.utils.unset
@@ -109,11 +113,8 @@ class InputView(
     }
 
     private val scope = DynamicScope()
-    private val broadcaster = InputBroadcaster()
     private val popup = PopupComponent()
-    private val punctuation = PunctuationComponent()
-    private val returnKeyDrawable = ReturnKeyDrawableComponent()
-    private val inputPresentation = InputPresentationComponent()
+    private val punctuation = PunctuationController()
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
     private val windowLifecycle = InputWindowLifecycleDispatcher()
@@ -135,11 +136,8 @@ class InputView(
         scope += service.wrapToUniqueComponent()
         scope += theme.wrapToUniqueComponent()
         scope += themedContext.wrapToUniqueComponent()
-        scope += broadcaster
         scope += popup
         scope += punctuation
-        scope += returnKeyDrawable
-        scope += inputPresentation
         scope += preedit
         scope += commonKeyActionListener
         scope += windowLifecycle
@@ -234,9 +232,9 @@ class InputView(
         setupScope()
 
         // restore punctuation mapping in case of InputView recreation
-        punctuation.updatePunctuationMapping()
+        punctuation.refresh()
 
-        // make sure KeyboardWindow's view has been created before it receives any broadcast
+        // Create the essential keyboard before rendering the first session snapshot.
         windowManager.addEssentialWindow(keyboardWindow, createView = true)
         windowManager.addEssentialWindow(symbolPicker)
         windowManager.addEssentialWindow(emojiPicker)
@@ -244,9 +242,7 @@ class InputView(
         // show KeyboardWindow by default
         navigator.navigate(InputNavigationCommand.ShowKeyboard())
 
-        service.inputSession.current.engine.inputMethod?.let {
-            broadcaster.onImeUpdate(it)
-        }
+        service.inputSession.current.engine.inputMethod?.let(keyboardWindow::onImeUpdate)
 
         customBackground.imageDrawable = theme.backgroundDrawable(keyBorder)
 
@@ -305,6 +301,29 @@ class InputView(
 
         keyboardPrefs.registerOnChangeListener(onKeyboardSizeChangeListener)
         advancedPrefs.registerOnChangeListener(onKeyboardSizeChangeListener)
+        observeSessionDerivedState()
+    }
+
+    private var sessionStateJob: Job? = null
+
+    private fun observeSessionDerivedState() {
+        sessionStateJob = service.lifecycleScope.launch {
+            service.inputSession.state
+                .map { it.punctuationMapping }
+                .distinctUntilChanged()
+                .collect(keyboardWindow::onPunctuationUpdate)
+        }
+    }
+
+    private fun updateReturnKey() {
+        val snapshot = service.inputSession.current
+        keyboardWindow.onReturnKeyDrawableUpdate(
+            ReturnKeyGlyphPolicy.resolve(
+                snapshot.editor,
+                InputPresentationReducer.reduce(snapshot.engine).preeditEmpty,
+                theme.isNothingStyle
+            )
+        )
     }
 
     private fun updateKeyboardSize() {
@@ -356,8 +375,9 @@ class InputView(
      * called when [InputView] is about to show, or restart
      */
     fun startInput(session: EditorSessionSnapshot) {
-        broadcaster.onEditorSessionUpdate(session, EditorSessionChange.Started)
-        returnKeyDrawable.updateDrawableOnEditor(session.editor)
+        keyboardWindow.onEditorSessionUpdate(session, EditorSessionChange.Started)
+        kawaiiBar.onEditorSessionUpdate(session, EditorSessionChange.Started)
+        updateReturnKey()
         if (focusChangeResetKeyboard || !session.restarting) {
             navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
@@ -373,33 +393,22 @@ class InputView(
         val inputMethodChanged = previous == null || previous.inputMethod != state.inputMethod
         val statusChanged = previous == null || previous.statusActions != state.statusActions
         if (candidatesChanged) {
-            broadcaster.onCandidateUpdate(state.candidates)
-        }
-        if (clientPreeditChanged) {
-            broadcaster.onClientPreeditUpdate(state.clientPreedit)
+            horizontalCandidate.onCandidateUpdate(state.candidates)
         }
         if (panelChanged) {
-            broadcaster.onInputPanelUpdate(state.inputPanel)
+            preedit.onInputPanelUpdate(state.inputPanel)
         }
         if (clientPreeditChanged || panelChanged || candidatesChanged) {
-            inputPresentation.update(state)
+            kawaiiBar.onInputPresentationUpdate(InputPresentationReducer.reduce(state))
+            updateReturnKey()
         }
         if (inputMethodChanged) {
-            state.inputMethod?.let {
-                broadcaster.onImeUpdate(it)
-            }
+            state.inputMethod?.let(keyboardWindow::onImeUpdate)
         }
         if (statusChanged) {
-            punctuation.updatePunctuationMapping()
-            broadcaster.onStatusAreaUpdate(state.statusActions)
+            punctuation.refresh()
         }
         previousEngineState = state
-    }
-
-    fun updateSelection(start: Int, end: Int) {
-        service.inputSession.current.editorSessionOrNull()?.let {
-            broadcaster.onEditorSessionUpdate(it, EditorSessionChange.Selection)
-        }
     }
 
     @RequiresApi(Build.VERSION_CODES.R)
@@ -411,6 +420,8 @@ class InputView(
         advancedPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
         keyboardPrefs.unregisterOnChangeListener(onKeyboardSizeChangeListener)
         kawaiiBar.onInputScopeDestroyed()
+        sessionStateJob?.cancel()
+        sessionStateJob = null
         // clear DynamicScope, implies that InputView should not be attached again after detached.
         scope.clear()
         super.onDetachedFromWindow()

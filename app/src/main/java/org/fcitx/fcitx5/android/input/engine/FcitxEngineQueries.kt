@@ -6,7 +6,6 @@ package org.fcitx.fcitx5.android.input.engine
 import org.fcitx.fcitx5.android.daemon.FcitxConnection
 import org.fcitx.fcitx5.android.data.punctuation.PunctuationManager
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
-import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
 
 /** Fcitx implementation of the project-owned read boundary. */
 class FcitxEngineQueries(private val connection: FcitxConnection) : InputEngineQueries {

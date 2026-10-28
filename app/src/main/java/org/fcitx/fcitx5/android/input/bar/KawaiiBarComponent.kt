@@ -45,7 +45,6 @@ import org.fcitx.fcitx5.android.input.bar.ui.CandidateUi
 import org.fcitx.fcitx5.android.input.bar.ui.IdleUi
 import org.fcitx.fcitx5.android.input.bar.ui.TitleUi
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateStyle
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
@@ -79,7 +78,7 @@ import kotlin.math.hypot
 import kotlin.math.min
 
 class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(),
-    InputBroadcastReceiver, InputWindowLifecycleObserver {
+    InputWindowLifecycleObserver {
 
     private val context by manager.context()
     private val theme by manager.theme()
@@ -409,7 +408,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         clipboardItemTimeout.unregisterOnChangeListener(onClipboardTimeoutUpdateListener)
     }
 
-    override fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
+    fun onEditorSessionUpdate(session: EditorSessionSnapshot, change: EditorSessionChange) {
         if (change != EditorSessionChange.Started) return
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             idleUi.privateMode(session.editor.privateMode)
@@ -427,7 +426,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         )
     }
 
-    override fun onInputPresentationUpdate(state: InputPresentationState) {
+    fun onInputPresentationUpdate(state: InputPresentationState) {
         barStateMachine.push(PresentationUpdated, ShowCandidates to state.showCandidates)
     }
 

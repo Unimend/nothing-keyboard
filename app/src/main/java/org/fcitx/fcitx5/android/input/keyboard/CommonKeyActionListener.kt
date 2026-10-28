@@ -8,10 +8,9 @@ package org.fcitx.fcitx5.android.input.keyboard
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import org.fcitx.fcitx5.android.core.FcitxKeyMapping
+import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
-import org.fcitx.fcitx5.android.input.broadcast.InputPresentationComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
@@ -29,7 +28,7 @@ import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener.Backspace
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
-import org.fcitx.fcitx5.android.input.keyboard.KeyAction.FcitxKeyAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.TextKeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.LangSwitchAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.MoveSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.PickerSwitchAction
@@ -56,7 +55,6 @@ class CommonKeyActionListener :
 
     private val context by manager.context()
     private val service by manager.inputMethodService()
-    private val presentation: InputPresentationComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
 
     private val kbdPrefs = AppPrefs.getInstance().keyboard
@@ -96,12 +94,12 @@ class CommonKeyActionListener :
     val listener by lazy {
         KeyActionListener { action, _ ->
             when (action) {
-                is FcitxKeyAction -> service.submitEngineCommand(
-                    EngineCommand.SendKeyText(action.act, action.states.states, action.code)
+                is TextKeyAction -> service.submitEngineCommand(
+                    EngineCommand.SendKeyText(action.act, action.modifiers)
                 )
                 is SymAction -> {
                     if (
-                        action.sym.sym == FcitxKeyMapping.FcitxKey_Return &&
+                        action.key == EngineKey.Return &&
                         hasPreedit()
                     ) {
                         // Return completes active input instead of leaking through as an editor
@@ -109,7 +107,7 @@ class CommonKeyActionListener :
                         commitAndReset()
                     } else {
                         service.submitEngineCommand(
-                            EngineCommand.SendKey(action.sym.sym, action.states.states)
+                            EngineCommand.SendKey(action.key, action.modifiers)
                         )
                     }
                 }
@@ -154,7 +152,7 @@ class CommonKeyActionListener :
                     when (backspaceSwipeState) {
                         Stopped -> {
                             backspaceSwipeState = if (
-                                presentation.state.preeditEmpty &&
+                                !hasPreedit() &&
                                 horizontalCandidate.adapter.total <= 0 // total is -1 on initialization
                             ) {
                                 editingCommands.execute(EditingCommand.ExtendSelection(action.steps))

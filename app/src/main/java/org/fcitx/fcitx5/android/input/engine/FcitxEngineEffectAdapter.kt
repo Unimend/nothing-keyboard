@@ -5,7 +5,6 @@ package org.fcitx.fcitx5.android.input.engine
 
 import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
-import org.fcitx.fcitx5.android.input.session.FcitxEngineStateAdapter
 
 object FcitxEngineEffectAdapter {
     fun map(event: FcitxEvent<*>): EngineEffect? = when (event) {

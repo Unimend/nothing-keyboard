@@ -8,7 +8,6 @@ import android.view.View
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
-import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.mechdancer.dependency.Dependent
@@ -19,7 +18,7 @@ import splitties.dimensions.dp
 import splitties.views.backgroundColor
 import splitties.views.horizontalPadding
 
-class PreeditComponent : UniqueComponent<PreeditComponent>(), Dependent, InputBroadcastReceiver,
+class PreeditComponent : UniqueComponent<PreeditComponent>(), Dependent,
     ManagedHandler by managedHandler() {
 
     private val context by manager.context()
@@ -39,7 +38,7 @@ class PreeditComponent : UniqueComponent<PreeditComponent>(), Dependent, InputBr
         }
     }
 
-    override fun onInputPanelUpdate(data: EngineInputPanel) {
+    fun onInputPanelUpdate(data: EngineInputPanel) {
         ui.update(data)
         ui.root.visibility = if (ui.visible) View.VISIBLE else View.INVISIBLE
     }

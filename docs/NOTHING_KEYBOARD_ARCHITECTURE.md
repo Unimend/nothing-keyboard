@@ -31,6 +31,10 @@ visual system ------------------------+----------------+
 Views may render models and emit user intents. They must not infer engine indices, own paging
 state, classify fonts independently or embed feature-specific gesture state.
 
+Keyboard definitions and gestures express keys through `EngineKey` and `EngineKeyModifier`.
+Fcitx symbols, modifier bitfields and scan-code conversion are private to `input/engine`; adding
+one of those protocol types to a surface is an architecture violation, not a convenience API.
+
 ## Lifecycle ownership
 
 Every listener, collector, delayed job, animator, and adapter callback must be owned by the
@@ -97,8 +101,8 @@ and specialized child overlays remain window-manager responsibilities rather tha
 
 Editor lifecycle, editor identity, capability flags, selection, and active surface are represented
 by the service-lifetime `InputSessionStore`. Windows declare their semantic surface and the window
-manager publishes transitions into the same snapshot. During migration, legacy broadcasts remain
-compatibility outputs; they must not become new sources of truth.
+manager publishes transitions into the same snapshot. Surfaces consume typed slices of this store;
+the former parallel input broadcast API has been removed and is forbidden by an architecture test.
 
 ## Custom rendering audit
 

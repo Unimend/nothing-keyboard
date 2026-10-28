@@ -7,16 +7,14 @@ package org.fcitx.fcitx5.android.input.engine
 sealed interface EngineCommand {
     data class SendKeyText(
         val text: String,
-        val states: UInt = 0u,
-        val code: Int = 0,
+        val modifiers: Set<EngineKeyModifier> = VirtualKeyModifiers,
         val keyUp: Boolean = false,
         val timestamp: Int = -1
     ) : EngineCommand
 
     data class SendKey(
-        val symbol: Int,
-        val states: UInt = 0u,
-        val code: Int = 0,
+        val key: EngineKey,
+        val modifiers: Set<EngineKeyModifier> = VirtualKeyModifiers,
         val keyUp: Boolean = false,
         val timestamp: Int = -1
     ) : EngineCommand
