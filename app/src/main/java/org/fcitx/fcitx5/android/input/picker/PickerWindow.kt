@@ -22,7 +22,6 @@ import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.EssentialWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.mechdancer.dependency.manager.must
 
 class PickerWindow(
@@ -45,11 +44,10 @@ class PickerWindow(
 
     private val theme by manager.theme()
     private val service by manager.inputMethodService()
-    private val windowManager: InputWindowManager by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
-    private val navigator by lazy { InputNavigator(service, windowManager) }
+    private val navigator: InputNavigator by manager.must()
 
     private val keyBorder by ThemeManager.prefs.keyBorder
 

@@ -46,7 +46,6 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.wm.InputWindow
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.EventStateMachine
 import org.fcitx.fcitx5.android.utils.item
@@ -61,9 +60,8 @@ class ClipboardWindow : InputWindow.ExtendedInputWindow<ClipboardWindow>() {
     override val surface = InputSurface.Clipboard
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
-    private val windowManager: InputWindowManager by manager.must()
     private val theme by manager.theme()
-    private val navigator by lazy { InputNavigator(service, windowManager) }
+    private val navigator: InputNavigator by manager.must()
 
     private val snackbarCtx by lazy {
         context.withTheme(R.style.InputViewSnackbarTheme)

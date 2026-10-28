@@ -23,14 +23,14 @@ import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
-import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.InputMethod
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.Keyboard
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ReloadConfig
 import org.fcitx.fcitx5.android.input.status.StatusAreaEntry.Android.Type.ThemeList
 import org.fcitx.fcitx5.android.input.wm.InputWindow
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.LegacyEngineStateAdapter
 import org.fcitx.fcitx5.android.utils.AppUtil
@@ -53,7 +53,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
     private val theme by manager.theme()
-    private val windowManager: InputWindowManager by manager.must()
+    private val navigator: InputNavigator by manager.must()
 
     private val editorInfoInspector by AppPrefs.getInstance().internal.editorInfoInspector
 
@@ -195,7 +195,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>(),
     private val editorInfoButton by lazy {
         ToolButton(context, R.drawable.ic_baseline_info_24, theme).apply {
             contentDescription = context.getString(R.string.editor_info_inspector)
-            setOnClickListener { windowManager.attachWindow(EditorInfoWindow()) }
+            setOnClickListener { navigator.navigate(InputNavigationCommand.ShowEditorInfo) }
         }
     }
 

@@ -50,8 +50,6 @@ import org.fcitx.fcitx5.android.input.bar.ui.TitleUi
 import org.fcitx.fcitx5.android.input.bar.ui.ToolButton
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.candidates.expanded.ExpandedCandidateStyle
-import org.fcitx.fcitx5.android.input.candidates.expanded.window.FlexboxExpandedCandidateWindow
-import org.fcitx.fcitx5.android.input.candidates.expanded.window.GridExpandedCandidateWindow
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.dependency.UniqueViewComponent
 import org.fcitx.fcitx5.android.input.dependency.context
@@ -65,9 +63,7 @@ import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
-import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindow
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.AppUtil
 import org.fcitx.fcitx5.android.utils.InputMethodUtil
 import org.mechdancer.dependency.DynamicScope
@@ -92,11 +88,10 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     private val context by manager.context()
     private val theme by manager.theme()
     private val service by manager.inputMethodService()
-    private val windowManager: InputWindowManager by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val popup: PopupComponent by manager.must()
-    private val navigator by lazy { InputNavigator(service, windowManager) }
+    private val navigator: InputNavigator by manager.must()
 
     private val prefs = AppPrefs.getInstance()
 
@@ -307,7 +302,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                     navigator.navigate(InputNavigationCommand.ShowClipboard)
                 }
                 moreButton.setOnClickListener {
-                    windowManager.attachWindow(StatusAreaWindow())
+                    navigator.navigate(InputNavigationCommand.ShowStatus)
                 }
             }
             clipboardUi.suggestionView.apply {
@@ -373,12 +368,12 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
     // set expand candidate button to create expand candidate
     private fun setExpandButtonToAttach() {
         candidateUi.expandButton.setOnClickListener {
-            windowManager.attachWindow(
+            navigator.navigate(InputNavigationCommand.ShowExpandedCandidates(
                 when (expandedCandidateStyle) {
-                    ExpandedCandidateStyle.Grid -> GridExpandedCandidateWindow()
-                    ExpandedCandidateStyle.Flexbox -> FlexboxExpandedCandidateWindow()
+                    ExpandedCandidateStyle.Grid -> InputNavigationCommand.CandidateLayout.Grid
+                    ExpandedCandidateStyle.Flexbox -> InputNavigationCommand.CandidateLayout.Flexbox
                 }
-            )
+            ))
         }
         candidateUi.expandButton.setIcon(R.drawable.ic_baseline_expand_more_24)
         candidateUi.expandButton.contentDescription = context.getString(R.string.expand_candidates_list)

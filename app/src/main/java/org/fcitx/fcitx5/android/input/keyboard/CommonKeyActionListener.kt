@@ -39,7 +39,6 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SpaceLongPressAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SymAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UnicodeAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.UndoAction
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.utils.switchToNextIME
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.UniqueComponent
@@ -58,7 +57,6 @@ class CommonKeyActionListener :
     private val service by manager.inputMethodService()
     private val preeditState: PreeditEmptyStateComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
-    private val windowManager: InputWindowManager by manager.must()
 
     private val kbdPrefs = AppPrefs.getInstance().keyboard
 
@@ -67,7 +65,7 @@ class CommonKeyActionListener :
 
     private var backspaceSwipeState = Stopped
     private val editingCommands by lazy { AndroidEditingCommandExecutor(service) }
-    private val navigator by lazy { InputNavigator(service, windowManager) }
+    private val navigator: InputNavigator by manager.must()
 
     private fun hasPreedit(): Boolean = service.inputSession.current.engine.let {
         !it.clientPreedit.isEmpty || !it.inputPanel.preedit.isEmpty

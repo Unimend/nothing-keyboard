@@ -42,7 +42,6 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.input.wm.InputWindow
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
 import splitties.views.recyclerview.verticalLayoutManager
@@ -59,9 +58,8 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val bar: KawaiiBarComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
-    private val windowManager: InputWindowManager by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
-    private val navigator by lazy { InputNavigator(service, windowManager) }
+    private val navigator: InputNavigator by manager.must()
 
     protected val disableAnimation by AppPrefs.getInstance().advanced.disableAnimation
 

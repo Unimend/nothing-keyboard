@@ -34,6 +34,8 @@ import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.DisplayMetrics
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.RealSize
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.picker.emojiPicker
 import org.fcitx.fcitx5.android.input.picker.emoticonPicker
 import org.fcitx.fcitx5.android.input.picker.symbolPicker
@@ -107,6 +109,7 @@ class InputView(
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
     private val windowManager = InputWindowManager()
+    private val navigator = InputNavigator()
     private val kawaiiBar = KawaiiBarComponent()
     private val horizontalCandidate = HorizontalCandidateComponent()
     private val keyboardWindow = KeyboardWindow()
@@ -127,6 +130,7 @@ class InputView(
         scope += preedit
         scope += commonKeyActionListener
         scope += windowManager
+        scope += navigator
         scope += kawaiiBar
         scope += horizontalCandidate
         broadcaster.onScopeSetupFinished(scope)
@@ -221,7 +225,7 @@ class InputView(
         windowManager.addEssentialWindow(emojiPicker)
         windowManager.addEssentialWindow(emoticonPicker)
         // show KeyboardWindow by default
-        windowManager.attachWindow(KeyboardWindow)
+        navigator.navigate(InputNavigationCommand.ShowKeyboard())
 
         service.inputSession.current.engine.inputMethod?.let {
             broadcaster.onImeUpdate(LegacyEngineStateAdapter.inputMethod(it))
@@ -338,7 +342,7 @@ class InputView(
         broadcaster.onStartInput(info, capFlags)
         returnKeyDrawable.updateDrawableOnEditorInfo(info)
         if (focusChangeResetKeyboard || !restarting) {
-            windowManager.attachWindow(KeyboardWindow)
+            navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
     }
 

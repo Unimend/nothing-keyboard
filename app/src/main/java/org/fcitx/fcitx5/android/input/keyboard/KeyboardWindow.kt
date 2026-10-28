@@ -21,6 +21,8 @@ import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
 import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
+import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
+import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
@@ -43,6 +45,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     private val theme by manager.theme()
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val windowManager: InputWindowManager by manager.must()
+    private val navigator: InputNavigator by manager.must()
     private val popup: PopupComponent by manager.must()
     private val bar: KawaiiBarComponent by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
@@ -80,7 +83,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
 
     private val keyActionListener = KeyActionListener { it, source ->
         if (it is KeyAction.LayoutSwitchAction) {
-            switchLayout(it.act)
+            navigator.navigate(InputNavigationCommand.ShowKeyboard(it.act))
         } else {
             commonKeyActionListener.listener.onKeyAction(it, source)
         }
@@ -137,7 +140,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
                 if (remember) {
                     lastSymbolType = PickerWindow.Key.Symbol.name
                 }
-                windowManager.attachWindow(PickerWindow.Key.Symbol)
+                navigator.navigate(InputNavigationCommand.ShowPicker(PickerWindow.Key.Symbol))
             }
         }
     }

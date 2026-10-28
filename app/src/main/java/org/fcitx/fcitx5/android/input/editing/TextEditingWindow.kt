@@ -19,7 +19,6 @@ import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.wm.InputWindow
-import org.fcitx.fcitx5.android.input.wm.InputWindowManager
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.mechdancer.dependency.manager.must
 
@@ -29,7 +28,6 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
     override val surface = InputSurface.Editing
 
     private val service: FcitxInputMethodService by manager.inputMethodService()
-    private val windowManager: InputWindowManager by manager.must()
     private val theme by manager.theme()
 
     private val hapticOnRepeat by AppPrefs.getInstance().keyboard.hapticOnRepeat
@@ -40,7 +38,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>(),
 
     private val session = EditingSession()
     private val commandExecutor by lazy { AndroidEditingCommandExecutor(service) }
-    private val navigator by lazy { InputNavigator(service, windowManager) }
+    private val navigator: InputNavigator by manager.must()
 
     private fun sendDirectionKey(keyEventCode: Int) {
         commandExecutor.execute(session.move(keyEventCode))
