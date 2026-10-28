@@ -12,6 +12,7 @@ import org.fcitx.fcitx5.android.input.session.EngineStatusAction
 import org.fcitx.fcitx5.android.input.session.EngineText
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
+import org.fcitx.fcitx5.android.input.session.InputPresentationState
 
 interface InputBroadcastReceiver {
 
@@ -29,7 +30,7 @@ interface InputBroadcastReceiver {
 
     fun onPunctuationUpdate(mapping: Map<String, String>) {}
 
-    fun onPreeditEmptyStateUpdate(empty: Boolean) {}
+    fun onInputPresentationUpdate(state: InputPresentationState) {}
 
     fun onReturnKeyDrawableUpdate(@DrawableRes resourceId: Int) {}
 

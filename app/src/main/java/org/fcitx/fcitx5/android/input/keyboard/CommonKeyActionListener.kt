@@ -11,7 +11,7 @@ import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 import org.fcitx.fcitx5.android.daemon.launchOnReady
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
-import org.fcitx.fcitx5.android.input.broadcast.PreeditEmptyStateComponent
+import org.fcitx.fcitx5.android.input.broadcast.InputPresentationComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputMethodService
@@ -55,7 +55,7 @@ class CommonKeyActionListener :
 
     private val context by manager.context()
     private val service by manager.inputMethodService()
-    private val preeditState: PreeditEmptyStateComponent by manager.must()
+    private val presentation: InputPresentationComponent by manager.must()
     private val horizontalCandidate: HorizontalCandidateComponent by manager.must()
 
     private val kbdPrefs = AppPrefs.getInstance().keyboard
@@ -153,7 +153,7 @@ class CommonKeyActionListener :
                     when (backspaceSwipeState) {
                         Stopped -> {
                             backspaceSwipeState = if (
-                                preeditState.isEmpty &&
+                                presentation.state.preeditEmpty &&
                                 horizontalCandidate.adapter.total <= 0 // total is -1 on initialization
                             ) {
                                 editingCommands.execute(EditingCommand.ExtendSelection(action.steps))

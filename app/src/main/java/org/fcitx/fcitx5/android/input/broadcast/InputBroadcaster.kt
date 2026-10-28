@@ -11,6 +11,7 @@ import org.fcitx.fcitx5.android.input.session.EngineStatusAction
 import org.fcitx.fcitx5.android.input.session.EngineText
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
+import org.fcitx.fcitx5.android.input.session.InputPresentationState
 import org.mechdancer.dependency.Dependent
 import org.mechdancer.dependency.ScopeEvent
 import org.mechdancer.dependency.UniqueComponent
@@ -64,8 +65,8 @@ class InputBroadcaster : UniqueComponent<InputBroadcaster>(), Dependent, InputBr
         receivers.forEach { it.onPunctuationUpdate(mapping) }
     }
 
-    override fun onPreeditEmptyStateUpdate(empty: Boolean) {
-        receivers.forEach { it.onPreeditEmptyStateUpdate(empty) }
+    override fun onInputPresentationUpdate(state: InputPresentationState) {
+        receivers.forEach { it.onInputPresentationUpdate(state) }
     }
 
     override fun onReturnKeyDrawableUpdate(resourceId: Int) {

@@ -41,6 +41,7 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.session.InputSurface
 import org.fcitx.fcitx5.android.input.session.EngineCandidateAction
 import org.fcitx.fcitx5.android.input.session.EngineInputPanel
+import org.fcitx.fcitx5.android.input.session.InputPresentationState
 import org.fcitx.fcitx5.android.input.wm.InputWindow
 import org.mechdancer.dependency.manager.must
 import splitties.dimensions.dp
@@ -209,8 +210,8 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         candidateLayout.embeddedKeyboard.keyActionListener = null
     }
 
-    override fun onPreeditEmptyStateUpdate(empty: Boolean) {
-        if (empty) {
+    override fun onInputPresentationUpdate(state: InputPresentationState) {
+        if (state.preeditEmpty) {
             navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
     }

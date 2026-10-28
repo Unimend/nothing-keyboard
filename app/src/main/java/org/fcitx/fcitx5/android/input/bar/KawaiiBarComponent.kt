@@ -26,9 +26,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.suspendCancellableCoroutine
 import org.fcitx.fcitx5.android.R
-import org.fcitx.fcitx5.android.input.session.EngineCandidateList
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
+import org.fcitx.fcitx5.android.input.session.InputPresentationState
 import org.fcitx.fcitx5.android.data.clipboard.ClipboardManager
 import org.fcitx.fcitx5.android.data.clipboard.db.ClipboardEntry
 import org.fcitx.fcitx5.android.data.prefs.AppPrefs
@@ -37,11 +37,9 @@ import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.ClickToAttachWindow
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.ClickToDetachWindow
 import org.fcitx.fcitx5.android.input.bar.ExpandButtonStateMachine.State.Hidden
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.BooleanKey.CandidateEmpty
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.BooleanKey.PreeditEmpty
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.TransitionEvent.CandidatesUpdated
+import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.BooleanKey.ShowCandidates
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.TransitionEvent.ExtendedWindowAttached
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.TransitionEvent.PreeditUpdated
+import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.TransitionEvent.PresentationUpdated
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.TransitionEvent.WindowDetached
 import org.fcitx.fcitx5.android.input.bar.ui.CandidateUi
 import org.fcitx.fcitx5.android.input.bar.ui.IdleUi
@@ -456,12 +454,8 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         evalIdleUiState()
     }
 
-    override fun onPreeditEmptyStateUpdate(empty: Boolean) {
-        barStateMachine.push(PreeditUpdated, PreeditEmpty to empty)
-    }
-
-    override fun onCandidateUpdate(data: EngineCandidateList) {
-        barStateMachine.push(CandidatesUpdated, CandidateEmpty to data.items.isEmpty())
+    override fun onInputPresentationUpdate(state: InputPresentationState) {
+        barStateMachine.push(PresentationUpdated, ShowCandidates to state.showCandidates)
     }
 
     override fun onWindowAttached(window: InputWindow) {

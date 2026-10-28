@@ -23,7 +23,7 @@ import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemeManager
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcaster
-import org.fcitx.fcitx5.android.input.broadcast.PreeditEmptyStateComponent
+import org.fcitx.fcitx5.android.input.broadcast.InputPresentationComponent
 import org.fcitx.fcitx5.android.input.broadcast.PunctuationComponent
 import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
 import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateComponent
@@ -106,7 +106,7 @@ class InputView(
     private val popup = PopupComponent()
     private val punctuation = PunctuationComponent()
     private val returnKeyDrawable = ReturnKeyDrawableComponent()
-    private val preeditEmptyState = PreeditEmptyStateComponent()
+    private val inputPresentation = InputPresentationComponent()
     private val preedit = PreeditComponent()
     private val commonKeyActionListener = CommonKeyActionListener()
     private val windowLifecycle = InputWindowLifecycleDispatcher()
@@ -128,7 +128,7 @@ class InputView(
         scope += popup
         scope += punctuation
         scope += returnKeyDrawable
-        scope += preeditEmptyState
+        scope += inputPresentation
         scope += preedit
         scope += commonKeyActionListener
         scope += windowLifecycle
@@ -366,11 +366,8 @@ class InputView(
         if (panelChanged) {
             broadcaster.onInputPanelUpdate(state.inputPanel)
         }
-        if (clientPreeditChanged || panelChanged) {
-            preeditEmptyState.updatePreeditEmptyState(
-                clientPreedit = state.clientPreedit,
-                preedit = state.inputPanel.preedit
-            )
+        if (clientPreeditChanged || panelChanged || candidatesChanged) {
+            inputPresentation.update(state)
         }
         if (inputMethodChanged) {
             state.inputMethod?.let {

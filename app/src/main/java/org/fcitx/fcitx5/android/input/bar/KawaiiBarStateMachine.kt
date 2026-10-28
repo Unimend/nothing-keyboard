@@ -4,8 +4,7 @@
  */
 package org.fcitx.fcitx5.android.input.bar
 
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.BooleanKey.CandidateEmpty
-import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.BooleanKey.PreeditEmpty
+import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.BooleanKey.ShowCandidates
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.State.Candidate
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.State.Idle
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarStateMachine.State.Title
@@ -19,22 +18,14 @@ object KawaiiBarStateMachine {
     }
 
     enum class BooleanKey : EventStateMachine.BooleanStateKey {
-        PreeditEmpty, CandidateEmpty
+        ShowCandidates
     }
 
     enum class TransitionEvent(val builder: TransitionBuildBlock<State, BooleanKey>) :
         EventStateMachine.TransitionEvent<State, BooleanKey> by BuildTransitionEvent(builder) {
-        PreeditUpdated({
-            from(Candidate) transitTo Idle on (PreeditEmpty to true)
-            from(Idle) transitTo Candidate onF {
-                it(PreeditEmpty) == false && it(CandidateEmpty) == false
-            }
-        }),
-        CandidatesUpdated({
-            from(Idle) transitTo Candidate on (CandidateEmpty to false)
-            from(Candidate) transitTo Idle onF {
-                it(PreeditEmpty) == true && it(CandidateEmpty) == true
-            }
+        PresentationUpdated({
+            from(Idle) transitTo Candidate on (ShowCandidates to true)
+            from(Candidate) transitTo Idle on (ShowCandidates to false)
         }),
         ExtendedWindowAttached({
             from(Idle) transitTo Title
@@ -42,7 +33,7 @@ object KawaiiBarStateMachine {
         }),
         WindowDetached({
             // candidate state has higher priority so here it goes first
-            from(Title) transitTo Candidate on (CandidateEmpty to false)
+            from(Title) transitTo Candidate on (ShowCandidates to true)
             from(Title) transitTo Idle
         }),
     }
@@ -51,8 +42,7 @@ object KawaiiBarStateMachine {
         EventStateMachine<State, TransitionEvent, BooleanKey>(
             initialState = Idle,
             externalBooleanStates = mutableMapOf(
-                PreeditEmpty to true,
-                CandidateEmpty to true
+                ShowCandidates to false
             )
         ).apply {
             onNewStateListener = block
