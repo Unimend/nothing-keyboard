@@ -24,7 +24,7 @@ class FcitxEngineStateAdapterTest {
             )
         )
 
-        val mapped = FcitxEngineStateAdapter.map(event) as EngineStateEvent.InputPanelChanged
+        val mapped = FcitxEngineStateAdapter.mapRelevantOrNull(event) as EngineStateEvent.InputPanelChanged
 
         assertEquals("ni", mapped.value.preedit.plainText)
         assertEquals(
@@ -42,7 +42,7 @@ class FcitxEngineStateAdapterTest {
             FcitxEvent.CandidateListEvent.Data(1, source)
         )
 
-        val mapped = FcitxEngineStateAdapter.map(event) as EngineStateEvent.CandidatesChanged
+        val mapped = FcitxEngineStateAdapter.mapRelevantOrNull(event) as EngineStateEvent.CandidatesChanged
         source[0] = CandidateWord.Empty
 
         assertEquals("你", mapped.value.items.single().text)
@@ -51,7 +51,7 @@ class FcitxEngineStateAdapterTest {
 
     @Test
     fun effectOnlyEventsDoNotEnterPersistentState() {
-        assertNull(FcitxEngineStateAdapter.map(FcitxEvent.CommitStringEvent(
+        assertNull(FcitxEngineStateAdapter.mapRelevantOrNull(FcitxEvent.CommitStringEvent(
             FcitxEvent.CommitStringEvent.Data("text", -1)
         )))
     }

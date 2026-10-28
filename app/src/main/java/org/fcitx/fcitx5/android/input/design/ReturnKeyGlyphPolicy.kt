@@ -23,6 +23,6 @@ object ReturnKeyGlyphPolicy {
             EditorAction.Previous -> R.drawable.ic_baseline_keyboard_tab_reverse_24
             EditorAction.Return -> R.drawable.ic_baseline_keyboard_return_24
         }
-        return if (nothingStyle) NothingGlyphRegistry.resolve(source) else source
+        return if (nothingStyle) NothingGlyphRegistry.resolveRequired(source) else source
     }
 }

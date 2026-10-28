@@ -15,7 +15,7 @@ import org.junit.Test
 class FcitxEngineEffectAdapterTest {
     @Test
     fun commitEventBecomesEngineOwnedEffect() {
-        val effect = FcitxEngineEffectAdapter.map(
+        val effect = FcitxEngineEffectAdapter.mapRelevantOrNull(
             FcitxEvent.CommitStringEvent(FcitxEvent.CommitStringEvent.Data("你好", 2))
         )
 
@@ -24,7 +24,7 @@ class FcitxEngineEffectAdapterTest {
 
     @Test
     fun virtualBackspaceIsSemanticInsteadOfRawFcitxSymbol() {
-        val effect = FcitxEngineEffectAdapter.map(
+        val effect = FcitxEngineEffectAdapter.mapRelevantOrNull(
             FcitxEvent.KeyEvent(
                 FcitxEvent.KeyEvent.Data(
                     KeySym(FcitxKeyMapping.FcitxKey_BackSpace),
@@ -40,7 +40,7 @@ class FcitxEngineEffectAdapterTest {
     @Test
     fun stateOnlyCandidateEventProducesNoAndroidEffect() {
         assertNull(
-            FcitxEngineEffectAdapter.map(
+            FcitxEngineEffectAdapter.mapRelevantOrNull(
                 FcitxEvent.CandidateListEvent(FcitxEvent.CandidateListEvent.Data())
             )
         )

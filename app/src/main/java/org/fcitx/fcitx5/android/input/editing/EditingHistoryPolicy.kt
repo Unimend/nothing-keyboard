@@ -22,6 +22,14 @@ object EditingHistoryPolicy {
         is EditingCommand.DeletionGestureRelease -> EditingHistoryEffect.ManageDestructiveEdit
 
         EditingCommand.Undo -> EditingHistoryEffect.ConsumeDestructiveEdit
-        else -> EditingHistoryEffect.Preserve
+
+        EditingCommand.FinishComposition,
+        is EditingCommand.MoveCursor,
+        is EditingCommand.DeletionGestureMove,
+        EditingCommand.DeletionGestureCancel,
+        EditingCommand.ResetDeletionGesture,
+        EditingCommand.CancelSelection,
+        EditingCommand.SelectAll,
+        EditingCommand.Copy -> EditingHistoryEffect.Preserve
     }
 }

@@ -38,7 +38,7 @@ class FcitxEngineBridge(
                 }
                 publishState(event)
                 if (event is FcitxEvent.ReadyEvent) publishCachedState()
-                FcitxEngineEffectAdapter.map(event)?.let { effect ->
+                FcitxEngineEffectAdapter.mapRelevantOrNull(event)?.let { effect ->
                     InputCoreDiagnostics.recordEngineEffect(effect::class.simpleName ?: "EngineEffect")
                     effectSink(effect)
                 }
@@ -54,7 +54,7 @@ class FcitxEngineBridge(
     }
 
     private fun publishState(event: FcitxEvent<*>) {
-        FcitxEngineStateAdapter.map(event)?.let {
+        FcitxEngineStateAdapter.mapRelevantOrNull(event)?.let {
             publish(it)
         }
     }

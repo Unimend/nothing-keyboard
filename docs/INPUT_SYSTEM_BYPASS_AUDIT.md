@@ -33,7 +33,7 @@ exception—future cross-system imports are still governed by the boundary tests
 | System | Single source of truth | Forbidden surface behavior | Current enforcement |
 |---|---|---|---|
 | Typography | `NothingTypography` roles/styles | Selecting a typeface in a surface | Static boundary test |
-| Glyphs | `NothingGlyphRegistry` | Assigning theme-dependent functional glyphs without resolution | `KeyView`, `ToolButton`, `TextEditingButton` resolve centrally |
+| Glyphs | `NothingGlyphRegistry` | Assigning theme-dependent functional glyphs without resolution | Required project controls fail when unmapped; external/content fallback is named explicitly |
 | Picker tabs | Semantic `Category.label` | Drawable tabs that bypass mixed typography | Drawable field and rendering branch removed |
 | Editing commands | `EditingCommand` + `AndroidEditingCommandExecutor` | A View mutating `InputConnection` | Static boundary test |
 | Destructive editing | `DestructiveEditingController` | Per-surface delete, clear or undo implementations | Shared controller and gesture binding |
@@ -166,12 +166,45 @@ effect and context ordering each have separate controllers.
    typography measurer (real Doto/system spans, letter spacing and candidate style). Comment spacing
    now shares a pure presentation function between measurement and rendering. Device visual checks
    for mixed Latin/CJK/symbol candidates remain pending.
-4. **Non-semantic icon coverage:** the registry is now the only resolution route for shared
-   controls, but several navigation arrows do not yet have custom pixel assets and intentionally
-   fall back to their system drawable until those assets are designed.
+4. **Non-semantic icon coverage:** candidate expansion and Return actions use strict registered
+   glyph resolution. Other shared controls are now visibly marked with
+   `resolveOrKeepOriginal`; this is an audit queue, not a claim that their Material fallbacks are
+   finished. Editing arrows, toolbar back/settings/private/voice controls, clipboard actions,
+   candidate pagination and dynamic status icons must be classified as either a project-owned
+   required glyph or an engine/content-owned optional glyph. A generic ambiguous `resolve` API no
+   longer exists.
 
 Every future migration must finish with three artifacts: one owner, removal of the previous entry
 point, and a boundary test. Without all three, the system is still considered transitional.
+
+## Silent fallback audit, 2026-10-28
+
+The candidate expand button exposed a broader failure mode: a call can enter a new centralized
+system while that system silently returns the old source value. Centralization alone therefore does
+not prove enforcement.
+
+Closed in this pass:
+
+- `NothingGlyphRegistry.resolveRequired` rejects an unregistered project-owned control instead of
+  returning its Material drawable. `resolveOrKeepOriginal` is a deliberately conspicuous API for
+  external/content glyphs and the remaining migration queue.
+- Candidate expand/collapse and Return-key actions use required glyph resolution. Tests cover both
+  candidate states and rejection of an unregistered required glyph.
+- Project-owned sealed policies for engine effects, engine-command history and editing history no
+  longer contain catch-all branches. A future model case must be handled or compilation fails.
+- Navigation return policies enumerate every current `InputSurface`; a new surface cannot silently
+  become “return to keyboard”.
+- Nullable Fcitx adapters are named `mapRelevantOrNull`, making their external-protocol filtering
+  an explicit boundary rather than an apparently incomplete mapping.
+
+Still intentional and separately owned:
+
+- Android compatibility fallbacks for API levels, window insets and missing editor connections.
+- Fcitx event adapters ignore events owned by the other adapter or with no project-side meaning.
+- Doto covers Latin letters and digits; CJK, emoji and punctuation intentionally retain suitable
+  system fonts. This is typography policy, not missing glyph fallback.
+- Unknown Fcitx status icon names use a visible generic status icon because plugins can introduce
+  names the application cannot enumerate at build time.
 
 ## 2026-10-28 device regression finding
 

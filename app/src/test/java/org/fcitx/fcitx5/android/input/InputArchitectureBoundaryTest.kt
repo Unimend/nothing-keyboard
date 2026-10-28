@@ -89,6 +89,36 @@ class InputArchitectureBoundaryTest {
         ).forEach { mapping ->
             assertTrue("Missing candidate control glyph mapping: $mapping", mapping in registry)
         }
+        val candidate = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/bar/ui/CandidateUi.kt"
+        ).readText()
+        val bar = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt"
+        ).readText()
+        assertTrue("Candidate attach glyph must be required", "setRequiredIcon(R.drawable.ic_baseline_expand_more_24)" in candidate)
+        assertTrue("Expanded candidate attach glyph must be required", "setRequiredIcon(R.drawable.ic_baseline_expand_more_24)" in bar)
+        assertTrue("Expanded candidate detach glyph must be required", "setRequiredIcon(R.drawable.ic_baseline_expand_less_24)" in bar)
+    }
+
+    @Test
+    fun `project owned sealed policies cannot hide new cases behind catch all branches`() {
+        listOf(
+            "editing/EditingAwareEngineCommandPort.kt",
+            "editing/EditingHistoryPolicy.kt",
+            "engine/InputEngineEffectRouter.kt"
+        ).forEach { name ->
+            val source = sourceRoot.resolve("org/fcitx/fcitx5/android/input/$name").readText()
+            assertFalse("Catch-all branch hides new project model cases in $name", "else ->" in source)
+        }
+    }
+
+    @Test
+    fun `Fcitx nullable adapters advertise intentional event filtering`() {
+        val bridge = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/engine/FcitxEngineBridge.kt"
+        ).readText()
+        assertFalse("Ambiguous nullable adapter call returned", "Adapter.map(event)" in bridge)
+        assertTrue("mapRelevantOrNull(event)" in bridge)
     }
 
     @Test

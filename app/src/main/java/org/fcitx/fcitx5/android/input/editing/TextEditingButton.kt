@@ -105,7 +105,7 @@ class TextEditingButton(
 
     fun setIcon(@DrawableRes icon: Int) {
         imageView.imageResource = if (theme.isNothingStyle) {
-            NothingGlyphRegistry.resolve(icon)
+            NothingGlyphRegistry.resolveOrKeepOriginal(icon)
         } else icon
         removeView(textView)
         add(imageView, lParams(wrapContent, wrapContent, gravityCenter))

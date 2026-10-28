@@ -33,7 +33,7 @@ class PaginationUi(override val ctx: Context, val theme: Theme) : Ui {
 
     private fun createIcon(@DrawableRes icon: Int) = imageView {
         imageTintList = ColorStateList.valueOf(colors.keyContent)
-        imageDrawable = drawable(NothingGlyphRegistry.resolve(icon, theme))
+        imageDrawable = drawable(NothingGlyphRegistry.resolveOrKeepOriginal(icon, theme))
         scaleType = ImageView.ScaleType.CENTER_CROP
         isClickable = true
     }

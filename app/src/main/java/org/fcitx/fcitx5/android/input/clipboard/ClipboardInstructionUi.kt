@@ -67,7 +67,7 @@ sealed class ClipboardInstructionUi(override val ctx: Context, protected val the
 
         private val icon = imageView {
             imageDrawable = drawable(
-                NothingGlyphRegistry.resolve(R.drawable.ic_baseline_content_paste_24, theme)
+                NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_content_paste_24, theme)
             )!!.apply {
                 setTint(colors.alternateKeyContent)
             }

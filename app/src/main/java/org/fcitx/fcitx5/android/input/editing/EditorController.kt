@@ -45,7 +45,9 @@ class EditorController(
                 EngineVirtualKey.Unicode -> commitText(Character.toString(effect.unicode))
                 EngineVirtualKey.Unhandled -> Timber.w("Unhandled virtual engine key: ${effect.rawSymbol}")
             }
-            else -> return false
+            is EngineEffect.ForwardKey,
+            is EngineEffect.InputMethodChanged,
+            is EngineEffect.InputMethodSwitched -> return false
         }
         return true
     }

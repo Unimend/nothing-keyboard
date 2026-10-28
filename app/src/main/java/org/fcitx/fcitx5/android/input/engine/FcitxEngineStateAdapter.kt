@@ -26,7 +26,8 @@ import org.fcitx.fcitx5.android.input.session.EngineTextStyle
 
 /** Converts Fcitx-owned objects at the boundary; downstream state uses project types only. */
 object FcitxEngineStateAdapter {
-    fun map(event: FcitxEvent<*>): EngineStateEvent? = when (event) {
+    /** Returns null only for Fcitx events that do not publish session state. */
+    fun mapRelevantOrNull(event: FcitxEvent<*>): EngineStateEvent? = when (event) {
         is FcitxEvent.ReadyEvent -> EngineStateEvent.Operational
         is FcitxEvent.ClientPreeditEvent -> EngineStateEvent.ClientPreeditChanged(event.data.toEngineText())
         is FcitxEvent.InputPanelEvent -> EngineStateEvent.InputPanelChanged(

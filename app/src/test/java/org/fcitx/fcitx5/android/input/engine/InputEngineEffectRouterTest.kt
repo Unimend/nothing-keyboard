@@ -3,6 +3,7 @@ package org.fcitx.fcitx5.android.input.engine
 
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class InputEngineEffectRouterTest {
@@ -44,7 +45,9 @@ class InputEngineEffectRouterTest {
     @Test
     fun `unconsumed editor-only effect cannot leak into platform host`() {
         val host = Host()
-        InputEngineEffectRouter({ false }, host).handle(EngineEffect.CommitText("text", 1))
+        assertThrows(IllegalStateException::class.java) {
+            InputEngineEffectRouter({ false }, host).handle(EngineEffect.CommitText("text", 1))
+        }
         assertEquals(emptyList<String>(), host.calls)
     }
 }

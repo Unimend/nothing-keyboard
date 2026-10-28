@@ -347,7 +347,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
                 }
             ))
         }
-        candidateUi.expandButton.setIcon(R.drawable.ic_baseline_expand_more_24)
+        candidateUi.expandButton.setRequiredIcon(R.drawable.ic_baseline_expand_more_24)
         candidateUi.expandButton.contentDescription = context.getString(R.string.expand_candidates_list)
     }
 
@@ -356,7 +356,7 @@ class KawaiiBarComponent : UniqueViewComponent<KawaiiBarComponent, FrameLayout>(
         candidateUi.expandButton.setOnClickListener {
             navigator.navigate(InputNavigationCommand.ShowKeyboard())
         }
-        candidateUi.expandButton.setIcon(R.drawable.ic_baseline_expand_less_24)
+        candidateUi.expandButton.setRequiredIcon(R.drawable.ic_baseline_expand_less_24)
         candidateUi.expandButton.contentDescription = context.getString(R.string.hide_candidates_list)
     }
 

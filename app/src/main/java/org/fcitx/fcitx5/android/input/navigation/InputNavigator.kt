@@ -104,7 +104,16 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
 
     private fun returnTarget(): InputNavigationCommand = when (windowManager.currentSurface) {
         InputSurface.Clipboard -> clipboardReturnTarget
-        else -> InputNavigationCommand.ShowKeyboard(modeStore.state.currentKeyboardLayout)
+        null,
+        InputSurface.None,
+        InputSurface.Keyboard,
+        InputSurface.ExpandedCandidates,
+        InputSurface.Editing,
+        is InputSurface.Picker,
+        InputSurface.Status,
+        InputSurface.Auxiliary -> InputNavigationCommand.ShowKeyboard(
+            modeStore.state.currentKeyboardLayout
+        )
     }
 }
 
@@ -117,6 +126,10 @@ internal object ClipboardReturnPolicy {
                 org.fcitx.fcitx5.android.input.mode.PickerKind.fromStorage(surface.kind)
             )
             InputSurface.Status -> InputNavigationCommand.ShowStatus
-            else -> InputNavigationCommand.ShowKeyboard(keyboardLayout)
+            null,
+            InputSurface.None,
+            InputSurface.ExpandedCandidates,
+            InputSurface.Clipboard,
+            InputSurface.Auxiliary -> InputNavigationCommand.ShowKeyboard(keyboardLayout)
         }
 }

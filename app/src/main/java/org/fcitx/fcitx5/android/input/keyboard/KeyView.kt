@@ -452,7 +452,9 @@ private fun ImageView.configure(theme: Theme, @DrawableRes src: Int, variant: Va
             Variant.Accent -> colors.accentContent
         }
     )
-    imageResource = if (theme.isNothingStyle) NothingGlyphRegistry.resolve(src) else src
+    imageResource = if (theme.isNothingStyle) {
+        NothingGlyphRegistry.resolveOrKeepOriginal(src)
+    } else src
 }
 
 @SuppressLint("ViewConstructor")

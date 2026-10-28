@@ -7,7 +7,8 @@ import org.fcitx.fcitx5.android.core.FcitxEvent
 import org.fcitx.fcitx5.android.core.FcitxKeyMapping
 
 object FcitxEngineEffectAdapter {
-    fun map(event: FcitxEvent<*>): EngineEffect? = when (event) {
+    /** Returns null only for Fcitx events that do not represent an Android editor side effect. */
+    fun mapRelevantOrNull(event: FcitxEvent<*>): EngineEffect? = when (event) {
         is FcitxEvent.CommitStringEvent ->
             EngineEffect.CommitText(event.data.text, event.data.cursor)
         is FcitxEvent.ClientPreeditEvent -> EngineEffect.UpdateClientPreedit(

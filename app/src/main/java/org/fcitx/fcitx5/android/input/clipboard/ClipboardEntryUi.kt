@@ -64,7 +64,7 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     }
 
     val pin = imageView {
-        imageDrawable = drawable(NothingGlyphRegistry.resolve(R.drawable.ic_baseline_push_pin_24, theme))!!.apply {
+        imageDrawable = drawable(NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_push_pin_24, theme))!!.apply {
             setTint(colors.alternateKeyContent)
             setAlpha(0.3f)
         }

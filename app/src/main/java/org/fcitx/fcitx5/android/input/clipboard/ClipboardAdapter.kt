@@ -105,17 +105,17 @@ abstract class ClipboardAdapter(
                         onUnpin(entry.id)
                     }
                 } else {
-                    menu.item(R.string.pin, NothingGlyphRegistry.resolve(R.drawable.ic_baseline_push_pin_24, theme), iconTint) {
+                    menu.item(R.string.pin, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_push_pin_24, theme), iconTint) {
                         onPin(entry.id)
                     }
                 }
-                menu.item(R.string.edit, NothingGlyphRegistry.resolve(R.drawable.ic_baseline_edit_24, theme), iconTint) {
+                menu.item(R.string.edit, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_edit_24, theme), iconTint) {
                     onEdit(entry.id)
                 }
-                menu.item(R.string.share, NothingGlyphRegistry.resolve(R.drawable.ic_baseline_share_24, theme), iconTint) {
+                menu.item(R.string.share, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_share_24, theme), iconTint) {
                     onShare(entry)
                 }
-                menu.item(R.string.delete, NothingGlyphRegistry.resolve(R.drawable.ic_baseline_delete_24, theme), iconTint) {
+                menu.item(R.string.delete, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_delete_24, theme), iconTint) {
                     onDelete(entry.id)
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !DeviceUtil.isSamsungOneUI && !DeviceUtil.isFlyme) {

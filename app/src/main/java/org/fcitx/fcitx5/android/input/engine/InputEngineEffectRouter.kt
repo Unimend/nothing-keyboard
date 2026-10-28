@@ -18,7 +18,12 @@ class InputEngineEffectRouter(
             is EngineEffect.ForwardKey -> host.forwardKey(effect)
             is EngineEffect.InputMethodChanged -> host.inputMethodChanged(effect)
             is EngineEffect.InputMethodSwitched -> host.inputMethodSwitched(effect)
-            else -> Unit
+            is EngineEffect.CommitText,
+            is EngineEffect.UpdateClientPreedit,
+            is EngineEffect.DeleteSurrounding,
+            is EngineEffect.VirtualKey -> error(
+                "Editor-owned engine effect was not handled: ${effect::class.simpleName}"
+            )
         }
     }
 }

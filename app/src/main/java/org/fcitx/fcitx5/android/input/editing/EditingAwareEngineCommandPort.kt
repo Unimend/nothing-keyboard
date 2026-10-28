@@ -28,6 +28,24 @@ object EngineCommandHistoryPolicy {
             is EngineKey.Unicode, is EngineKey.KeypadDigit, is EngineKey.KeypadOperator -> true
         }
         is EngineCommand.SelectCandidate -> true
-        else -> false
+        EngineCommand.Reset,
+        EngineCommand.ResetIfNotEmpty,
+        is EngineCommand.Focus,
+        EngineCommand.FocusOutIn,
+        is EngineCommand.ActivateContext,
+        is EngineCommand.DeactivateContext,
+        is EngineCommand.SetCapabilities,
+        is EngineCommand.ActivateInputMethod,
+        is EngineCommand.EnumerateInputMethod,
+        EngineCommand.ToggleInputMethod,
+        EngineCommand.TriggerQuickPhrase,
+        EngineCommand.TriggerUnicode,
+        is EngineCommand.MoveCursor,
+        is EngineCommand.OffsetCandidatePage,
+        is EngineCommand.TriggerCandidateAction,
+        is EngineCommand.TriggerCandidateTabAction,
+        is EngineCommand.ActivateStatusAction,
+        is EngineCommand.SetCandidatePagingMode,
+        EngineCommand.ReloadConfiguration -> false
     }
 }
