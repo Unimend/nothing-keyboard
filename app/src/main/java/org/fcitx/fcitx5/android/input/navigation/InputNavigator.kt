@@ -4,7 +4,6 @@
 package org.fcitx.fcitx5.android.input.navigation
 
 import androidx.core.content.ContextCompat
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.FcitxInputMethodService
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardWindow
 import org.fcitx.fcitx5.android.input.candidates.expanded.window.FlexboxExpandedCandidateWindow
@@ -15,7 +14,7 @@ import org.fcitx.fcitx5.android.input.editorinfo.EditorInfoWindow
 import org.fcitx.fcitx5.android.input.debug.InputCoreDiagnostics
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
 import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
-import org.fcitx.fcitx5.android.input.mode.PickerKind
+import org.fcitx.fcitx5.android.input.mode.InputModeStore
 import org.fcitx.fcitx5.android.input.picker.PickerWindow
 import org.fcitx.fcitx5.android.input.status.StatusAreaWindow
 import org.fcitx.fcitx5.android.input.wm.InputWindowManager
@@ -30,7 +29,7 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
     ManagedHandler by managedHandler() {
     private val service: FcitxInputMethodService by manager.inputMethodService()
     private val windowManager: InputWindowManager by manager.must()
-    private var lastPickerType by AppPrefs.getInstance().internal.lastPickerType
+    private val modeStore: InputModeStore by manager.must()
 
     fun navigate(command: InputNavigationCommand) {
         InputCoreDiagnostics.recordNavigation(command.diagnosticName)
@@ -43,8 +42,8 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
                 windowManager.attachWindow(TextEditingWindow())
             }
             is InputNavigationCommand.ShowPicker -> {
-                val kind = command.kind ?: rememberedPicker()
-                command.kind?.let { lastPickerType = it.name }
+                val kind = command.kind ?: modeStore.state.rememberedPicker
+                modeStore.activatePicker(kind)
                 windowManager.attachWindow(PickerWindow.Key.fromKind(kind))
             }
             InputNavigationCommand.ShowStatus ->
@@ -77,9 +76,6 @@ class InputNavigator : UniqueComponent<InputNavigator>(), Dependent,
             }
         }
     }
-
-    private fun rememberedPicker(): PickerKind =
-        PickerKind.fromStorage(lastPickerType) ?: PickerKind.Emoji
 
     private val InputNavigationCommand.diagnosticName: String
         get() = when (this) {

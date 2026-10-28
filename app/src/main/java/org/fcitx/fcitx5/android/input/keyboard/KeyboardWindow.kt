@@ -14,7 +14,6 @@ import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.input.session.EditorInputKind
 import org.fcitx.fcitx5.android.input.session.EditorSessionSnapshot
 import org.fcitx.fcitx5.android.input.session.EditorSessionChange
-import org.fcitx.fcitx5.android.data.prefs.AppPrefs
 import org.fcitx.fcitx5.android.input.bar.KawaiiBarComponent
 import org.fcitx.fcitx5.android.input.broadcast.InputBroadcastReceiver
 import org.fcitx.fcitx5.android.input.broadcast.ReturnKeyDrawableComponent
@@ -25,7 +24,7 @@ import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
 import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
 import org.fcitx.fcitx5.android.input.mode.InputMode
-import org.fcitx.fcitx5.android.input.mode.PickerKind
+import org.fcitx.fcitx5.android.input.mode.InputModeStore
 import org.fcitx.fcitx5.android.input.popup.PopupActionListener
 import org.fcitx.fcitx5.android.input.popup.PopupComponent
 import org.fcitx.fcitx5.android.input.session.InputSurface
@@ -48,6 +47,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     private val commonKeyActionListener: CommonKeyActionListener by manager.must()
     private val windowManager: InputWindowManager by manager.must()
     private val navigator: InputNavigator by manager.must()
+    private val modeStore: InputModeStore by manager.must()
     private val popup: PopupComponent by manager.must()
     private val bar: KawaiiBarComponent by manager.must()
     private val returnKeyDrawable: ReturnKeyDrawableComponent by manager.must()
@@ -78,9 +78,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
             KeyboardLayout.Number to NumberKeyboard(context, theme)
         )
     }
-    private var currentLayout = KeyboardLayout.Text
-    private var lastSymbolType: String by AppPrefs.getInstance().internal.lastSymbolLayout
-
+    private val currentLayout get() = modeStore.state.currentKeyboardLayout
     private val currentKeyboard: BaseKeyboard get() = keyboards.getValue(currentLayout)
 
     private val keyActionListener = KeyActionListener { it, source ->
@@ -90,7 +88,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
                 is InputMode.Keyboard ->
                     navigator.navigate(InputNavigationCommand.ShowKeyboard(target.layout))
                 is InputMode.Picker -> {
-                    lastSymbolType = target.kind.name
+                    modeStore.activatePicker(target.kind, rememberAsSymbolMode = true)
                     navigator.navigate(InputNavigationCommand.ShowPicker(target.kind))
                 }
             }
@@ -120,7 +118,7 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
     }
 
     private fun attachLayout(target: KeyboardLayout) {
-        currentLayout = target
+        check(currentLayout == target)
         currentKeyboard.let {
             it.keyActionListener = keyActionListener
             it.popupActionListener = popupActionListener
@@ -135,23 +133,29 @@ class KeyboardWindow : InputWindow.SimpleInputWindow<KeyboardWindow>(), Essentia
 
     fun switchLayout(to: KeyboardLayout?, remember: Boolean = true) {
         ContextCompat.getMainExecutor(service).execute {
-            val target = to ?: KeyboardLayout.fromStorage(lastSymbolType)
-            if (target != null) {
-                if (remember && target != KeyboardLayout.Text) {
-                    lastSymbolType = target.name
+            val targetMode = to?.let(InputMode::Keyboard) ?: modeStore.state.rememberedSymbolMode
+            if (targetMode is InputMode.Keyboard) {
+                val target = targetMode.layout
+                val unchanged = target == currentLayout
+                if (!unchanged) {
+                    detachCurrentLayout()
                 }
-                if (target == currentLayout) return@execute
-                detachCurrentLayout()
+                modeStore.activateKeyboard(
+                    target,
+                    rememberAsSymbolMode = remember && target != KeyboardLayout.Text
+                )
+                if (unchanged) return@execute
                 attachLayout(target)
                 if (windowManager.isAttached(this)) {
                     notifyBarLayoutChanged()
                 }
             } else {
-                val picker = PickerKind.fromStorage(lastSymbolType) ?: PickerKind.Symbol
-                if (remember) {
-                    lastSymbolType = picker.name
-                }
-                navigator.navigate(InputNavigationCommand.ShowPicker(picker))
+                check(targetMode is InputMode.Picker)
+                modeStore.activatePicker(
+                    targetMode.kind,
+                    rememberAsSymbolMode = remember
+                )
+                navigator.navigate(InputNavigationCommand.ShowPicker(targetMode.kind))
             }
         }
     }

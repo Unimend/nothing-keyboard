@@ -34,6 +34,7 @@ import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.RealSiz
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardWindow
 import org.fcitx.fcitx5.android.input.navigation.InputNavigationCommand
 import org.fcitx.fcitx5.android.input.navigation.InputNavigator
+import org.fcitx.fcitx5.android.input.mode.InputModeStore
 import org.fcitx.fcitx5.android.input.picker.emojiPicker
 import org.fcitx.fcitx5.android.input.picker.emoticonPicker
 import org.fcitx.fcitx5.android.input.picker.symbolPicker
@@ -111,6 +112,7 @@ class InputView(
     private val commonKeyActionListener = CommonKeyActionListener()
     private val windowLifecycle = InputWindowLifecycleDispatcher()
     private val windowManager = InputWindowManager()
+    private val inputModeStore = InputModeStore()
     private val navigator = InputNavigator()
     private val kawaiiBar = KawaiiBarComponent()
     private val horizontalCandidate = HorizontalCandidateComponent()
@@ -133,6 +135,7 @@ class InputView(
         scope += commonKeyActionListener
         scope += windowLifecycle
         scope += windowManager
+        scope += inputModeStore
         scope += navigator
         scope += kawaiiBar
         scope += horizontalCandidate
