@@ -133,6 +133,12 @@ abstract class ClipboardAdapter(
 
     fun getEntryAt(position: Int) = getItem(position)
 
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.entryUi.root.setOnClickListener(null)
+        holder.entryUi.root.setOnLongClickListener(null)
+        super.onViewRecycled(holder)
+    }
+
     fun onDetached() {
         popupMenu?.dismiss()
         popupMenu = null

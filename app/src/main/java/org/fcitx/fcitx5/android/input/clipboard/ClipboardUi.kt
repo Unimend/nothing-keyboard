@@ -68,22 +68,22 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         deleteAllButton.visibility = if (enabled) View.VISIBLE else View.INVISIBLE
     }
 
-    fun switchUiByState(state: ClipboardStateMachine.State) {
+    fun switchUiByState(state: ClipboardViewMode) {
         Timber.d("Switch clipboard to $state")
         if (!disableAnimation)
             TransitionManager.beginDelayedTransition(root, Fade().apply {
                 duration = NothingDesignTokens.Motion.InstantFeedbackMs
             })
         when (state) {
-            ClipboardStateMachine.State.Normal -> {
+            ClipboardViewMode.Normal -> {
                 viewAnimator.displayedChild = 0
                 setDeleteButtonShown(true)
             }
-            ClipboardStateMachine.State.AddMore -> {
+            ClipboardViewMode.AddMore -> {
                 viewAnimator.displayedChild = 1
                 setDeleteButtonShown(false)
             }
-            ClipboardStateMachine.State.EnableListening -> {
+            ClipboardViewMode.EnableListening -> {
                 viewAnimator.displayedChild = 2
                 setDeleteButtonShown(false)
             }
