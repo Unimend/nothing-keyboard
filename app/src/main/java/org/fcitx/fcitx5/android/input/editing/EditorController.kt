@@ -11,6 +11,7 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommand
 import org.fcitx.fcitx5.android.input.engine.EngineEffect
 import org.fcitx.fcitx5.android.input.engine.EngineVirtualKey
 import org.fcitx.fcitx5.android.input.session.EngineText
+import org.fcitx.fcitx5.android.input.session.InputLifecycleEditor
 import org.fcitx.fcitx5.android.utils.withBatchEdit
 import splitties.bitflags.hasFlag
 import timber.log.Timber
@@ -25,7 +26,7 @@ class EditorController(
     private val sendKey: (Int) -> Unit,
     private val submitEngineCommand: (EngineCommand, () -> Boolean) -> Unit,
     private val ignoreSystemCursor: () -> Boolean
-) {
+) : InputLifecycleEditor {
     private fun submitEngineCommand(command: EngineCommand) = submitEngineCommand(command) { true }
 
     private val selection = CursorTracker()
@@ -54,7 +55,7 @@ class EditorController(
     val currentSelection: CursorRange
         get() = CursorRange(selection.latest.start, selection.latest.end)
 
-    fun startInput(start: Int, end: Int) {
+    override fun startInput(start: Int, end: Int) {
         cursorUpdateIndex += 1
         selection.resetTo(start, end)
         resetComposingState()
@@ -65,11 +66,11 @@ class EditorController(
         handleCursorUpdate(start, end, composingStart, composingEnd, cursorUpdateIndex)
     }
 
-    fun unbindInput() {
+    override fun unbindInput() {
         cursorUpdateIndex += 1
     }
 
-    fun finishInputView() {
+    override fun finishInputView() {
         cursorUpdateIndex += 1
         connection()?.finishComposingText()
         resetComposingState()

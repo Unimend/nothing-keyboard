@@ -346,6 +346,30 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `Android input callbacks delegate stable lifecycle transitions`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        val lifecycle = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/session/InputLifecycleController.kt"
+        ).readText()
+
+        listOf(
+            "inputLifecycle.startInput(",
+            "inputLifecycle.startInputView(",
+            "inputLifecycle.finishInputView()",
+            "inputLifecycle.finishInput()",
+            "inputLifecycle.unbindInput()"
+        ).forEach { assertTrue("Missing lifecycle delegation: $it", it in service) }
+        listOf(
+            "EditingCommand.ResetDeletionGesture",
+            "EngineCommand.SetCapabilities",
+            "EngineCommand.Focus(false)",
+            "EngineCommand.FocusOutIn"
+        ).forEach { assertTrue("Lifecycle owner is incomplete: $it", it in lifecycle) }
+    }
+
+    @Test
     fun `only navigator and bootstrap may attach input windows`() {
         val allowed = setOf(
             "InputView.kt",

@@ -217,3 +217,8 @@ Editing changes require sequence tests, not only isolated-command tests. At mini
 3. Separate gesture recognition, action mapping and feedback.
 4. Replace ad-hoc window state with a single keyboard-surface state.
 5. Split `FcitxInputMethodService` only after the boundaries above are stable.
+
+The first Service split keeps two lifetimes deliberately separate: `InputLifecycleController`
+owns stable editor/session/engine transitions, while `FcitxInputMethodService` remains the Android
+composition root for views, input-device presentation, candidate anchoring and window callbacks.
+Renderers must not reconstruct lifecycle command order.

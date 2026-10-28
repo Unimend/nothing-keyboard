@@ -22,6 +22,7 @@ unrepresentable, and a test must prevent it from returning.
 | Engine key protocol | `EngineKey` + `EngineKeyModifier` | Views constructing native symbols, flags or scan codes | Translation exists only in `FcitxEngineCommandAdapter` |
 | Hardware key events | `AndroidKeyEventController` | Service/UI caching native events or synthesizing modifier sequences | Static ownership test |
 | Engine command scheduling | `FcitxCommandDispatcher` + `SerialCommandQueue` | Service managing native jobs; caller join starting queued work | Queue behavior tests and Service boundary test |
+| Android input lifecycle | `InputLifecycleController` | Service independently ordering session, editor and engine focus transitions | Sequence tests and lifecycle-delegation boundary test |
 
 ## Removed legacy escape hatches
 
@@ -48,6 +49,9 @@ unrepresentable, and a test must prevent it from returning.
 - Ambiguous `DeletedTextEdit + Restoration` combinations. Range and whole-document restoration are
   separate `DestructiveEditTransaction` types; software keys, physical keys, editor commands and
   engine-side surrounding deletion now share explicit history invalidation policies.
+- Repeated lifecycle transition sequences in `FcitxInputMethodService`. `InputLifecycleController`
+  now owns the stable order of gesture reset, editor/session publication, capabilities and engine
+  focus. The Service retains only Android view/device effects that depend on platform objects.
 
 ## Deliberate platform boundaries (not legacy UI)
 
@@ -74,11 +78,13 @@ service. Selection tracking is private, reads return a copy, and lifecycle chang
 startInput, selectionChanged, finishInputView and unbindInput. Cross-editor undo behavior is intentionally preserved.
 Editor effects are interpreted by EditorController. EngineTextRenderer owns semantic span conversion
 for both editor composition and keyboard preedit; lifecycle transitions invalidate queued cursor moves.
-The service still routes engine effects and owns platform lifecycle orchestration; those are
-separate remaining boundaries, not completed by the editor extraction.
+The service still routes engine effects and owns platform view/device orchestration. Stable input
+lifecycle transitions have moved to `InputLifecycleController`; view creation, candidate anchoring
+and input-device presentation remain separate platform boundaries.
 
-1. **Service decomposition:** `FcitxInputMethodService` still contains platform lifecycle,
-   Android window/insets/device lifecycle orchestration in one large class. Command scheduling and
+1. **Service decomposition:** `FcitxInputMethodService` still contains Android view creation,
+   window/insets/device orchestration in one large class. Stable editor/session/engine lifecycle
+   ordering now belongs to `InputLifecycleController`. Command scheduling and
    subtype synchronization now belong to the engine/platform boundary; editor effects belong to
    editing. Editor capabilities are semantic values, encoded into native bits only by the adapter.
    These are permitted

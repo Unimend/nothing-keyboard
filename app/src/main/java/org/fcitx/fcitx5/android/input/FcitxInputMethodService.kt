@@ -57,8 +57,12 @@ import org.fcitx.fcitx5.android.input.engine.EngineSwitchReason
 import org.fcitx.fcitx5.android.input.engine.FcitxEngineQueries
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
 import org.fcitx.fcitx5.android.input.session.InputSessionEvent
+import org.fcitx.fcitx5.android.input.session.InputLifecycleController
+import org.fcitx.fcitx5.android.input.session.InputLifecycleSessionSink
 import org.fcitx.fcitx5.android.input.session.InputSessionStore
 import org.fcitx.fcitx5.android.input.session.InputSessionReader
+import org.fcitx.fcitx5.android.input.session.EditorCapability
+import org.fcitx.fcitx5.android.input.session.EditorSnapshot
 import org.fcitx.fcitx5.android.input.engine.AndroidSubtypeController
 import org.fcitx.fcitx5.android.input.engine.PlatformInputMethodPort
 import org.fcitx.fcitx5.android.input.session.toEditorSnapshot
@@ -162,6 +166,31 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         ) { code, shift, ctrl ->
             keyEvents.sendCombination(code, shift = shift, ctrl = ctrl)
         }
+    }
+
+    private val inputLifecycle by lazy {
+        InputLifecycleController(
+            editor = editor,
+            editingCommands = editingCommands,
+            engineCommands = engineCommands,
+            session = object : InputLifecycleSessionSink {
+                override fun inputStarted(
+                    editor: EditorSnapshot,
+                    capabilities: Set<EditorCapability>,
+                    restarting: Boolean
+                ) = sessionStore.dispatch(InputSessionEvent.InputStarted(editor, capabilities, restarting))
+
+                override fun inputViewStarted(
+                    editor: EditorSnapshot,
+                    restarting: Boolean
+                ) = sessionStore.dispatch(InputSessionEvent.InputViewStarted(editor, restarting))
+
+                override fun inputViewFinished() =
+                    sessionStore.dispatch(InputSessionEvent.InputViewFinished)
+
+                override fun inputFinished() = sessionStore.dispatch(InputSessionEvent.InputFinished)
+            }
+        )
     }
 
     private val prefs = AppPrefs.getInstance()
@@ -391,34 +420,23 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     }
 
     override fun onStartInput(attribute: EditorInfo, restarting: Boolean) {
-        editingCommands.execute(org.fcitx.fcitx5.android.input.editing.EditingCommand.ResetDeletionGesture)
-        // update selection as soon as possible
-        // sometimes when restarting input, onUpdateSelection happens before onStartInput, and
-        // initialSel{Start,End} is outdated. but it's the client app's responsibility to send
-        // right cursor position, try to workaround this would simply introduce more bugs.
-        editor.startInput(attribute.initialSelStart, attribute.initialSelEnd)
         val capabilities = AndroidEditorCapabilities.fromAndroid(attribute.inputType, attribute.imeOptions)
-        sessionStore.dispatch(
-            InputSessionEvent.InputStarted(
-                attribute.toEditorSnapshot(), capabilities, restarting
-            )
-        )
         // EditorInfo may change between onStartInput and onStartInputView
         inputDeviceMgr.notifyOnStartInput(attribute)
+        inputLifecycle.startInput(
+            editorSnapshot = attribute.toEditorSnapshot(),
+            capabilities = capabilities,
+            initialSelectionStart = attribute.initialSelStart,
+            initialSelectionEnd = attribute.initialSelEnd,
+            restarting = restarting,
+            acceptsEngineFocus = !attribute.isTypeNull()
+        )
         Timber.d("onStartInput: initialSel=${editor.currentSelection}, restarting=$restarting")
-        val isNullType = attribute.isTypeNull()
-        // Commands share one serial queue, preserving focus -> capability -> focus ordering.
-        if (restarting) submitEngineCommand(EngineCommand.Focus(false))
-        submitEngineCommand(EngineCommand.SetCapabilities(capabilities))
-        if (!isNullType) submitEngineCommand(EngineCommand.Focus(true))
     }
 
     override fun onStartInputView(info: EditorInfo, restarting: Boolean) {
         Timber.d("onStartInputView: restarting=$restarting")
-        sessionStore.dispatch(
-            InputSessionEvent.InputViewStarted(info.toEditorSnapshot(), restarting)
-        )
-        submitEngineCommand(EngineCommand.Focus(true))
+        inputLifecycle.startInputView(info.toEditorSnapshot(), restarting)
         if (inputDeviceMgr.evaluateOnStartInputView(info)) {
             // because onStartInputView will always be called after onStartInput,
             // editorInfo and capFlags should be up-to-date
@@ -470,25 +488,22 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     override fun onFinishInputView(finishingInput: Boolean) {
         Timber.d("onFinishInputView: finishingInput=$finishingInput")
-        sessionStore.dispatch(InputSessionEvent.InputViewFinished)
         candidateAnchor.invalidateWindowGeometry()
         inputDeviceMgr.onFinishInputView()
-        editor.finishInputView()
+        inputLifecycle.finishInputView()
         currentInputConnection?.monitorCursorAnchor(false)
-        submitEngineCommand(EngineCommand.FocusOutIn)
         hideStatusIcon()
         dialogs.dismiss()
     }
 
     override fun onFinishInput() {
         Timber.d("onFinishInput")
-        sessionStore.dispatch(InputSessionEvent.InputFinished)
-        submitEngineCommand(EngineCommand.Focus(false))
+        inputLifecycle.finishInput()
     }
 
     override fun onUnbindInput() {
         keyEvents.reset()
-        editor.unbindInput()
+        inputLifecycle.unbindInput()
         // currentInputBinding can be null on some devices under some special Multi-screen mode
         val uid = currentInputBinding?.uid ?: return
         Timber.d("onUnbindInput: uid=$uid")
