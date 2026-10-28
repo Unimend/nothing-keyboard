@@ -13,6 +13,9 @@ class InputLifecycleControllerTest {
     private val calls = mutableListOf<String>()
     private val editor = object : InputLifecycleEditor {
         override fun startInput(start: Int, end: Int) { calls += "editor:start:$start:$end" }
+        override fun selectionChanged(start: Int, end: Int, composingStart: Int, composingEnd: Int) {
+            calls += "editor:selection:$start:$end:$composingStart:$composingEnd"
+        }
         override fun finishInputView() { calls += "editor:finishView" }
         override fun unbindInput() { calls += "editor:unbind" }
     }
@@ -26,6 +29,7 @@ class InputLifecycleControllerTest {
             calls += "session:start:$restarting"
         }
         override fun inputViewStarted(editor: EditorSnapshot, restarting: Boolean) { calls += "session:view:$restarting" }
+        override fun selectionChanged(start: Int, end: Int) { calls += "session:selection:$start:$end" }
         override fun inputViewFinished() { calls += "session:finishView" }
         override fun inputFinished() { calls += "session:finish" }
     }
@@ -56,6 +60,15 @@ class InputLifecycleControllerTest {
         controller.startInput(snapshot, emptySet(), 0, 0, restarting = false, acceptsEngineFocus = false)
         assertEquals(1, calls.count { it.startsWith("engine:") })
         assertEquals("engine:${EngineCommand.SetCapabilities(emptySet())}", calls.last())
+    }
+
+    @Test
+    fun `selection publishes session state before editor reconciliation`() {
+        controller.selectionChanged(4, 7, 2, 6)
+        assertEquals(
+            listOf("session:selection:4:7", "editor:selection:4:7:2:6"),
+            calls
+        )
     }
 
     @Test

@@ -8,6 +8,7 @@ import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
 
 interface InputLifecycleEditor {
     fun startInput(start: Int, end: Int)
+    fun selectionChanged(start: Int, end: Int, composingStart: Int, composingEnd: Int)
     fun finishInputView()
     fun unbindInput()
 }
@@ -15,6 +16,7 @@ interface InputLifecycleEditor {
 interface InputLifecycleSessionSink {
     fun inputStarted(editor: EditorSnapshot, capabilities: Set<EditorCapability>, restarting: Boolean)
     fun inputViewStarted(editor: EditorSnapshot, restarting: Boolean)
+    fun selectionChanged(start: Int, end: Int)
     fun inputViewFinished()
     fun inputFinished()
 }
@@ -45,6 +47,11 @@ class InputLifecycleController(
     fun startInputView(editorSnapshot: EditorSnapshot, restarting: Boolean) {
         session.inputViewStarted(editorSnapshot, restarting)
         engineCommands.submit(EngineCommand.Focus(true))
+    }
+
+    fun selectionChanged(start: Int, end: Int, composingStart: Int, composingEnd: Int) {
+        session.selectionChanged(start, end)
+        editor.selectionChanged(start, end, composingStart, composingEnd)
     }
 
     fun finishInputView() {

@@ -199,6 +199,9 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
                     restarting: Boolean
                 ) = sessionStore.dispatch(InputSessionEvent.InputViewStarted(editor, restarting))
 
+                override fun selectionChanged(start: Int, end: Int) =
+                    sessionStore.dispatch(InputSessionEvent.SelectionChanged(start, end))
+
                 override fun inputViewFinished() =
                     sessionStore.dispatch(InputSessionEvent.InputViewFinished)
 
@@ -469,9 +472,8 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         candidatesEnd: Int
     ) {
         // onUpdateSelection can left behind when user types quickly enough, eg. long press backspace
-        sessionStore.dispatch(InputSessionEvent.SelectionChanged(newSelStart, newSelEnd))
         Timber.d("onUpdateSelection: old=[$oldSelStart,$oldSelEnd] new=[$newSelStart,$newSelEnd] cand=[$candidatesStart,$candidatesEnd]")
-        editor.selectionChanged(
+        inputLifecycle.selectionChanged(
             newSelStart,
             newSelEnd,
             candidatesStart,

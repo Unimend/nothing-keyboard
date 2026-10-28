@@ -54,7 +54,9 @@ unrepresentable, and a test must prevent it from returning.
   engine-side surrounding deletion now share explicit history invalidation policies.
 - Repeated lifecycle transition sequences in `FcitxInputMethodService`. `InputLifecycleController`
   now owns the stable order of gesture reset, editor/session publication, capabilities and engine
-  focus. The Service retains only Android view/device effects that depend on platform objects.
+  focus. Selection callbacks also publish session state before editor/composition reconciliation
+  through the same boundary. The Service retains only Android view/device effects that depend on
+  platform objects.
 - Theme and preference listener ownership formerly split between `onCreate`, three Service fields
   and `onDestroy`. `AndroidInputSurfaceRebuildSignals` now owns the symmetric registration lifetime;
   `InputSurfaceRebuildController` maps each reason to keyboard-only, candidates-only or full rebuild.

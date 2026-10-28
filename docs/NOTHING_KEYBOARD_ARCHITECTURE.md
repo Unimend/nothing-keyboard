@@ -223,6 +223,10 @@ owns stable editor/session/engine transitions, while `FcitxInputMethodService` r
 composition root for views, input-device presentation, candidate anchoring and window callbacks.
 Renderers must not reconstruct lifecycle command order.
 
+Android selection updates are lifecycle transitions too: session selection is published before
+the editor reconciles cursor and composing ranges. Direct Service-to-editor selection calls are
+forbidden because they can expose stale selection state to gesture and undo systems.
+
 Input-surface rebuild reasons are also centralized. Keyboard-layout preferences rebuild only the
 keyboard surface, candidate preferences rebuild only candidates, and theme changes rebuild both.
 `AndroidInputSurfaceRebuildSignals` is the sole owner of the corresponding listener lifetime.

@@ -61,7 +61,7 @@ class EditorController(
         resetComposingState()
     }
 
-    fun selectionChanged(start: Int, end: Int, composingStart: Int, composingEnd: Int) {
+    override fun selectionChanged(start: Int, end: Int, composingStart: Int, composingEnd: Int) {
         cursorUpdateIndex += 1
         handleCursorUpdate(start, end, composingStart, composingEnd, cursorUpdateIndex)
     }

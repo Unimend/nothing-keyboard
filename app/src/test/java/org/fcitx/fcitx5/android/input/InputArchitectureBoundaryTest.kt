@@ -385,6 +385,21 @@ class InputArchitectureBoundaryTest {
     }
 
     @Test
+    fun `selection callbacks enter the lifecycle ordering boundary`() {
+        val service = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
+        ).readText()
+        assertTrue(
+            "Android selection callback must delegate reconciliation order",
+            "inputLifecycle.selectionChanged(" in service
+        )
+        assertFalse(
+            "Service must not call the concrete editor selection path",
+            "editor.selectionChanged(" in service
+        )
+    }
+
+    @Test
     fun `input device transitions use one presentation controller`() {
         val service = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/FcitxInputMethodService.kt"
