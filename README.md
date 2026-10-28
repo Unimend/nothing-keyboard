@@ -32,8 +32,8 @@ documented under [`docs/`](docs/).
 
 ### Dependencies
 
-- Android SDK Platform & Build-Tools 35.
-- Android NDK (Side by side) 25 & CMake 3.22.1, they can be installed using SDK Manager in Android Studio or `sdkmanager` command line.
+- Android SDK Platform 36 and Build-Tools 36.1.0.
+- Android NDK 28.0.13004108 and CMake 3.31.6. Install them with Android Studio's SDK Manager or `sdkmanager`.
 - [KDE/extra-cmake-modules](https://github.com/KDE/extra-cmake-modules)
 - GNU Gettext >= 0.20 (for `msgfmt` binary; or install `appstream` if you really have to use gettext <= 0.19.)
 
@@ -108,4 +108,7 @@ The current recommended versions are recorded in [Versions.kt](build-logic/conve
 
 ## Nix
 
-Appropriate Android SDK with NDK is available in the development shell.  The `gradlew` should work out-of-the-box, so you can install the app to your phone with `./gradlew installDebug` after applying the patch mentioned above. For development, you may want to install the unstable version of Android Studio, and point the project SDK path to `$ANDROID_SDK_ROOT` defined in the shell. Notice that Android Studio may generate wrong `local.properties` which sets the SDK location to `~/Android/SDK` (installed by SDK Manager). In such case, you need specify `sdk.dir` as the project SDK in that file manually, in case Android Studio sticks to the wrong global SDK.
+The development shell provides the matching Android SDK and NDK. `gradlew` works directly inside
+that shell, so the app can be built with `./gradlew :app:assembleDebug`. For IDE development, point
+Android Studio at the `$ANDROID_SDK_ROOT` exported by the shell. If Android Studio rewrites
+`local.properties` to a different global SDK, set `sdk.dir` back to that project SDK explicitly.

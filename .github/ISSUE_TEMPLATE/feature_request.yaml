@@ -31,7 +31,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        ### 设备信息 / Device Infomation
+        ### 设备信息 / Device Information
 
   - type: input
     id: os_version
