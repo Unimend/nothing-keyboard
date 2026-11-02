@@ -162,7 +162,6 @@
     <string name="space_behavior_enumerate">Enumerate input methods</string>
     <string name="space_behavior_activate">Toggle input method activate state</string>
     <string name="space_behavior_picker">Show input method picker dialog</string>
-    <string name="show_lang_switch_key">Show language switch key</string>
     <string name="horizontal_candidate_style">Horizontal candidate style</string>
     <string name="horizontal_candidate_never_fill">Never fill width</string>
     <string name="horizontal_candidate_auto_fill">Fill width on demand</string>
@@ -201,7 +200,7 @@
     <string name="expand_keypress_area">Expand keypress area to the edge</string>
     <string name="update_table">Update table</string>
     <string name="table_dict_replace_message">Dictionary of table-based input method \"%1$s\" exists. You may import a new dict and replace it.</string>
-    <string name="lang_switch_key_behavior">Language switch key behavior</string>
+    <string name="lang_switch_key_behavior">Language switching behavior</string>
     <string name="lang_switch_behavior_next_ime_app">Switch to next input method App</string>
     <string name="_cannot_be_empty">%1$s cannot be empty</string>
     <string name="clipboard_mask_sensitive">Mask sensitive data (such as passwords)</string>

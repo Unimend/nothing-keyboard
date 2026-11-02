@@ -23,6 +23,7 @@ import androidx.annotation.DrawableRes
 import androidx.annotation.FloatRange
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.view.updateLayoutParams
+import androidx.core.graphics.ColorUtils
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.data.theme.ThemePrefs.PunctuationPosition
@@ -62,6 +63,7 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
     CustomGestureView(ctx) {
 
     protected val colors = theme.toInputColorScheme()
+    private val visualStyle = theme.inputSurfaceStyle.keyboard
 
     val bordered: Boolean
     val borderStroke: Boolean
@@ -72,10 +74,11 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
 
     init {
         val prefs = InputThemeSettings
-        val visualStyle = theme.inputSurfaceStyle.keyboard
         bordered = prefs.keyBorder.getValue()
         borderStroke = prefs.keyBorderStroke.getValue()
-        rippled = prefs.keyRippleEffect.getValue()
+        // Nothing uses one keyboard-wide light field so the wave can cross key boundaries.
+        rippled = !theme.isNothingStyle &&
+            (visualStyle.forceTouchRipple || prefs.keyRippleEffect.getValue())
         radius = dp(visualStyle.keyCornerRadiusDp ?: prefs.keyRadius.getValue().toFloat())
         val landscape = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         val hMarginPref =
@@ -129,18 +132,26 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
         }
         // key border
         if ((bordered && def.border != Border.Off) || def.border == Border.On) {
-            val bkgColor = when (def.variant) {
+            val rawBackgroundColor = when (def.variant) {
                 Variant.Normal, Variant.AltForeground -> colors.keyContainer
                 Variant.Alternative -> colors.alternateKeyContainer
                 Variant.Accent -> colors.accentContainer
             }
+            val bkgColor = ColorUtils.setAlphaComponent(
+                rawBackgroundColor,
+                (255 * visualStyle.keyContainerAlpha).roundToInt()
+            )
+            val shadowColor = ColorUtils.setAlphaComponent(
+                colors.shadow,
+                (255 * visualStyle.keyContainerAlpha).roundToInt()
+            )
             val borderOrShadowWidth = dp(1)
             // background: key border
             appearanceView.background = if (borderStroke) borderedKeyBackgroundDrawable(
-                bkgColor, colors.shadow,
+                bkgColor, shadowColor,
                 radius, borderOrShadowWidth, hMargin, vMargin
             ) else shadowedKeyBackgroundDrawable(
-                bkgColor, colors.shadow,
+                bkgColor, shadowColor,
                 radius, borderOrShadowWidth, hMargin, vMargin
             )
             // foreground: press highlight or ripple
@@ -156,9 +167,16 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
     }
 
     private fun setupPressHighlight(mask: Drawable? = null) {
+        if (theme.isNothingStyle) {
+            appearanceView.foreground = null
+            return
+        }
+        val pressColor = if (theme.isNothingStyle) {
+            Color.argb(82, 255, 255, 255)
+        } else colors.pressed
         appearanceView.foreground = if (rippled) {
             RippleDrawable(
-                ColorStateList.valueOf(colors.pressed), null,
+                ColorStateList.valueOf(pressColor), null,
                 // ripple should be masked with an opaque color
                 mask ?: highlightMaskDrawable(Color.WHITE)
             )
@@ -181,6 +199,11 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 )
             }
         }
+    }
+
+    override fun drawableHotspotChanged(x: Float, y: Float) {
+        super.drawableHotspotChanged(x, y)
+        appearanceView.drawableHotspotChanged(x - appearanceView.left, y - appearanceView.top)
     }
 
     private fun highlightMaskDrawable(@ColorInt color: Int): Drawable {
@@ -228,7 +251,13 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 val hInset = dp(10)
                 val vInset = if (h < minHeight) 0 else min((h - minHeight) / 2, dp(16))
                 appearanceView.background = insetRadiusDrawable(
-                    hInset, vInset, bkgRadius, colors.spaceContainer
+                    hInset,
+                    vInset,
+                    bkgRadius,
+                    ColorUtils.setAlphaComponent(
+                        colors.spaceContainer,
+                        (255 * theme.inputSurfaceStyle.keyboard.keyContainerAlpha).roundToInt()
+                    )
                 )
                 // InsetDrawable sets padding to container view; remove padding to prevent text from bing clipped
                 appearanceView.padding = 0
@@ -245,7 +274,12 @@ abstract class KeyView(ctx: Context, val theme: Theme, val def: KeyDef.Appearanc
                 val hInset = (w - drawableSize) / 2
                 val vInset = (h - drawableSize) / 2
                 appearanceView.background = insetOvalDrawable(
-                    hInset, vInset, colors.accentContainer
+                    hInset,
+                    vInset,
+                    ColorUtils.setAlphaComponent(
+                        colors.accentContainer,
+                        (255 * theme.inputSurfaceStyle.keyboard.keyContainerAlpha).roundToInt()
+                    )
                 )
                 appearanceView.padding = 0
                 setupPressHighlight(

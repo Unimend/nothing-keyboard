@@ -7,15 +7,15 @@ package org.fcitx.fcitx5.android.input.keyboard
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
-import android.view.View
 import android.view.animation.DecelerateInterpolator
-import androidx.annotation.Keep
 import androidx.core.view.allViews
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.session.EngineInputMethod
 import org.fcitx.fcitx5.android.input.engine.EngineKeyModifier
+import org.fcitx.fcitx5.android.input.mode.InputMode
+import org.fcitx.fcitx5.android.input.mode.KeyboardLayout
+import org.fcitx.fcitx5.android.input.mode.PickerKind
 import org.fcitx.fcitx5.android.input.settings.InputSettings
-import org.fcitx.fcitx5.android.data.prefs.ManagedPreference
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.feedback.InputMotionSystem
 import org.fcitx.fcitx5.android.input.feedback.InputMotionRole
@@ -76,9 +76,14 @@ class TextKeyboard(
                 BackspaceKey()
             ),
             listOf(
-                LayoutSwitchKey("?123"),
+                LayoutSwitchKey("123", InputMode.Keyboard(KeyboardLayout.Number)),
                 CommaKey(0.1f, KeyDef.Appearance.Variant.Alternative),
-                LanguageKey(),
+                LayoutSwitchKey(
+                    "!?#",
+                    InputMode.Picker(PickerKind.Symbol),
+                    0.1f,
+                    KeyDef.Appearance.Variant.AltForeground
+                ),
                 SpaceKey(),
                 SymbolKey(".", 0.1f, KeyDef.Appearance.Variant.Alternative),
                 ReturnKey()
@@ -89,23 +94,10 @@ class TextKeyboard(
     val caps: ImageKeyView by lazy { findViewById(R.id.button_caps) }
     val backspace: ImageKeyView by lazy { findViewById(R.id.button_backspace) }
     val quickphrase: ImageKeyView by lazy { findViewById(R.id.button_quickphrase) }
-    val lang: ImageKeyView by lazy { findViewById(R.id.button_lang) }
     val space: TextKeyView by lazy { findViewById(R.id.button_space) }
     val `return`: ImageKeyView by lazy { findViewById(R.id.button_return) }
 
-    private val showLangSwitchKey = InputSettings.keyboard.showLangSwitchKey
-
-    @Keep
-    private val showLangSwitchKeyListener = ManagedPreference.OnChangeListener<Boolean> { _, v ->
-        updateLangSwitchKey(v)
-    }
-    private var preferenceListenerRegistered = false
-
     private val keepLettersUppercase by InputSettings.keyboard.keepLettersUppercase
-
-    init {
-        updateLangSwitchKey(showLangSwitchKey.getValue())
-    }
 
     private val textKeys: List<TextKeyView> by lazy {
         allViews.filterIsInstance(TextKeyView::class.java).toList()
@@ -161,30 +153,9 @@ class TextKeyboard(
 
     override fun onAttach() {
         super.onAttach()
-        if (!preferenceListenerRegistered) {
-            showLangSwitchKey.registerOnChangeListener(showLangSwitchKeyListener)
-            preferenceListenerRegistered = true
-        }
         capsState = CapsState.None
         updateCapsButtonIcon()
         updateAlphabetKeys()
-    }
-
-    override fun onDetach() {
-        unregisterPreferenceListener()
-        super.onDetach()
-    }
-
-    private fun unregisterPreferenceListener() {
-        if (preferenceListenerRegistered) {
-            showLangSwitchKey.unregisterOnChangeListener(showLangSwitchKeyListener)
-            preferenceListenerRegistered = false
-        }
-    }
-
-    override fun onDetachedFromWindow() {
-        unregisterPreferenceListener()
-        super.onDetachedFromWindow()
     }
 
     override fun onReturnDrawableUpdate(returnDrawable: Int) {
@@ -294,10 +265,6 @@ class TextKeyboard(
                 }
             }
         }
-    }
-
-    private fun updateLangSwitchKey(visible: Boolean) {
-        lang.visibility = if (visible) View.VISIBLE else View.GONE
     }
 
     private fun updateAlphabetKeys() {

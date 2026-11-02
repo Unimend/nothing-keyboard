@@ -1,114 +1,172 @@
+<div align="center">
+
+![Nothing Keyboard](docs/assets/readme-hero.svg)
+
 # Nothing Keyboard
 
-A Nothing-inspired Android keyboard with an independently structured input shell.
-[Fcitx5](https://github.com/fcitx/fcitx5) is retained behind an engine adapter for
-Chinese input. Lifecycle, editing, gestures, navigation, typography, glyphs,
-theme, motion and UI state belong to the Nothing Keyboard systems.
+**一款以 Nothing 视觉语言重新设计的 Android 输入法。**<br>
+Fcitx 只保留为中文输入引擎边界，其余界面、手势、编辑、导航与动画均由独立系统负责。
 
-The old external-plugin APK runtime, plugin modules and customizable theme stack
-have deliberately been removed. Architecture and migration boundaries are
-documented under [`docs/`](docs/).
+[![Android](https://img.shields.io/badge/Android-6.0%2B-050505?style=flat-square&logo=android&logoColor=white)](https://www.android.com/)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.3-050505?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org/)
+[![Fcitx5](https://img.shields.io/badge/Engine-Fcitx5-050505?style=flat-square)](https://github.com/fcitx/fcitx5)
+[![License](https://img.shields.io/badge/License-LGPL--2.1-ff3131?style=flat-square)](LICENSE)
 
-## Project status
+`BLACK / WHITE / RED` · `DOTO` · `DOT MATRIX MOTION`
 
-### Supported Languages
+</div>
 
-- English
-- Simplified Chinese Pinyin, powered by [libime](https://github.com/fcitx/libime)
-  and [fcitx5-chinese-addons](https://github.com/fcitx/fcitx5-chinese-addons)
+---
 
-### Implemented Features
+## 01 / 设计方向
 
-- Nothing-style virtual keyboard
-- Expandable candidate view
-- Clipboard and quick editing workspace
-- Unified destructive-edit gestures and undo history
-- Fixed Nothing visual system and Doto typography policy
-- Popup preview on key press
-- Swipe and long-press symbol input
-- Symbol and Emoji picker
+Nothing Keyboard 不是给原输入法换一套皮肤，而是在稳定输入引擎之外重建一套职责明确的输入系统。
 
-## Build
+| 原则 | 实现 |
+|---|---|
+| **信息干净** | 黑色表面、白色主信息、红色只表达状态与反馈 |
+| **字体统一** | 英文、数字与功能标签遵循 Doto / 点阵字形规则 |
+| **反馈有生命力** | 全界面点阵涟漪、短促反馈、明确的状态变化 |
+| **操作少一步** | 空格、删除键与候选栏承担连续手势操作 |
+| **系统可维护** | 功能通过数据模型与事件接口沟通，不跨层操纵内部实现 |
 
-### Dependencies
+## 02 / 已实现
 
-- Android SDK Platform 36 and Build-Tools 36.1.0.
-- Android NDK 28.0.13004108 and CMake 3.31.6. Install them with Android Studio's SDK Manager or `sdkmanager`.
-- [KDE/extra-cmake-modules](https://github.com/KDE/extra-cmake-modules)
-- GNU Gettext >= 0.20 (for `msgfmt` binary; or install `appstream` if you really have to use gettext <= 0.19.)
+### 输入
 
-### How to set up development environment
+- 英文输入
+- 简体中文拼音，由 [libime](https://github.com/fcitx/libime) 与 [fcitx5-chinese-addons](https://github.com/fcitx/fcitx5-chinese-addons) 提供引擎能力
+- 横向滑动候选栏，无需展开即可连续找词
+- 数字、符号、Emoji 与颜文字页面
+- 按键上滑输入副字符
 
-<details>
-<summary>Prerequisites for Windows</summary>
+### 手势
 
-- Enable [Developer Mode](https://learn.microsoft.com/en-us/windows/apps/get-started/enable-your-device-for-development) so that symlinks can be created without administrator privilege.
+| 位置 | 手势 | 动作 |
+|---|---|---|
+| 空格 | 左右滑动 | 移动文本光标 |
+| 空格 | 上滑 | 打开快捷编辑工作区 |
+| 空格 | 下滑 | 切换输入语言 |
+| 删除键 | 左右滑动 | 选择待删除范围，再次点击确认删除 |
+| 删除键 | 上滑 | 清空当前输入范围 |
+| 删除键 | 下滑 | 撤回最近一次删除 |
+| 字母键 | 上滑 | 输入键帽上方的数字或符号 |
 
-- Enable symlink support for `git`:
+### Nothing 界面
 
-    ```shell
-    git config --global core.symlinks true
-    ```
+- 透明键帽与统一的间距体系
+- Doto 字体及专用像素功能图标
+- 全输入法表面的点阵圆环涟漪
+- 每次随机扩散半径，固定点数与固定点尺寸
+- 白色按键预览，红色只用于活动状态和关键提示
+- 快捷编辑工作区与 Nothing 风格剪贴板
 
-</details>
+## 03 / 架构
 
-First, clone this repository and fetch all submodules:
+```text
+Android 输入法生命周期
+└── Nothing Keyboard 应用外壳
+    ├── 输入会话与状态系统
+    ├── 编辑命令与撤回系统
+    ├── 键盘布局与按键系统
+    ├── 候选词与预编辑系统
+    ├── 手势识别与反馈系统
+    ├── 页面导航与窗口系统
+    ├── 字体、字形与颜色系统
+    ├── 动画与点阵涟漪系统
+    ├── 剪贴板与快捷编辑系统
+    └── Fcitx Engine Adapter
+        └── Fcitx5 / libime / Chinese Addons
+```
 
-```shell
+详细说明：
+
+- [Nothing Keyboard 架构](docs/NOTHING_KEYBOARD_ARCHITECTURE.md)
+- [设计规范](docs/DESIGN_SPEC.md)
+- [输入引擎评估](docs/INPUT_ENGINE_EVALUATION.md)
+- [旧系统绕过审计](docs/INPUT_SYSTEM_BYPASS_AUDIT.md)
+
+## 04 / 安装与兼容性
+
+- Android 6.0（API 23）及以上
+- 普通 Android 手机即可安装，**不需要 Root**
+- 当前仍处于持续开发和实机验证阶段，建议先作为测试输入法使用
+
+安装 APK 后：
+
+1. 打开系统的“语言与输入法”设置。
+2. 启用 **Nothing Keyboard**。
+3. 在输入法选择器中切换到 Nothing Keyboard。
+
+> 输入法可以读取用户输入的内容。请只安装来自本仓库或自己构建的 APK。
+
+## 05 / 构建
+
+### 环境
+
+- Android SDK Platform 36
+- Android Build-Tools 36.1.0
+- Android NDK 28.0.13004108
+- CMake 3.31.6
+- KDE extra-cmake-modules
+- GNU Gettext 0.20+
+
+### 获取代码
+
+```bash
 git clone https://github.com/Unimend/nothing-keyboard.git
+cd nothing-keyboard
 git submodule update --init --recursive
 ```
 
-Install `extra-cmake-modules` and `gettext` with your system package manager:
+macOS：
 
-```shell
-# For Arch Linux (Arch has gettext in it's base meta package)
-sudo pacman -S extra-cmake-modules
-
-# For Debian/Ubuntu
-sudo apt install extra-cmake-modules gettext
-
-# For macOS
+```bash
 brew install extra-cmake-modules gettext
-
-# For Windows, install MSYS2 and execute in its shell (UCRT64)
-pacman -S mingw-w64-ucrt-x86_64-extra-cmake-modules mingw-w64-ucrt-x86_64-gettext
-# then add C:\msys64\ucrt64\bin to PATH
+./gradlew :app:assembleDebug
 ```
 
-Install Android SDK Platform, Android SDK Build-Tools, Android NDK and cmake via SDK Manager in Android Studio:
+Arch Linux：
 
-<details>
-<summary>Detailed steps (screenshots)</summary>
+```bash
+sudo pacman -S extra-cmake-modules
+./gradlew :app:assembleDebug
+```
 
-**Note:** These screenshots are for references and the versions in them may be out of date.
-The current recommended versions are recorded in [Versions.kt](build-logic/convention/src/main/kotlin/Versions.kt) file.
+Debian / Ubuntu：
 
-![Open SDK Manager](https://user-images.githubusercontent.com/13914967/202184493-3ee1546b-0a83-4cc9-9e41-d20b0904a0cf.png)
+```bash
+sudo apt install extra-cmake-modules gettext
+./gradlew :app:assembleDebug
+```
 
-![Install SDK Platform](https://user-images.githubusercontent.com/13914967/202184534-340a9e7c-7c42-49bd-9cf5-1ec9dcafcf32.png)
+Windows 需要先启用开发者模式与 Git 符号链接支持，再通过 MSYS2 安装构建依赖：
 
-![Install SDK Build-Tools](https://user-images.githubusercontent.com/13914967/202185945-0c7a9f39-1fcc-4018-9c81-b3d2bf1c2d3f.png)
+```powershell
+git config --global core.symlinks true
+```
 
-![Install NDK](https://user-images.githubusercontent.com/13914967/202185601-0cf877ea-e148-4b88-bd2f-70533189b3d4.png)
+```bash
+pacman -S mingw-w64-ucrt-x86_64-extra-cmake-modules mingw-w64-ucrt-x86_64-gettext
+```
 
-![Install CMake](https://user-images.githubusercontent.com/13914967/202184655-3c1ab47c-432f-4bd7-a508-92096482de50.png)
+## 06 / 项目状态
 
-</details>
+当前重点是通过真实日常使用继续打磨：
 
-### Trouble-shooting
+- 手势容错与组合操作
+- 候选词长列表体验
+- 输入法各页面的视觉一致性
+- 动画流畅度与低功耗表现
+- 将残余的 Fcitx UI 依赖继续收敛到引擎边界
 
-- Android Studio indexing takes forever to complete and cosumes a lot of memory.
+---
 
-    Switch to "Project" view in the "Project" tool window (namely the file tree side bar), right click `lib/fcitx5/src/main/cpp/prebuilt` directory, then select "Mark Directory as > Excluded". You may also need to restart the IDE to interrupt ongoing indexing process.
+<div align="center">
 
-- Gradle error: "No variants found for ':app'. Check build files to ensure at least one variant exists." or "[CXX1210] <whatever>/CMakeLists.txt debug|arm64-v8a : No compatible library found"
+**NOTHING KEYBOARD**<br>
+`ENGINE INSIDE / SYSTEMS OUTSIDE`
 
-    Examine if there are environment variables set such as `_JAVA_OPTIONS` or `JAVA_TOOL_OPTIONS`. You might want to clear them (maybe in the startup script `studio.sh` of Android Studio), as some gradle plugin treats anything in stderr as errors and aborts.
+基于 Fcitx5 Android 项目演进，遵循 [LGPL-2.1 License](LICENSE)。
 
-## Nix
-
-The development shell provides the matching Android SDK and NDK. `gradlew` works directly inside
-that shell, so the app can be built with `./gradlew :app:assembleDebug`. For IDE development, point
-Android Studio at the `$ANDROID_SDK_ROOT` exported by the shell. If Android Studio rewrites
-`local.properties` to a different global SDK, set `sdk.dir` back to that project SDK explicitly.
+</div>

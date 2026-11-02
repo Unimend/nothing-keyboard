@@ -205,6 +205,11 @@ abstract class BaseKeyboard(
                                 onAction(KeyAction.ShowTextEditingAction)
                             }
                         }
+                        KeyboardGestureAction.SwitchLanguage -> {
+                            KeyboardFeedback.afterConfirmation(view, theme) {
+                                onAction(KeyAction.LangSwitchAction)
+                            }
+                        }
                         else -> Unit
                     }
                     decision.consumed
@@ -383,6 +388,7 @@ abstract class BaseKeyboard(
             }
         }
     }
+
 
     private class TouchTarget(val view: KeyView, val hitRect: Rect)
 

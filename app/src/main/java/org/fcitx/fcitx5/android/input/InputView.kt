@@ -10,6 +10,7 @@ import android.content.res.Configuration
 import android.graphics.Point
 import android.os.Build
 import android.view.View
+import android.view.MotionEvent
 import android.view.WindowInsets
 import android.view.inputmethod.InlineSuggestionsResponse
 import android.widget.ImageView
@@ -30,6 +31,7 @@ import org.fcitx.fcitx5.android.input.candidates.horizontal.HorizontalCandidateC
 import org.fcitx.fcitx5.android.input.design.ReturnKeyGlyphPolicy
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import org.fcitx.fcitx5.android.input.design.isNothingStyle
+import org.fcitx.fcitx5.android.input.feedback.KeyboardRippleLayer
 import org.fcitx.fcitx5.android.input.keyboard.CommonKeyActionListener
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.DisplayMetrics
 import org.fcitx.fcitx5.android.input.keyboard.KeyboardHeightPercentBase.RealSize
@@ -106,6 +108,7 @@ class InputView(
 ) {
 
     private val nothingCompactHeightScale = theme.inputSurfaceStyle.keyboard.heightScale
+    private val rippleLayer = KeyboardRippleLayer(service)
 
     private val keyBorder by InputThemeSettings.keyBorder
 
@@ -334,10 +337,30 @@ class InputView(
             centerVertically()
             centerHorizontally()
         })
+        if (theme.isNothingStyle) {
+            add(rippleLayer, lParams(matchParent, matchParent) {
+                centerVertically()
+                centerHorizontally()
+            })
+            rippleLayer.bringToFront()
+        }
 
         keyboardPrefs.registerOnChangeListener(onKeyboardSizeChangeListener)
         advancedPrefs.registerOnChangeListener(onKeyboardSizeChangeListener)
         observeSessionDerivedState()
+    }
+
+    override fun dispatchTouchEvent(event: MotionEvent): Boolean {
+        if (theme.isNothingStyle) {
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> rippleLayer.pulse(event.x, event.y)
+                MotionEvent.ACTION_POINTER_DOWN -> {
+                    val index = event.actionIndex
+                    rippleLayer.pulse(event.getX(index), event.getY(index))
+                }
+            }
+        }
+        return super.dispatchTouchEvent(event)
     }
 
     private var sessionStateJob: Job? = null

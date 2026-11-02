@@ -50,7 +50,8 @@ fun Theme.toInputColorScheme(): InputColorScheme = InputColorScheme(
     candidateMarker = candidateLabelColor,
     candidateComment = candidateCommentColor,
     popupContainer = popupBackgroundColor,
-    popupContent = if (isNothingStyle) accentKeyBackgroundColor else popupTextColor,
+    // Quick key-preview text stays neutral white; red remains reserved for active controls.
+    popupContent = if (isNothingStyle) keyTextColor else popupTextColor,
     clipboardContainer = if (isNothingStyle) {
         NothingDesignTokens.Color.RaisedSurface
     } else clipboardEntryColor,

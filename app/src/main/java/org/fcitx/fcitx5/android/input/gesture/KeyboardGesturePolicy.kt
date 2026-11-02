@@ -19,6 +19,7 @@ sealed interface KeyboardGestureAction {
     data class MoveSelection(val steps: Int) : KeyboardGestureAction
     data class FinishSelection(val steps: Int) : KeyboardGestureAction
     data object OpenEditingPanel : KeyboardGestureAction
+    data object SwitchLanguage : KeyboardGestureAction
     data object ClearAllText : KeyboardGestureAction
     data object Undo : KeyboardGestureAction
     data object CancelSelection : KeyboardGestureAction
@@ -30,20 +31,26 @@ data class GestureDecision(
 )
 
 object KeyboardGesturePolicy {
+    private fun isVerticalIntent(totalX: Int, totalY: Int): Boolean =
+        totalY != 0 && totalY.absoluteValue * 2 >= totalX.absoluteValue
+
     fun space(snapshot: GestureSnapshot): GestureDecision = when (snapshot.phase) {
         GesturePhase.Cancel -> GestureDecision(consumed = true)
         GesturePhase.Move -> when {
-            snapshot.totalY.absoluteValue > snapshot.totalX.absoluteValue ->
+            isVerticalIntent(snapshot.totalX, snapshot.totalY) ->
                 GestureDecision(consumed = true)
             snapshot.countX != 0 ->
                 GestureDecision(KeyboardGestureAction.MoveCursor(snapshot.countX), consumed = true)
             else -> GestureDecision()
         }
         GesturePhase.Up -> if (
-            snapshot.totalY < 0 &&
-            snapshot.totalY.absoluteValue >= snapshot.totalX.absoluteValue
+            isVerticalIntent(snapshot.totalX, snapshot.totalY)
         ) {
-            GestureDecision(KeyboardGestureAction.OpenEditingPanel, consumed = true)
+            GestureDecision(
+                if (snapshot.totalY < 0) KeyboardGestureAction.OpenEditingPanel
+                else KeyboardGestureAction.SwitchLanguage,
+                consumed = true
+            )
         } else {
             GestureDecision()
         }

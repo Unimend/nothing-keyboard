@@ -29,6 +29,8 @@ data class ClipboardSurfaceStyle(
 
 data class KeyboardSurfaceStyle(
     val keyCornerRadiusDp: Float?,
+    val keyContainerAlpha: Float,
+    val forceTouchRipple: Boolean,
     val heightScale: Float,
     val showSpaceIndicator: Boolean,
     val alternateTextSizeSp: Float,
@@ -84,6 +86,8 @@ object InputSurfaceStylePolicy {
             isNothing = true,
             keyboard = KeyboardSurfaceStyle(
                 keyCornerRadiusDp = NothingDesignTokens.Shape.KeyCornerRadiusDp,
+                keyContainerAlpha = 0f,
+                forceTouchRipple = false,
                 heightScale = NothingDesignTokens.Keyboard.CompactHeightScale,
                 showSpaceIndicator = true,
                 alternateTextSizeSp = NothingTextStyle.KeyAlternate.sizeSp,
@@ -140,6 +144,8 @@ object InputSurfaceStylePolicy {
             isNothing = false,
             keyboard = KeyboardSurfaceStyle(
                 keyCornerRadiusDp = null,
+                keyContainerAlpha = 1f,
+                forceTouchRipple = false,
                 heightScale = 1f,
                 showSpaceIndicator = false,
                 alternateTextSizeSp = 10.666667f,

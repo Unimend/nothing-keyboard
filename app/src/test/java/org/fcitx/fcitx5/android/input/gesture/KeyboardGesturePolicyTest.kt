@@ -40,6 +40,30 @@ class KeyboardGesturePolicyTest {
     }
 
     @Test
+    fun `space downward release switches language`() {
+        val result = KeyboardGesturePolicy.space(
+            GestureSnapshot(GesturePhase.Up, countX = 0, totalX = 0, totalY = 2)
+        )
+        assertEquals(KeyboardGestureAction.SwitchLanguage, result.action)
+        assertTrue(result.consumed)
+    }
+
+    @Test
+    fun `curved diagonal space swipe still follows its vertical intent`() {
+        val downward = KeyboardGesturePolicy.space(
+            GestureSnapshot(GesturePhase.Up, countX = 0, totalX = 2, totalY = 1)
+        )
+        assertEquals(KeyboardGestureAction.SwitchLanguage, downward.action)
+        assertTrue(downward.consumed)
+
+        val upward = KeyboardGesturePolicy.space(
+            GestureSnapshot(GesturePhase.Up, countX = 0, totalX = -3, totalY = -2)
+        )
+        assertEquals(KeyboardGestureAction.OpenEditingPanel, upward.action)
+        assertTrue(upward.consumed)
+    }
+
+    @Test
     fun `backspace long upward swipe clears all`() {
         val result = KeyboardGesturePolicy.backspace(
             GestureSnapshot(GesturePhase.Up, countX = 0, totalX = 0, totalY = -2)
