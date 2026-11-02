@@ -19,6 +19,8 @@ sealed interface EditingCommand {
     data object Copy : EditingCommand
     data object Paste : EditingCommand
     data object Backspace : EditingCommand
+    data object BeginBackspaceRepeat : EditingCommand
+    data object EndBackspaceRepeat : EditingCommand
     data object ClearAll : EditingCommand
     data object Undo : EditingCommand
 }

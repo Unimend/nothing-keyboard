@@ -58,7 +58,6 @@ struct AndroidKeyboardEngineState : public InputContextProperty {
 
 class AndroidKeyboardEngine final : public InputMethodEngineV3 {
 public:
-    static int constexpr MaxBufferSize = 20;
     static int constexpr SpellCandidateSize = 20;
 
     explicit AndroidKeyboardEngine(Instance *instance);

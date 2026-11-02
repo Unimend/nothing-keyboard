@@ -18,24 +18,54 @@ sealed interface DestructiveEditTransaction {
         override val cursorAfterRestore: Int
     ) : DestructiveEditTransaction
 
-    /** Restores engine-owned preedit through the engine, never as committed document text. */
+    /** Restores only engine-owned source input; committed editor text stays untouched. */
     data class RestoreComposition(
         override val deletedText: String,
         override val cursorAfterRestore: Int
     ) : DestructiveEditTransaction
+
 }
 
 /** One-level undo history owned by our destructive gestures, independent of app/system Undo. */
 class DestructiveEditHistory {
     private var lastEdit: DestructiveEditTransaction? = null
+    private var grouping = false
+
+    fun beginGroup() {
+        grouping = true
+        lastEdit = null
+    }
+
+    fun endGroup() {
+        grouping = false
+    }
 
     fun record(edit: DestructiveEditTransaction) {
-        lastEdit = edit.takeIf { it.deletedText.isNotEmpty() }
+        if (edit.deletedText.isEmpty()) return
+        lastEdit = if (grouping) mergeBackward(lastEdit, edit) else edit
     }
 
     fun consume(): DestructiveEditTransaction? = lastEdit.also { lastEdit = null }
 
     fun clear() {
         lastEdit = null
+        grouping = false
+    }
+
+    private fun mergeBackward(
+        previous: DestructiveEditTransaction?,
+        next: DestructiveEditTransaction
+    ): DestructiveEditTransaction {
+        if (previous !is DestructiveEditTransaction.RestoreRange ||
+            next !is DestructiveEditTransaction.RestoreRange ||
+            next.start + next.deletedText.length != previous.start
+        ) {
+            return next
+        }
+        return DestructiveEditTransaction.RestoreRange(
+            start = next.start,
+            deletedText = next.deletedText + previous.deletedText,
+            cursorAfterRestore = previous.cursorAfterRestore
+        )
     }
 }

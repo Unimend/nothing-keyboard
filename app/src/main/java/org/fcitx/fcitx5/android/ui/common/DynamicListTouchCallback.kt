@@ -37,7 +37,7 @@ open class DynamicListTouchCallback<T>(
     }
 
     private val deleteIcon: Bitmap by lazy {
-        ctx.drawable(R.drawable.ic_baseline_delete_24)!!.apply {
+        ctx.drawable(R.drawable.ic_pixel_delete)!!.apply {
             setTint(ctx.styledColor(android.R.attr.colorBackground))
         }.toBitmap()
     }

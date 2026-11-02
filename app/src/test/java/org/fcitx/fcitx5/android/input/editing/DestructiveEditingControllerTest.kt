@@ -23,6 +23,9 @@ class DestructiveEditingControllerTest {
             get() = if (editingComposition.isEmpty()) "" else text.substring(
                 editingComposition.start, editingComposition.end
             )
+        var rawCompositionInput = ""
+        override val editingCompositionInput: String
+            get() = rawCompositionInput
         override val hasActiveComposition: Boolean
             get() = editingComposition.isNotEmpty()
         override val shouldSimulateBackspaceKey: Boolean
@@ -108,7 +111,7 @@ class DestructiveEditingControllerTest {
     }
 
     @Test
-    fun `clear during pinyin composition affects only preedit and undo restores it through engine`() {
+    fun `clear during pinyin composition keeps document and undo restores preedit through engine`() {
         val editor = Editor().apply {
             text = "abcni"
             start = 5
@@ -127,6 +130,28 @@ class DestructiveEditingControllerTest {
         controller.undo()
         assertEquals("abc", editor.text)
         assertEquals("ni", editor.restoredComposition)
+        assertEquals(3, editor.start)
+        assertEquals(3, editor.end)
+    }
+
+    @Test
+    fun `composition undo restores raw pinyin instead of rendered Chinese preedit`() {
+        val editor = Editor().apply {
+            text = "abc你好"
+            start = text.length
+            end = start
+            editingSelection.update(start, end)
+            editingComposition.update(3, text.length)
+            rawCompositionInput = "nihao"
+        }
+        val controller = DestructiveEditingController(editor)
+
+        controller.clearAll()
+        assertEquals("abc", editor.text)
+        controller.undo()
+
+        assertEquals("abc", editor.text)
+        assertEquals("nihao", editor.restoredComposition)
         assertEquals(3, editor.start)
         assertEquals(3, editor.end)
     }
@@ -231,4 +256,27 @@ class DestructiveEditingControllerTest {
         assertEquals(editor.text.length, editor.start)
         assertEquals(editor.start, editor.end)
     }
+
+    @Test
+    fun `one long press repeat is restored as one undo transaction`() {
+        val editor = Editor().apply {
+            text = "abcdef"
+            start = text.length
+            end = start
+            editingSelection.update(start, end)
+            simulateBackspace = false
+        }
+        val controller = DestructiveEditingController(editor)
+
+        controller.beginBackspaceRepeat()
+        repeat(4) { controller.deleteBackward() }
+        controller.endBackspaceRepeat()
+        assertEquals("ab", editor.text)
+
+        controller.undo()
+        assertEquals("abcdef", editor.text)
+        assertEquals(editor.text.length, editor.start)
+        assertEquals(editor.start, editor.end)
+    }
+
 }

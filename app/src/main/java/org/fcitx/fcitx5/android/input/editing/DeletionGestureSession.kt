@@ -5,7 +5,6 @@ import org.fcitx.fcitx5.android.input.session.EngineState
 
 sealed interface DeletionGestureEffect {
     data class Extend(val steps: Int) : DeletionGestureEffect
-    data object Delete : DeletionGestureEffect
     data object ResetComposition : DeletionGestureEffect
     data object CollapseSelection : DeletionGestureEffect
 }
@@ -31,7 +30,8 @@ class DeletionGestureSession {
         if (totalSteps == 0) return null
         return when (previous) {
             State.Idle -> null
-            State.Selecting -> DeletionGestureEffect.Delete
+            // Keep the range selected. A following ordinary backspace performs the deletion.
+            State.Selecting -> null
             State.ResetComposition -> DeletionGestureEffect.ResetComposition
         }
     }

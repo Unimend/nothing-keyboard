@@ -20,7 +20,8 @@ class CandidatesPagingSource(val queries: InputEngineQueries, val total: Int, va
         val pageSize = params.loadSize
         Timber.d("getCandidates(offset=$startIndex, limit=$pageSize)")
         val candidates = queries.candidates(startIndex, pageSize)
-        // Expanded candidates begin after the horizontal rail. Never prepend into that rail.
+        // The expanded surface is a complete view of the candidate list, not a continuation of
+        // the horizontal rail, so every refresh begins at engine index zero.
         val prevKey = null
         val nextKey = nextCandidatePageKey(
             startIndex = startIndex,

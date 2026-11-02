@@ -40,7 +40,7 @@ class ClipboardSuggestionUi(override val ctx: Context, private val theme: Theme)
     private val colors = theme.toInputColorScheme()
 
     private val icon = imageView {
-        imageDrawable = drawable(NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_clipboard, theme))!!.apply {
+        imageDrawable = drawable(NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_clipboard, theme))!!.apply {
             setTint(colors.alternateKeyContent)
         }
     }

@@ -54,6 +54,22 @@ object NothingTypographyPolicy {
     fun canUseWholeDotoTypeface(text: CharSequence): Boolean =
         text.isNotEmpty() && text.all { usesDoto(it) || it.isWhitespace() }
 
+    /**
+     * Doto does not contain full-width Latin and digit code points. Picker keys may display the
+     * equivalent half-width glyph while retaining the original full-width value for committing.
+     */
+    fun dotoCompatibleDisplay(text: CharSequence): String = buildString(text.length) {
+        text.forEach { character ->
+            append(
+                when (character.code) {
+                    in 0xFF10..0xFF19, in 0xFF21..0xFF3A, in 0xFF41..0xFF5A ->
+                        (character.code - 0xFEE0).toChar()
+                    else -> character
+                }
+            )
+        }
+    }
+
     fun classify(text: CharSequence): KeyboardTextKind {
         var containsLatinOrNumber = false
         var containsCjk = false

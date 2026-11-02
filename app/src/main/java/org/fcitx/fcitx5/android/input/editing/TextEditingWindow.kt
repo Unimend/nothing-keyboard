@@ -92,6 +92,12 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
             backspaceButton.onClickWithRepeating {
                 commandExecutor.execute(session.backspace())
             }
+            backspaceButton.onRepeatStartListener = {
+                commandExecutor.execute(EditingCommand.BeginBackspaceRepeat)
+            }
+            backspaceButton.onRepeatEndListener = {
+                commandExecutor.execute(EditingCommand.EndBackspaceRepeat)
+            }
             BackspaceGestureController.bind(
                 backspaceButton,
                 theme,
@@ -100,7 +106,7 @@ class TextEditingWindow : InputWindow.ExtendedInputWindow<TextEditingWindow>() {
                     moveSelection = {
                         commandExecutor.execute(EditingCommand.DeletionGestureMove(it))
                     },
-                    deleteSelection = {
+                    finishSelection = {
                         commandExecutor.execute(EditingCommand.DeletionGestureRelease(it))
                         session.finishDeletionGesture()
                         updateSelection(session.hasSelection, session.userSelection)

@@ -61,7 +61,7 @@ class ClipboardUi(override val ctx: Context, private val theme: Theme) : Ui {
         add(viewAnimator, defaultLParams(matchParent, matchParent))
     }
 
-    val deleteAllButton = ToolButton(ctx, R.drawable.ic_baseline_delete_sweep_24, theme).apply {
+    val deleteAllButton = ToolButton(ctx, R.drawable.ic_pixel_delete, theme).apply {
         contentDescription = ctx.getString(R.string.delete_all)
     }
 

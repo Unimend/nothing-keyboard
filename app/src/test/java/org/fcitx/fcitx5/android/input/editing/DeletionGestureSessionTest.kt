@@ -8,11 +8,11 @@ class DeletionGestureSessionTest {
     private val idle = EngineState()
     private val composing = EngineState(clientPreedit = EngineText(listOf(EngineTextSegment("ni"))))
 
-    @Test fun `committed text selects in both directions then deletes once`() {
+    @Test fun `committed text selects in both directions and remains selected on release`() {
         val gesture = DeletionGestureSession()
         assertEquals(DeletionGestureEffect.Extend(-1), gesture.move(-1, idle))
         assertEquals(DeletionGestureEffect.Extend(2), gesture.move(2, idle))
-        assertEquals(DeletionGestureEffect.Delete, gesture.release(1))
+        assertNull(gesture.release(1))
         assertNull(gesture.release(1))
     }
     @Test fun `composition is reset without selecting application text`() {

@@ -99,14 +99,20 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
     val platformInputMethods: PlatformInputMethodPort get() = subtypeController
 
     private lateinit var engineDispatcher: FcitxCommandDispatcher
+    private val compositionInputJournal =
+        org.fcitx.fcitx5.android.input.editing.CompositionInputJournal()
     private val editorEngineCommands = object : GuardedEngineCommandPort {
-        override fun submit(command: EngineCommand) = engineDispatcher.submit(command)
+        override fun submit(command: EngineCommand) = engineDispatcher.submit(command).also {
+            compositionInputJournal.observe(command)
+        }
         override fun submit(command: EngineCommand, guard: () -> Boolean) =
-            engineDispatcher.submit(command, guard)
+            engineDispatcher.submit(command, guard).also {
+                compositionInputJournal.observe(command)
+            }
     }
     private val editingAwareEngineCommands: EngineCommandPort by lazy {
         org.fcitx.fcitx5.android.input.editing.EditingAwareEngineCommandPort(
-            engineDispatcher,
+            editorEngineCommands,
             editor::invalidateDestructiveUndo
         )
     }
@@ -145,7 +151,7 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
 
     private fun currentStatusIcon() = inputSession.current.engine.inputMethod?.let(
         StatusIconMapping::fromEntry
-    ) ?: R.drawable.ic_baseline_keyboard_24
+    ) ?: R.drawable.ic_pixel_keyboard
 
     private val navbarMgr = NavigationBarManager()
     private val devicePresentation = InputDevicePresentationController(
@@ -209,6 +215,21 @@ class FcitxInputMethodService : LifecycleInputMethodService() {
         editorInfo = { currentInputEditorInfo },
         sendKey = { keyEvents.sendDownUp(it) },
         engineCommands = editorEngineCommands,
+        onEngineCommit = compositionInputJournal::clear,
+        compositionInput = {
+            inputSession.current.engine.let { engine ->
+                val panelPreedit = engine.inputPanel.preedit.plainText
+                val clientPreedit = engine.clientPreedit.plainText
+                // Pinyin's commit-preview mode may expose rendered Chinese on one surface and
+                // raw key input on the other. Destructive undo must replay the Latin input,
+                // never commit the rendered candidate sentence.
+                compositionInputJournal.rawInput.ifBlank {
+                    listOf(panelPreedit, clientPreedit)
+                    .firstOrNull { text -> text.any { it in 'a'..'z' || it in 'A'..'Z' } }
+                    ?: panelPreedit.ifBlank { clientPreedit }
+                }
+            }
+        },
         ignoreSystemCursor = { ignoreSystemCursor }
     )
 

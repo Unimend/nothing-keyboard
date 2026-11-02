@@ -8,6 +8,7 @@ import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import org.fcitx.fcitx5.android.R
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.resources.resolveThemeAttribute
@@ -38,7 +39,9 @@ import splitties.views.textAppearance
 class DynamicListEntryUi(override val ctx: Context) : Ui {
 
     val handleImage = imageView {
-        imageDrawable = drawable(R.drawable.ic_baseline_drag_handle_24)!!.apply {
+        imageDrawable = drawable(
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_drag)
+        )!!.apply {
             setTint(styledColor(android.R.attr.colorAccent))
         }
         setPaddingDp(3, 0, 3, 0)
@@ -55,14 +58,18 @@ class DynamicListEntryUi(override val ctx: Context) : Ui {
 
     val editButton = imageButton {
         background = styledDrawable(android.R.attr.selectableItemBackground)
-        imageDrawable = drawable(R.drawable.ic_baseline_edit_24)!!.apply {
+        imageDrawable = drawable(
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_edit)
+        )!!.apply {
             setTint(styledColor(android.R.attr.colorControlNormal))
         }
     }
 
     val settingsButton = imageButton {
         background = styledDrawable(android.R.attr.selectableItemBackground)
-        imageDrawable = drawable(R.drawable.ic_baseline_settings_24)!!.apply {
+        imageDrawable = drawable(
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_settings)
+        )!!.apply {
             setTint(styledColor(android.R.attr.colorControlNormal))
         }
     }

@@ -26,6 +26,7 @@ import com.google.android.material.behavior.HideViewOnScrollBehavior
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import org.fcitx.fcitx5.android.R
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.utils.onPositiveButtonClick
 import org.fcitx.fcitx5.android.utils.str
 import splitties.dimensions.dp
@@ -74,7 +75,9 @@ abstract class BaseDynamicListUi<T>(
     protected var shouldShowFab = false
 
     protected val fab = view(::FloatingActionButton) {
-        imageDrawable = drawable(R.drawable.ic_baseline_plus_24)!!.apply {
+        imageDrawable = drawable(
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_add)
+        )!!.apply {
             setTint(styledColor(android.R.attr.colorForegroundInverse))
         }
     }

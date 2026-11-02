@@ -2,8 +2,8 @@
 <resources>
     <string name="input_core_diagnostics">Input core diagnostics</string>
     <string name="input_core_diagnostics_hint">Type here to inspect the engine state</string>
-    <string name="app_name_release">Fcitx5</string>
-    <string name="app_name_debug">Fcitx5 (Debug)</string>
+    <string name="app_name_release">Nothing Keyboard</string>
+    <string name="app_name_debug">Nothing Keyboard (Debug)</string>
     <string name="input_methods">Input Methods</string>
     <string name="addons">Addons</string>
     <string name="global_options">Global Options</string>
@@ -100,7 +100,6 @@
     <string name="punctuation_pos_bottom">Bottom (Portrait only)</string>
     <string name="punctuation_pos_top_right">Top Right</string>
     <string name="punctuation_pos_none">None</string>
-    <string name="expand_toolbar_by_default">Expand toolbar by default</string>
     <string name="popup_on_key_press">Popup on key press</string>
     <string name="disable_animation">Disable animation</string>
     <string name="import_from_file">Import from file…</string>

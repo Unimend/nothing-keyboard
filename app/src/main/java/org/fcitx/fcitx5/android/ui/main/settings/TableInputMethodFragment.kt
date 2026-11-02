@@ -69,7 +69,7 @@ class TableInputMethodFragment : Fragment(), OnItemChangedListener<TableBasedInp
             initSettingsButton = {
                 visibility = View.VISIBLE
                 imageDrawable =
-                    if (it.tableFileExists) drawable(R.drawable.ic_baseline_edit_24)
+                    if (it.tableFileExists) drawable(R.drawable.ic_pixel_edit)
                     else styledDrawable(android.R.attr.alertDialogIcon)
                 setOnClickListener { _ ->
                     tableToReplace = it
@@ -238,7 +238,7 @@ class TableInputMethodFragment : Fragment(), OnItemChangedListener<TableBasedInp
                 return@launch
             }
             NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_baseline_library_books_24)
+                .setSmallIcon(R.drawable.ic_pixel_code)
                 .setContentTitle(getString(R.string.table_im))
                 .setContentText("${getString(R.string.importing)} $fileName")
                 .setOngoing(true)
@@ -303,7 +303,7 @@ class TableInputMethodFragment : Fragment(), OnItemChangedListener<TableBasedInp
             val confName = cr.queryFileName(confUri) ?: return@launch
             val dictName = cr.queryFileName(dictUri) ?: return@launch
             NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_baseline_library_books_24)
+                .setSmallIcon(R.drawable.ic_pixel_code)
                 .setContentTitle(getString(R.string.table_im))
                 .setContentText("${getString(R.string.importing)} $confName")
                 .setOngoing(true)
@@ -343,7 +343,7 @@ class TableInputMethodFragment : Fragment(), OnItemChangedListener<TableBasedInp
                 return@launch
             }
             NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_baseline_library_books_24)
+                .setSmallIcon(R.drawable.ic_pixel_code)
                 .setContentTitle(getString(R.string.table_im))
                 .setContentText("${getString(R.string.importing)} $dictName")
                 .setOngoing(true)

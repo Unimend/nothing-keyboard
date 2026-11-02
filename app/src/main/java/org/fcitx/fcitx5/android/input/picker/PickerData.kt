@@ -6,10 +6,15 @@ package org.fcitx.fcitx5.android.input.picker
 
 object PickerData {
 
-    /** Semantic tab label. Picker tabs deliberately have no drawable escape hatch. */
-    data class Category(val label: String)
+    /** Semantic tab model. Surfaces choose the visual; data never passes arbitrary drawables. */
+    data class Category(
+        val label: String,
+        val visual: Visual = Visual.Text
+    ) {
+        enum class Visual { Text, RecentlyUsed }
+    }
 
-    val RecentlyUsedCategory = Category("⟳")
+    val RecentlyUsedCategory = Category("", Category.Visual.RecentlyUsed)
 
     val Symbol: List<Pair<Category, Array<String>>> = listOf(
         // Keep this as text so the shared mixed-type policy can render `1` with Doto while

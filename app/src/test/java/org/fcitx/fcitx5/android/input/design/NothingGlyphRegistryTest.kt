@@ -5,7 +5,6 @@ package org.fcitx.fcitx5.android.input.design
 
 import org.fcitx.fcitx5.android.R
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertThrows
 import org.junit.Test
 
 class NothingGlyphRegistryTest {
@@ -27,20 +26,45 @@ class NothingGlyphRegistryTest {
             R.drawable.ic_pixel_expand_less,
             NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_expand_less_24)
         )
+        assertEquals(
+            R.drawable.ic_pixel_up,
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_arrow_upward_24)
+        )
+        assertEquals(
+            R.drawable.ic_pixel_down,
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_arrow_downward_24)
+        )
+        assertEquals(
+            R.drawable.ic_pixel_previous,
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_keyboard_arrow_left_24)
+        )
+        assertEquals(
+            R.drawable.ic_pixel_next,
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_keyboard_arrow_right_24)
+        )
     }
 
     @Test
-    fun `explicit optional resolution preserves external glyphs without an equivalent`() {
+    fun `legacy project controls resolve to pixel glyphs even through the optional boundary`() {
         assertEquals(
-            R.drawable.ic_baseline_delete_24,
+            R.drawable.ic_pixel_delete,
             NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_delete_24)
         )
     }
 
     @Test
-    fun `required project controls cannot silently retain Material glyphs`() {
-        assertThrows(IllegalArgumentException::class.java) {
+    fun `required project controls resolve every registered legacy glyph`() {
+        assertEquals(
+            R.drawable.ic_pixel_delete,
             NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_delete_24)
-        }
+        )
+        assertEquals(
+            R.drawable.ic_pixel_pin,
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_push_pin_24)
+        )
+        assertEquals(
+            R.drawable.ic_pixel_keyboard,
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_baseline_keyboard_24)
+        )
     }
 }

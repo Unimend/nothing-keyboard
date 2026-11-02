@@ -15,6 +15,7 @@ import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.NothingTypographyPolicy
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.gesture.BackspaceGestureController
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
@@ -23,7 +24,7 @@ import org.fcitx.fcitx5.android.input.keyboard.ImageKeyView
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
-import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.FinishSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.TextKeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.MoveSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.SymAction
@@ -109,7 +110,7 @@ class PickerPageUi(
     }
 
     private val backspaceAppearance = Appearance.Image(
-        src = R.drawable.ic_baseline_backspace_24,
+        src = R.drawable.ic_pixel_backspace,
         variant = Variant.Alternative,
         border = if (bordered) Border.On else Border.Off,
         viewId = R.id.button_backspace
@@ -117,6 +118,7 @@ class PickerPageUi(
 
     private val backspaceKey by lazy {
         val backspaceAction = SymAction(EngineKey.Backspace)
+        val repeatBackspaceAction = KeyAction.RepeatBackspaceAction
         val action: (View) -> Unit = {
             keyActionListener?.onKeyAction(backspaceAction, Source.Keyboard)
         }
@@ -124,7 +126,9 @@ class PickerPageUi(
         ImageKeyView(ctx, theme, backspaceAppearance).apply {
             setOnClickListener(listener)
             repeatEnabled = true
-            onRepeatListener = action
+            onRepeatListener = {
+                keyActionListener?.onKeyAction(repeatBackspaceAction, Source.Keyboard)
+            }
             BackspaceGestureController.bind(
                 this,
                 theme,
@@ -133,8 +137,8 @@ class PickerPageUi(
                     moveSelection = {
                         keyActionListener?.onKeyAction(MoveSelectionAction(it), Source.Keyboard)
                     },
-                    deleteSelection = {
-                        keyActionListener?.onKeyAction(DeleteSelectionAction(it), Source.Keyboard)
+                    finishSelection = {
+                        keyActionListener?.onKeyAction(FinishSelectionAction(it), Source.Keyboard)
                     },
                     clearAll = {
                         keyActionListener?.onKeyAction(ClearAllTextAction, Source.Keyboard)
@@ -147,6 +151,12 @@ class PickerPageUi(
                     }
                 )
             )
+            onRepeatStartListener = {
+                keyActionListener?.onKeyAction(KeyAction.BeginBackspaceRepeatAction, Source.Keyboard)
+            }
+            onRepeatEndListener = {
+                keyActionListener?.onKeyAction(KeyAction.EndBackspaceRepeatAction, Source.Keyboard)
+            }
         }
     }
 
@@ -222,8 +232,9 @@ class PickerPageUi(
                     isEnabled = true
                     val item = items[i]
                     val transformed = policy?.transform(item) ?: item
+                    val displayText = NothingTypographyPolicy.dotoCompatibleDisplay(transformed)
                     mainText.setNothingText(
-                        transformed,
+                        displayText,
                         theme,
                         NothingTextStyle.KeyPrimary,
                         sizeSp = keyAppearance.textSize,

@@ -428,9 +428,13 @@ class AltTextKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.AltText)
 }
 
 @SuppressLint("ViewConstructor")
-class ImageKeyView(ctx: Context, theme: Theme, def: KeyDef.Appearance.Image) :
-    KeyView(ctx, theme, def) {
-    val img = imageView { configure(theme, def.src, def.variant) }
+class ImageKeyView(ctx: Context, private val glyphTheme: Theme, def: KeyDef.Appearance.Image) :
+    KeyView(ctx, glyphTheme, def) {
+    val img = imageView { configure(glyphTheme, def.src, def.variant) }
+
+    fun setGlyph(@DrawableRes source: Int) {
+        img.imageResource = NothingGlyphRegistry.resolveRequired(source, glyphTheme)
+    }
 
     init {
         appearanceView.apply {
@@ -453,7 +457,7 @@ private fun ImageView.configure(theme: Theme, @DrawableRes src: Int, variant: Va
         }
     )
     imageResource = if (theme.isNothingStyle) {
-        NothingGlyphRegistry.resolveOrKeepOriginal(src)
+        NothingGlyphRegistry.resolveRequired(src)
     } else src
 }
 

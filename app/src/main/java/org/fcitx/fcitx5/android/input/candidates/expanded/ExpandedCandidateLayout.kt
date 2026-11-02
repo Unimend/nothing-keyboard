@@ -52,7 +52,7 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
             val Layout: List<List<KeyDef>> = listOf(
                 listOf(
                     ImageActionKey(
-                        R.drawable.ic_baseline_arrow_upward_24,
+                        R.drawable.ic_pixel_up,
                         action = KeyAction.CandidatePageAction(
                             KeyAction.CandidatePageAction.Direction.Previous
                         ),
@@ -63,7 +63,7 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
                 ),
                 listOf(
                     ImageActionKey(
-                        R.drawable.ic_baseline_arrow_downward_24,
+                        R.drawable.ic_pixel_down,
                         action = KeyAction.CandidatePageAction(
                             KeyAction.CandidatePageAction.Direction.Next
                         ),
@@ -83,7 +83,7 @@ class ExpandedCandidateLayout(context: Context, theme: Theme) : ConstraintLayout
         val `return`: ImageKeyView by lazy { findViewById(R.id.button_return) }
 
         override fun onReturnDrawableUpdate(returnDrawable: Int) {
-            `return`.img.imageResource = returnDrawable
+            `return`.setGlyph(returnDrawable)
         }
     }
 

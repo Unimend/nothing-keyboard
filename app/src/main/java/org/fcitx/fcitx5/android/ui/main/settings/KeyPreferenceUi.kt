@@ -9,6 +9,7 @@ import android.view.KeyEvent
 import android.view.inputmethod.EditorInfo
 import androidx.core.widget.addTextChangedListener
 import org.fcitx.fcitx5.android.R
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.core.Key
 import org.fcitx.fcitx5.android.core.KeyState
 import org.fcitx.fcitx5.android.core.KeyStates
@@ -111,7 +112,9 @@ class KeyPreferenceUi(override val ctx: Context) : Ui {
 
     private val clearButton = imageButton {
         background = styledDrawable(android.R.attr.actionBarItemBackground)
-        imageDrawable = drawable(R.drawable.ic_baseline_delete_24)!!.apply {
+        imageDrawable = drawable(
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_delete)
+        )!!.apply {
             setTint(styledColor(android.R.attr.colorControlNormal))
         }
         setOnClickListener {

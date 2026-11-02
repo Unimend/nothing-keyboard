@@ -90,6 +90,7 @@ object PreferenceScreenFactory {
         fun stubPreference() = Preference(context).apply {
             summary =
                 "${context.getString(R.string.unimplemented_type)} '${ConfigType.pretty(descriptor.ty)}'"
+            isEnabled = false
         }
 
         fun <T : Any> navigate(route: T): Boolean {

@@ -84,9 +84,9 @@ class CandidateInteractionReducerTest {
     }
 
     @Test
-    fun `loaded count is the expanded offset`() {
-        val state = CandidateInteractionState(loadedCount = 37)
+    fun `loaded candidates remain expandable after the horizontal stream reaches its end`() {
+        val state = CandidateInteractionState(loadedCount = 37, total = 37, reachedEnd = true)
 
-        assertEquals(37, state.expandedOffset)
+        assertTrue(state.canExpand)
     }
 }

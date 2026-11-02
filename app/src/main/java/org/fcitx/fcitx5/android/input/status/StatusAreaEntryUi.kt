@@ -15,6 +15,7 @@ import android.widget.ImageView
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.AutoScaleTextView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
@@ -94,7 +95,9 @@ class StatusAreaEntryUi(override val ctx: Context, private val theme: Theme) : U
         if (entry.icon != 0) {
             icon.visibility = View.VISIBLE
             textIcon.visibility = View.GONE
-            icon.imageDrawable = ctx.drawable(entry.icon)!!.apply {
+            icon.imageDrawable = ctx.drawable(
+                NothingGlyphRegistry.resolveOrKeepOriginal(entry.icon, theme)
+            )!!.apply {
                 setTint(contentColor)
             }
         } else {

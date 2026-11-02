@@ -26,6 +26,8 @@ class EditorController(
     private val editorInfo: () -> EditorInfo,
     private val sendKey: (Int) -> Unit,
     private val engineCommands: GuardedEngineCommandPort,
+    private val onEngineCommit: () -> Unit,
+    private val compositionInput: () -> String,
     private val ignoreSystemCursor: () -> Boolean
 ) : InputLifecycleEditor {
     private fun submitEngineCommand(command: EngineCommand) = engineCommands.submit(command)
@@ -34,7 +36,10 @@ class EditorController(
     /** Returns false for engine effects owned by another subsystem. */
     fun handleEngineEffect(effect: EngineEffect): Boolean {
         when (effect) {
-            is EngineEffect.CommitText -> commitText(effect.text, effect.cursor)
+            is EngineEffect.CommitText -> {
+                onEngineCommit()
+                commitText(effect.text, effect.cursor)
+            }
             is EngineEffect.UpdateClientPreedit -> updateComposingText(effect.text)
             is EngineEffect.DeleteSurrounding -> handleDeleteSurrounding(effect.before, effect.after)
             is EngineEffect.VirtualKey -> when (effect.key) {
@@ -100,6 +105,8 @@ class EditorController(
                 get() = CursorRange(composing.start, composing.end)
             override val editingCompositionText: String
                 get() = composingText.plainText
+            override val editingCompositionInput: String
+                get() = compositionInput()
             override val hasActiveComposition: Boolean
                 get() = composing.isNotEmpty()
             override val shouldSimulateBackspaceKey: Boolean
@@ -226,6 +233,14 @@ class EditorController(
 
     fun deleteSelection() {
         destructiveEditing.deleteSelection()
+    }
+
+    fun beginBackspaceRepeat() {
+        destructiveEditing.beginBackspaceRepeat()
+    }
+
+    fun endBackspaceRepeat() {
+        destructiveEditing.endBackspaceRepeat()
     }
 
     fun invalidateDestructiveUndo() {

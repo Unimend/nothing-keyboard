@@ -42,19 +42,19 @@ class TextEditingUi(
             setIcon(icon)
         }
 
-    val upButton = iconButton(R.drawable.ic_baseline_keyboard_arrow_up_24).apply {
+    val upButton = iconButton(R.drawable.ic_pixel_up).apply {
         contentDescription = ctx.getString(R.string.move_cursor_up)
     }
 
-    val rightButton = iconButton(R.drawable.ic_baseline_keyboard_arrow_right_24).apply {
+    val rightButton = iconButton(R.drawable.ic_pixel_next).apply {
         contentDescription = ctx.getString(R.string.move_cursor_right)
     }
 
-    val downButton = iconButton(R.drawable.ic_baseline_keyboard_arrow_down_24).apply {
+    val downButton = iconButton(R.drawable.ic_pixel_down).apply {
         contentDescription = ctx.getString(R.string.move_cursor_down)
     }
 
-    val leftButton = iconButton(R.drawable.ic_baseline_keyboard_arrow_left_24).apply {
+    val leftButton = iconButton(R.drawable.ic_pixel_previous).apply {
         contentDescription = ctx.getString(R.string.move_cursor_left)
     }
 
@@ -62,11 +62,11 @@ class TextEditingUi(
         enableActivatedState()
     }
 
-    val homeButton = iconButton(R.drawable.ic_baseline_first_page_24).apply {
+    val homeButton = iconButton(R.drawable.ic_pixel_previous).apply {
         contentDescription = ctx.getString(R.string.move_cursor_to_start)
     }
 
-    val endButton = iconButton(R.drawable.ic_baseline_last_page_24).apply {
+    val endButton = iconButton(R.drawable.ic_pixel_next).apply {
         contentDescription = ctx.getString(R.string.move_cursor_to_end)
     }
 

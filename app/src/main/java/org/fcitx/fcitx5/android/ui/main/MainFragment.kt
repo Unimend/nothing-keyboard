@@ -62,44 +62,44 @@ class MainFragment : PaddingPreferenceFragment() {
             addCategory("Fcitx") {
                 addDestinationPreference(
                     R.string.global_options,
-                    R.drawable.ic_baseline_tune_24,
+                    R.drawable.ic_pixel_more,
                     SettingsRoute.GlobalConfig
                 )
                 addDestinationPreference(
                     R.string.input_methods,
-                    R.drawable.ic_baseline_language_24,
+                    R.drawable.ic_pixel_language,
                     SettingsRoute.InputMethodList
                 )
                 addDestinationPreference(
                     R.string.addons,
-                    R.drawable.ic_baseline_extension_24,
+                    R.drawable.ic_pixel_more,
                     SettingsRoute.AddonList
                 )
             }
             addCategory("Android") {
                 addDestinationPreference(
                     R.string.virtual_keyboard,
-                    R.drawable.ic_baseline_keyboard_24,
+                    R.drawable.ic_pixel_space,
                     SettingsRoute.VirtualKeyboard
                 )
                 addDestinationPreference(
                     R.string.candidates_window,
-                    R.drawable.ic_baseline_list_alt_24,
+                    R.drawable.ic_pixel_expand_more,
                     SettingsRoute.CandidatesWindow
                 )
                 addDestinationPreference(
                     R.string.clipboard,
-                    R.drawable.ic_clipboard,
+                    R.drawable.ic_pixel_clipboard,
                     SettingsRoute.Clipboard
                 )
                 addDestinationPreference(
                     R.string.emoji_and_symbols,
-                    R.drawable.ic_baseline_emoji_symbols_24,
+                    R.drawable.ic_pixel_face,
                     SettingsRoute.Symbol
                 )
                 addDestinationPreference(
                     R.string.advanced,
-                    R.drawable.ic_baseline_more_horiz_24,
+                    R.drawable.ic_pixel_more,
                     SettingsRoute.Advanced
                 )
             }

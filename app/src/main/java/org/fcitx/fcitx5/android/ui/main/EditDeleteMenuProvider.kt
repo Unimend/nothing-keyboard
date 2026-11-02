@@ -35,14 +35,14 @@ class EditDeleteMenuProvider<T>(
         when (buttonMode.value) {
             ButtonMode.EDIT -> {
                 if (editButtonAction != null) {
-                    menu.item(R.string.edit, R.drawable.ic_baseline_edit_24, tint, true) {
+                    menu.item(R.string.edit, R.drawable.ic_pixel_edit, tint, true) {
                         editButtonAction()
                     }
                 }
             }
             ButtonMode.DELETE -> {
                 if (deleteButtonAction != null) {
-                    menu.item(R.string.delete, R.drawable.ic_baseline_delete_24, tint, true) {
+                    menu.item(R.string.delete, R.drawable.ic_pixel_delete, tint, true) {
                         deleteButtonAction()
                     }
                 }

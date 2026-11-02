@@ -315,11 +315,6 @@ bool AndroidKeyboardEngine::updateBuffer(InputContext *inputContext, const KeyEv
 
     buffer.type(Key::keySymToUTF8(event.key().sym()));
 
-    if (buffer.size() >= MaxBufferSize) {
-        commitBuffer(inputContext);
-        return true;
-    }
-
     updateCandidate(*entry, inputContext);
     return true;
 }

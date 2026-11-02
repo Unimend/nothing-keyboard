@@ -36,7 +36,7 @@ class TitleUi(override val ctx: Context, private val theme: Theme) : Ui {
     private val visualStyle = theme.inputSurfaceStyle.toolbar
     private val colors = theme.toInputColorScheme()
 
-    private val backButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_back_24, theme).apply {
+    private val backButton = ToolButton(ctx, R.drawable.ic_pixel_previous, theme).apply {
         contentDescription = ctx.getString(R.string.back_to_keyboard)
     }
 

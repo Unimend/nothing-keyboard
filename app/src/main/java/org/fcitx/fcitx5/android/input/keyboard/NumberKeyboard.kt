@@ -71,7 +71,7 @@ class NumberKeyboard(
     val `return`: ImageKeyView by lazy { findViewById(R.id.button_return) }
 
     override fun onReturnDrawableUpdate(returnDrawable: Int) {
-        `return`.img.imageResource = returnDrawable
+        `return`.setGlyph(returnDrawable)
     }
 
     @SuppressLint("MissingSuperCall")

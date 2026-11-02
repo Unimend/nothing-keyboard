@@ -14,7 +14,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.graphics.drawable.DrawerArrowDrawable
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updateLayoutParams
@@ -56,6 +56,8 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(binding.toolbar)
         // always show toolbar back arrow icon
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        binding.toolbar.navigationIcon = AppCompatResources.getDrawable(this, R.drawable.ic_pixel_previous)
+        binding.toolbar.overflowIcon = AppCompatResources.getDrawable(this, R.drawable.ic_pixel_more)
         navController = binding.navHostFragment.getFragment<NavHostFragment>().navController
         navController.graph = SettingsRoute.createGraph(navController)
         viewModel.toolbarTitle.observe(this) {

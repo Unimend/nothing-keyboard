@@ -114,7 +114,7 @@ object FcitxDaemon {
     fun restartFcitx() = lock.withLock {
         val id = RESTART_ID++
         NotificationCompat.Builder(appContext, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_baseline_sync_24)
+            .setSmallIcon(R.drawable.ic_pixel_redo)
             .setContentTitle(appContext.getString(R.string.fcitx_daemon))
             .setContentText(appContext.getString(R.string.restarting_fcitx))
             .setOngoing(true)

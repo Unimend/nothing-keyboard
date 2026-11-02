@@ -69,8 +69,9 @@ class GridExpandedCandidateWindow :
 
     override fun prevPage() {
         layoutManager.apply {
-            var prev = findFirstCompletelyVisibleItemPosition() - 1
-            if (prev < 0) prev = 0
+            val prev = CandidatePageScrollPolicy.previous(
+                findFirstCompletelyVisibleItemPosition(), itemCount
+            ) ?: return
             startSmoothScroll(object : LinearSmoothScroller(context) {
                 override fun getVerticalSnapPreference() = SNAP_TO_END
                 override fun calculateSpeedPerPixel(dm: DisplayMetrics?) =
@@ -81,8 +82,9 @@ class GridExpandedCandidateWindow :
 
     override fun nextPage() {
         layoutManager.apply {
-            var next = findLastCompletelyVisibleItemPosition() + 1
-            if (next >= itemCount) next = itemCount - 1
+            val next = CandidatePageScrollPolicy.next(
+                findLastCompletelyVisibleItemPosition(), itemCount
+            ) ?: return
             startSmoothScroll(object : LinearSmoothScroller(context) {
                 override fun getVerticalSnapPreference() = SNAP_TO_START
                 override fun calculateSpeedPerPixel(dm: DisplayMetrics?) =

@@ -28,7 +28,6 @@ class AndroidEditingCommandExecutor(
         }
         when (gestureEffect) {
             is DeletionGestureEffect.Extend -> extendSelection(gestureEffect.steps)
-            DeletionGestureEffect.Delete -> editor.deleteSelection()
             DeletionGestureEffect.ResetComposition -> resetEngine()
             DeletionGestureEffect.CollapseSelection -> editor.cancelSelection()
             null -> Unit
@@ -50,6 +49,8 @@ class AndroidEditingCommandExecutor(
             EditingCommand.Copy -> contextAction(android.R.id.copy)
             EditingCommand.Paste -> contextAction(android.R.id.paste)
             EditingCommand.Backspace -> editor.deleteBackward()
+            EditingCommand.BeginBackspaceRepeat -> editor.beginBackspaceRepeat()
+            EditingCommand.EndBackspaceRepeat -> editor.endBackspaceRepeat()
             EditingCommand.ClearAll -> editor.clearAllText()
             EditingCommand.Undo -> editor.undoLastEdit()
         }

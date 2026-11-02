@@ -13,7 +13,7 @@ import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView.OnGestureListen
 object BackspaceGestureController {
     data class Actions(
         val moveSelection: (Int) -> Unit,
-        val deleteSelection: (Int) -> Unit,
+        val finishSelection: (Int) -> Unit,
         val clearAll: () -> Unit,
         val undo: () -> Unit,
         val cancel: () -> Unit
@@ -52,8 +52,8 @@ object BackspaceGestureController {
                             actions.moveSelection(action.steps)
                             KeyboardFeedback.step(gestureView, hapticOnRepeat)
                         }
-                        is KeyboardGestureAction.DeleteSelection ->
-                            actions.deleteSelection(action.steps)
+                        is KeyboardGestureAction.FinishSelection ->
+                            actions.finishSelection(action.steps)
                         KeyboardGestureAction.ClearAllText -> {
                             KeyboardFeedback.confirmation(gestureView, theme)
                             actions.clearAll()

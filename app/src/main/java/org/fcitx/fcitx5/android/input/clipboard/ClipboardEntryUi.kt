@@ -14,6 +14,7 @@ import android.view.View
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.NothingDotMatrixDrawable
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.setNothingText
@@ -38,7 +39,6 @@ import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.wrapContent
 import splitties.views.imageDrawable
 import splitties.views.setPaddingDp
-import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 
 class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radius: Float) : Ui {
 
@@ -64,7 +64,9 @@ class ClipboardEntryUi(override val ctx: Context, private val theme: Theme, radi
     }
 
     val pin = imageView {
-        imageDrawable = drawable(NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_push_pin_24, theme))!!.apply {
+        imageDrawable = drawable(
+            NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_pin)
+        )!!.apply {
             setTint(colors.alternateKeyContent)
             setAlpha(0.3f)
         }

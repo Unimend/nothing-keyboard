@@ -12,6 +12,7 @@ import androidx.preference.PreferenceCategory
 import androidx.preference.PreferenceGroup
 import androidx.preference.PreferenceScreen
 import androidx.preference.PreferenceViewHolder
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import splitties.resources.drawable
 import splitties.resources.styledColor
 
@@ -39,7 +40,7 @@ fun Preference.setup(
     if (icon == null) {
         isIconSpaceReserved = false
     } else {
-        setIcon(context.drawable(icon)?.apply {
+        setIcon(context.drawable(NothingGlyphRegistry.resolveRequired(icon))?.apply {
             setTint(context.styledColor(android.R.attr.colorControlNormal))
         })
     }

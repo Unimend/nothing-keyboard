@@ -18,6 +18,8 @@ object EditingHistoryPolicy {
         EditingCommand.Paste -> EditingHistoryEffect.InvalidateDestructiveEdit
 
         EditingCommand.Backspace,
+        EditingCommand.BeginBackspaceRepeat,
+        EditingCommand.EndBackspaceRepeat,
         EditingCommand.ClearAll,
         is EditingCommand.DeletionGestureRelease -> EditingHistoryEffect.ManageDestructiveEdit
 

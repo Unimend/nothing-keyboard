@@ -218,14 +218,20 @@ abstract class BaseKeyboard(
                         moveSelection = {
                             onAction(KeyAction.MoveSelectionAction(it))
                         },
-                        deleteSelection = {
-                            onAction(KeyAction.DeleteSelectionAction(it))
+                        finishSelection = {
+                            onAction(KeyAction.FinishSelectionAction(it))
                         },
                         clearAll = { onAction(KeyAction.ClearAllTextAction) },
                         undo = { onAction(KeyAction.UndoAction) },
                         cancel = { onAction(KeyAction.CancelSelectionAction) }
                     )
                 )
+                onRepeatStartListener = {
+                    onAction(KeyAction.BeginBackspaceRepeatAction)
+                }
+                onRepeatEndListener = {
+                    onAction(KeyAction.EndBackspaceRepeatAction)
+                }
             }
             def.behaviors.forEach {
                 when (it) {

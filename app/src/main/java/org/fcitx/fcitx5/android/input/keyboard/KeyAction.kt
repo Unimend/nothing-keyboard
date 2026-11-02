@@ -22,6 +22,9 @@ sealed class KeyAction {
         val modifiers: Set<EngineKeyModifier> = VirtualKeyModifiers
     ) : KeyAction()
 
+    /** Repeat-only backspace: engine owns preedit, editor owns committed document text. */
+    data object RepeatBackspaceAction : KeyAction()
+
     data class CommitAction(val text: String) : KeyAction()
 
     data class CapsAction(val lock: Boolean) : KeyAction()
@@ -42,7 +45,10 @@ sealed class KeyAction {
 
     data class MoveSelectionAction(val steps: Int) : KeyAction()
 
-    data class DeleteSelectionAction(val totalCnt: Int = 0) : KeyAction()
+    data class FinishSelectionAction(val totalCnt: Int = 0) : KeyAction()
+
+    data object BeginBackspaceRepeatAction : KeyAction()
+    data object EndBackspaceRepeatAction : KeyAction()
 
     data object ClearAllTextAction : KeyAction()
 

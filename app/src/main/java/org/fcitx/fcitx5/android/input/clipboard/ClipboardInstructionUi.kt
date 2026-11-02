@@ -7,10 +7,10 @@ package org.fcitx.fcitx5.android.input.clipboard
 import android.content.Context
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
 import org.fcitx.fcitx5.android.input.design.applyNothingTextStyle
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
-import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import splitties.dimensions.dp
 import splitties.resources.drawable
 import splitties.views.dsl.constraintlayout.below
@@ -67,7 +67,7 @@ sealed class ClipboardInstructionUi(override val ctx: Context, protected val the
 
         private val icon = imageView {
             imageDrawable = drawable(
-                NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_content_paste_24, theme)
+                NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_clipboard)
             )!!.apply {
                 setTint(colors.alternateKeyContent)
             }

@@ -5,7 +5,10 @@
 package org.fcitx.fcitx5.android.input.picker
 
 import android.content.Context
+import androidx.core.view.isVisible
+import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.data.theme.Theme
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.InputThemeSettings
 import org.fcitx.fcitx5.android.input.keyboard.CustomGestureView
 import org.fcitx.fcitx5.android.input.design.NothingTextStyle
@@ -14,6 +17,7 @@ import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.utils.alpha
 import org.fcitx.fcitx5.android.utils.pressHighlightDrawable
 import org.fcitx.fcitx5.android.utils.rippleDrawable
+import splitties.dimensions.dp
 import splitties.views.dsl.constraintlayout.after
 import splitties.views.dsl.constraintlayout.before
 import splitties.views.dsl.constraintlayout.centerVertically
@@ -23,6 +27,7 @@ import splitties.views.dsl.constraintlayout.lParams
 import splitties.views.dsl.constraintlayout.startOfParent
 import splitties.views.dsl.core.Ui
 import splitties.views.dsl.core.add
+import splitties.views.dsl.core.imageView
 import splitties.views.dsl.core.lParams
 import splitties.views.dsl.core.textView
 import splitties.views.dsl.core.view
@@ -45,8 +50,19 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
             setTextColor(colors.keyContent)
         }
 
+        val icon = imageView {
+            setImageResource(
+                NothingGlyphRegistry.resolveRequired(R.drawable.ic_pixel_history)
+            )
+            setColorFilter(colors.keyContent)
+            isVisible = false
+        }
+
         override val root = view(::CustomGestureView) {
             add(label, lParams {
+                gravity = gravityCenter
+            })
+            add(icon, lParams(dp(24), dp(24)) {
                 gravity = gravityCenter
             })
             if (keyRipple) {
@@ -59,13 +75,19 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
             }
         }
 
-        fun setLabel(str: String) {
-            label.setNothingText(str, theme, NothingTextStyle.PickerTab)
+        fun setCategory(category: PickerData.Category) {
+            val showIcon = category.visual == PickerData.Category.Visual.RecentlyUsed
+            icon.isVisible = showIcon
+            label.isVisible = !showIcon
+            if (!showIcon) {
+                label.setNothingText(category.label, theme, NothingTextStyle.PickerTab)
+            }
         }
 
         fun setActive(active: Boolean) {
             val color = colors.keyContent.alpha(if (active) 1f else 0.5f)
             label.setTextColor(color)
+            icon.setColorFilter(color)
         }
     }
 
@@ -83,7 +105,7 @@ class PickerTabsUi(override val ctx: Context, val theme: Theme) : Ui {
             val category = categories[it]
             TabUi().apply {
                 position = it
-                setLabel(category.label)
+                setCategory(category)
                 setActive(false)
             }
         }

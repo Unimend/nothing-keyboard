@@ -95,9 +95,31 @@ class InputArchitectureBoundaryTest {
         val bar = sourceRoot.resolve(
             "org/fcitx/fcitx5/android/input/bar/KawaiiBarComponent.kt"
         ).readText()
-        assertTrue("Candidate attach glyph must be required", "setRequiredIcon(R.drawable.ic_baseline_expand_more_24)" in candidate)
-        assertTrue("Expanded candidate attach glyph must be required", "setRequiredIcon(R.drawable.ic_baseline_expand_more_24)" in bar)
-        assertTrue("Expanded candidate detach glyph must be required", "setRequiredIcon(R.drawable.ic_baseline_expand_less_24)" in bar)
+        assertTrue("Candidate attach glyph must be pixel-native", "setRequiredIcon(R.drawable.ic_pixel_expand_more)" in candidate)
+        assertTrue("Expanded candidate attach glyph must be pixel-native", "setRequiredIcon(R.drawable.ic_pixel_expand_more)" in bar)
+        assertTrue("Expanded candidate detach glyph must be pixel-native", "setRequiredIcon(R.drawable.ic_pixel_expand_less)" in bar)
+    }
+
+    @Test
+    fun `picker functional tabs use semantic pixel glyphs instead of system characters`() {
+        val data = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/picker/PickerData.kt"
+        ).readText()
+        val tabs = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/picker/PickerTabsUi.kt"
+        ).readText()
+        assertFalse("History must not be a system-font character", "Category(\"⟳\")" in data)
+        assertTrue("History must be a semantic picker category", "Category.Visual.RecentlyUsed" in data)
+        assertTrue("History must render through the pixel glyph registry", "ic_pixel_history" in tabs)
+    }
+
+    @Test
+    fun `picker display normalizes unsupported full width digits without changing committed data`() {
+        val page = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/picker/PickerPageUi.kt"
+        ).readText()
+        assertTrue("Picker display must use the typography compatibility policy", "dotoCompatibleDisplay(transformed)" in page)
+        assertTrue("Picker click must retain the transformed source value", "onItemClick(transformed)" in page)
     }
 
     @Test
@@ -590,6 +612,17 @@ class InputArchitectureBoundaryTest {
         .filter { it.isFile && it.extension == "kt" }
         .toList()
 
+    private fun applicationSources(): List<File> = sourceRoot
+        .walkTopDown()
+        .filter { it.isFile && it.extension == "kt" }
+        .toList()
+
+    private fun presentationResources(): List<File> = requireNotNull(sourceRoot.parentFile)
+        .resolve("res")
+        .walkTopDown()
+        .filter { it.isFile && it.extension == "xml" && it.parentFile?.name != "drawable" }
+        .toList()
+
     @Test
     fun `input surfaces cannot choose typefaces outside typography system`() {
         val allowed = setOf("design/NothingTypography.kt", "AutoScaleTextView.kt")
@@ -611,6 +644,157 @@ class InputArchitectureBoundaryTest {
             file.name != "NothingGlyphRegistry.kt" && directDrawable.containsMatchIn(file.readText())
         }
         assertTrue("Direct functional drawable assignment: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `application image views cannot bypass functional glyph resolution`() {
+        val directDrawable = Regex(
+            """(?:imageDrawable\s*=\s*drawable\(\s*|imageResource\s*=\s*|setImageResource\(\s*)R\.drawable\.ic_"""
+        )
+        val violations = applicationSources().filter { file ->
+            file.name != "NothingGlyphRegistry.kt" && directDrawable.containsMatchIn(file.readText())
+        }
+        assertTrue("Application drawable bypass: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `dynamic keyboard image mutation stays inside glyph aware gateways`() {
+        val allowed = setOf(
+            "keyboard/KeyView.kt",
+            "bar/ui/ToolButton.kt",
+            "editing/TextEditingButton.kt"
+        )
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            "imageResource =" in file.readText() && allowed.none(relative::endsWith)
+        }
+        assertTrue("Dynamic image mutation outside glyph gateways: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `popup key menus resolve icons through the glyph registry`() {
+        val popup = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/input/popup/PopupMenuUi.kt"
+        ).readText()
+        assertFalse("Popup menu cannot load arbitrary key icons", "drawable(it.icon)" in popup)
+        assertTrue(
+            "Popup menu must require a registered glyph",
+            "NothingGlyphRegistry.resolveRequired(it.icon, theme)" in popup
+        )
+    }
+
+    @Test
+    fun `application menu and preference icons pass through required glyph registry`() {
+        val menu = sourceRoot.resolve("org/fcitx/fcitx5/android/utils/Menu.kt").readText()
+        val preferences = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/utils/PreferenceScreen.kt"
+        ).readText()
+        assertTrue(
+            "Menu icons must be resolved before Android renders them",
+            "NothingGlyphRegistry.resolveRequired(icon)" in menu
+        )
+        assertTrue(
+            "Preference icons must be resolved before Android renders them",
+            "NothingGlyphRegistry.resolveRequired(icon)" in preferences
+        )
+    }
+
+    @Test
+    fun `every visible Android setting has a runtime consumer`() {
+        val preferencesFile = sourceRoot.resolve(
+            "org/fcitx/fcitx5/android/data/prefs/AppPrefs.kt"
+        )
+        val preferences = preferencesFile.readText()
+        val categoryNames = listOf("Advanced", "Keyboard", "Candidates", "Clipboard", "Symbols")
+        val propertyPattern = Regex("(?m)^ {8}val\\s+(\\w+)")
+
+        fun categoryBody(name: String): String {
+            val start = preferences.indexOf("inner class $name")
+            require(start >= 0) { "Missing preference category $name" }
+            val open = preferences.indexOf('{', start)
+            var depth = 0
+            for (index in open until preferences.length) {
+                when (preferences[index]) {
+                    '{' -> depth++
+                    '}' -> if (--depth == 0) return preferences.substring(open + 1, index)
+                }
+            }
+            error("Unclosed preference category $name")
+        }
+
+        val visibleProperties = categoryNames.flatMap { name ->
+            propertyPattern.findAll(categoryBody(name)).map { it.groupValues[1] }.toList()
+        }.toSet()
+        val runtimeSource = applicationSources()
+            .filterNot { it == preferencesFile }
+            .joinToString("\n") { it.readText() }
+        val unconsumed = visibleProperties.filter { property ->
+            !Regex("\\b${Regex.escape(property)}\\b").containsMatchIn(runtimeSource)
+        }
+        assertTrue("Visible settings without runtime consumers: $unconsumed", unconsumed.isEmpty())
+    }
+
+    @Test
+    fun `functional controls cannot masquerade as system font characters`() {
+        val contentOwners = setOf(
+            "picker/PickerData.kt",
+            "popup/PopupPreset.kt"
+        )
+        val functionalCharacters = Regex("[⟳⚙⌫⌨⇧⇪⏎⏏]")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            contentOwners.none(relative::endsWith) && functionalCharacters.containsMatchIn(file.readText())
+        }
+        assertTrue("System-font characters used as controls: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `input surfaces cannot reference legacy Material glyphs outside compatibility policy`() {
+        val allowed = setOf(
+            "design/NothingGlyphRegistry.kt",
+            "design/ReturnKeyGlyphPolicy.kt"
+        )
+        val legacyGlyph = Regex("""R\.drawable\.ic_(?:baseline|outline)_""")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            allowed.none(relative::endsWith) && legacyGlyph.containsMatchIn(file.readText())
+        }
+        assertTrue("Legacy Material glyph references: ${violations.joinToString()}", violations.isEmpty())
+    }
+
+    @Test
+    fun `application presentation cannot reference legacy Material glyphs outside compatibility policy`() {
+        val allowed = setOf(
+            "input/design/NothingGlyphRegistry.kt",
+            "input/design/ReturnKeyGlyphPolicy.kt"
+        )
+        val legacyGlyph = Regex("""R\.drawable\.ic_(?:baseline|outline)_""")
+        val violations = applicationSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            allowed.none(relative::endsWith) && legacyGlyph.containsMatchIn(file.readText())
+        }
+        assertTrue("Application legacy Material glyph references: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `application layouts cannot restore legacy Material glyphs`() {
+        val legacyGlyph = Regex("""@drawable/ic_(?:baseline|outline)_""")
+        val violations = presentationResources().filter { legacyGlyph.containsMatchIn(it.readText()) }
+        assertTrue("Layout legacy Material glyph references: $violations", violations.isEmpty())
+    }
+
+    @Test
+    fun `optional glyph fallback is restricted to engine supplied status artwork`() {
+        val allowed = setOf(
+            "design/NothingGlyphRegistry.kt",
+            "status/StatusAreaEntryUi.kt"
+        )
+        val optionalFallback = Regex("""\bresolveOrKeepOriginal\s*\(""")
+        val violations = inputSources().filter { file ->
+            val relative = file.relativeTo(sourceRoot).invariantSeparatorsPath
+            allowed.none(relative::endsWith) && optionalFallback.containsMatchIn(file.readText())
+        }
+        assertTrue("Optional control glyph fallback: ${violations.joinToString()}", violations.isEmpty())
     }
 
     @Test

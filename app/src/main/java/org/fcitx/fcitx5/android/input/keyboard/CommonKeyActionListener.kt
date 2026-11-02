@@ -11,6 +11,7 @@ import org.fcitx.fcitx5.android.input.engine.EngineKey
 import org.fcitx.fcitx5.android.input.settings.InputSettings
 import org.fcitx.fcitx5.android.input.dependency.context
 import org.fcitx.fcitx5.android.input.dependency.inputView
+import org.fcitx.fcitx5.android.input.dependency.theme
 import org.fcitx.fcitx5.android.input.dialog.AddMoreInputMethodsPrompt
 import org.fcitx.fcitx5.android.input.dialog.InputMethodPickerController
 import org.fcitx.fcitx5.android.input.editing.EditingCommand
@@ -25,7 +26,7 @@ import org.fcitx.fcitx5.android.input.runtime.InputEditingAccess
 import org.fcitx.fcitx5.android.input.runtime.ImePlatformAccess
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.CommitAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.ClearAllTextAction
-import org.fcitx.fcitx5.android.input.keyboard.KeyAction.DeleteSelectionAction
+import org.fcitx.fcitx5.android.input.keyboard.KeyAction.FinishSelectionAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.TextKeyAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.LangSwitchAction
 import org.fcitx.fcitx5.android.input.keyboard.KeyAction.MoveSelectionAction
@@ -48,6 +49,7 @@ class CommonKeyActionListener :
 
     private val context by manager.context()
     private val inputView by manager.inputView()
+    private val theme by manager.theme()
     private val session: InputSessionAccess by manager.must()
     private val engine: InputEngineAccess by manager.must()
     private val editing: InputEditingAccess by manager.must()
@@ -84,7 +86,7 @@ class CommonKeyActionListener :
 
     private fun showInputMethodPicker() {
         inputView.surfaceScope.launch {
-            dialogs.show(inputMethodPicker.build(context))
+            dialogs.show(inputMethodPicker.build(context, theme))
         }
     }
 
@@ -95,7 +97,20 @@ class CommonKeyActionListener :
                     EngineCommand.SendKeyText(action.act, action.modifiers)
                 )
                 is SymAction -> {
-                    if (
+                    val rawChinesePreedit = if (action.key == EngineKey.Space) {
+                        PreeditSpacePolicy.rawTextOrNull(session.reader.current.engine)
+                    } else null
+                    if (rawChinesePreedit != null) {
+                        engine.commands.submit(EngineCommand.Reset).invokeOnCompletion { failure ->
+                            if (failure == null) {
+                                inputView.surfaceScope.launch {
+                                    editing.commands.execute(
+                                        EditingCommand.CommitText("$rawChinesePreedit ")
+                                    )
+                                }
+                            }
+                        }
+                    } else if (
                         action.key == EngineKey.Return &&
                         hasPreedit()
                     ) {
@@ -106,6 +121,17 @@ class CommonKeyActionListener :
                         engine.commands.submit(
                             EngineCommand.SendKey(action.key, action.modifiers)
                         )
+                    }
+                }
+                KeyAction.RepeatBackspaceAction -> {
+                    val engineState = session.reader.current.engine
+                    val engineOwnsDeletion = hasPreedit() ||
+                        engineState.candidates.total > 0 ||
+                        engineState.candidates.items.isNotEmpty()
+                    if (engineOwnsDeletion) {
+                        engine.commands.submit(EngineCommand.SendKey(EngineKey.Backspace))
+                    } else {
+                        editingCommands.execute(EditingCommand.Backspace)
                     }
                 }
                 is CommitAction -> {
@@ -147,8 +173,12 @@ class CommonKeyActionListener :
                 is ShowInputMethodPickerAction -> showInputMethodPicker()
                 is MoveSelectionAction ->
                     editingCommands.execute(EditingCommand.DeletionGestureMove(action.steps))
-                is DeleteSelectionAction ->
+                is FinishSelectionAction ->
                     editingCommands.execute(EditingCommand.DeletionGestureRelease(action.totalCnt))
+                KeyAction.BeginBackspaceRepeatAction ->
+                    editingCommands.execute(EditingCommand.BeginBackspaceRepeat)
+                KeyAction.EndBackspaceRepeatAction ->
+                    editingCommands.execute(EditingCommand.EndBackspaceRepeat)
                 ClearAllTextAction -> editingCommands.execute(EditingCommand.ClearAll)
                 UndoAction -> editingCommands.execute(EditingCommand.Undo)
                 KeyAction.CancelSelectionAction ->
@@ -167,7 +197,9 @@ class CommonKeyActionListener :
                         SpaceLongPressBehavior.ShowPicker -> showInputMethodPicker()
                     }
                 }
-                else -> {}
+                is KeyAction.CandidatePageAction,
+                is KeyAction.CapsAction,
+                is KeyAction.LayoutSwitchAction -> Unit
             }
         }
     }

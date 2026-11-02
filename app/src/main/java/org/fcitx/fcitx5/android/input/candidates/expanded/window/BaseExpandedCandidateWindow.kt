@@ -14,6 +14,8 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import org.fcitx.fcitx5.android.input.candidates.CandidateViewHolder
 import org.fcitx.fcitx5.android.input.candidates.expanded.CandidateTabActionsAdapter
@@ -129,7 +131,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
         pinnedTabsAdapter.updateTabs(pinnedTabs)
     }
 
-    private var offsetJob: Job? = null
+    private var candidateStateJob: Job? = null
 
     private val candidatesPager by lazy {
         Pager(
@@ -141,7 +143,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
                 CandidatesPagingSource(
                     engine.queries,
                     total = candidateInteraction.state.total,
-                    offset = adapter.offset
+                    offset = 0
                 )
             }
         )
@@ -164,15 +166,18 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
             it.keyActionListener = keyActionListener
         }
         updateTabs(inputSession.reader.current.engine.inputPanel.tabs)
-        offsetJob = inputView.surfaceScope.launch {
-            candidateInteraction.expandedOffset.collect {
-                if (it <= 0) {
-                    navigator.navigate(InputNavigationCommand.ShowKeyboard())
-                } else {
-                    candidateLayout.resetPosition()
-                    adapter.refreshWithOffset(it)
+        candidateStateJob = inputView.surfaceScope.launch {
+            candidateInteraction.snapshots
+                .map { it.generation to it.canExpand }
+                .distinctUntilChanged()
+                .collect { (_, canExpand) ->
+                    if (!canExpand) {
+                        navigator.navigate(InputNavigationCommand.ShowKeyboard())
+                    } else {
+                        candidateLayout.resetPosition()
+                        adapter.refresh()
+                    }
                 }
-            }
         }
         candidatesSubmitJob = inputView.surfaceScope.launch {
             candidatesPager.flow.collectLatest {
@@ -215,7 +220,7 @@ abstract class BaseExpandedCandidateWindow<T : BaseExpandedCandidateWindow<T>> :
 
     override fun onDetached() {
         candidatesSubmitJob?.cancel()
-        offsetJob?.cancel()
+        candidateStateJob?.cancel()
         sessionJob?.cancel()
         sessionJob = null
         candidateLayout.embeddedKeyboard.keyActionListener = null

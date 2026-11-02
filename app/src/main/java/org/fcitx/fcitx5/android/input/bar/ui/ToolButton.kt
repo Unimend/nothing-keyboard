@@ -77,7 +77,7 @@ class ToolButton(context: Context) : CustomGestureView(context) {
         label.visibility = View.GONE
         image.visibility = View.VISIBLE
         val resolved = if (glyphTheme?.isNothingStyle == true) {
-            NothingGlyphRegistry.resolveOrKeepOriginal(icon)
+            NothingGlyphRegistry.resolveRequired(icon)
         } else icon
         image.imageResource = resolved
     }

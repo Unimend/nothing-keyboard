@@ -29,7 +29,7 @@ sealed class StatusAreaEntry(
     companion object {
         private fun drawableFromIconName(icon: String) = when (icon) {
             // androidkeyboard
-            "tools-check-spelling" -> R.drawable.ic_baseline_spellcheck_24
+            "tools-check-spelling" -> R.drawable.ic_pixel_done
             // fcitx5-chinese-addons
             "fcitx-chttrans-active" -> R.drawable.ic_fcitx_status_chttrans_trad
             "fcitx-chttrans-inactive" -> R.drawable.ic_fcitx_status_chttrans_simp
@@ -40,16 +40,16 @@ sealed class StatusAreaEntry(
             "fcitx-remind-active" -> R.drawable.ic_fcitx_status_prediction_active
             "fcitx-remind-inactive" -> R.drawable.ic_fcitx_status_prediction_inactive
             // fcitx5-unikey
-            "document-edit" -> R.drawable.ic_baseline_edit_24
-            "character-set" -> R.drawable.ic_baseline_text_format_24
-            "edit-find" -> R.drawable.ic_baseline_search_24
+            "document-edit" -> R.drawable.ic_pixel_edit
+            "character-set" -> R.drawable.ic_pixel_quote
+            "edit-find" -> R.drawable.ic_pixel_search
             // fallback
             "" -> 0
             else -> {
                 if (icon.endsWith("-inactive")) {
-                    R.drawable.ic_baseline_code_off_24
+                    R.drawable.ic_pixel_code_off
                 } else {
-                    R.drawable.ic_baseline_code_24
+                    R.drawable.ic_pixel_code
                 }
             }
         }

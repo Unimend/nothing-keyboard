@@ -58,17 +58,17 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
         arrayOf(
             StatusAreaEntry.Android(
                 context.getString(R.string.input_method_options),
-                R.drawable.ic_baseline_language_24,
+                R.drawable.ic_pixel_language,
                 InputMethod
             ),
             StatusAreaEntry.Android(
                 context.getString(R.string.reload_config),
-                R.drawable.ic_baseline_sync_24,
+                R.drawable.ic_pixel_redo,
                 ReloadConfig
             ),
             StatusAreaEntry.Android(
                 context.getString(R.string.virtual_keyboard),
-                R.drawable.ic_baseline_keyboard_24,
+                R.drawable.ic_pixel_keyboard,
                 Keyboard
             )
         )
@@ -178,7 +178,7 @@ class StatusAreaWindow : InputWindow.ExtendedInputWindow<StatusAreaWindow>() {
     override fun onCreateView() = view
 
     private val settingsButton by lazy {
-        ToolButton(context, R.drawable.ic_baseline_settings_24, theme).apply {
+        ToolButton(context, R.drawable.ic_pixel_settings, theme).apply {
             contentDescription = context.getString(R.string.open_input_method_settings)
             setOnClickListener { AppUtil.launchMain(context) }
         }

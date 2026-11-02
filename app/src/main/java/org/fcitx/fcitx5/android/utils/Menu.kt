@@ -13,6 +13,7 @@ import android.view.SubMenu
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import splitties.resources.drawable
 
 fun MenuItem.setup(
@@ -22,11 +23,12 @@ fun MenuItem.setup(
     onClick: Function0<Any?>?
 ): MenuItem {
     if (icon != 0 && iconTint != 0) {
+        val resolvedIcon = NothingGlyphRegistry.resolveRequired(icon)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             iconTintList = ColorStateList.valueOf(iconTint)
-            setIcon(icon)
+            setIcon(resolvedIcon)
         } else {
-            setIcon(appContext.drawable(icon)?.apply { setTint(iconTint) })
+            setIcon(appContext.drawable(resolvedIcon)?.apply { setTint(iconTint) })
         }
     }
     if (showAsAction) {

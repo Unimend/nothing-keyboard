@@ -33,13 +33,13 @@ class PaginationUi(override val ctx: Context, val theme: Theme) : Ui {
 
     private fun createIcon(@DrawableRes icon: Int) = imageView {
         imageTintList = ColorStateList.valueOf(colors.keyContent)
-        imageDrawable = drawable(NothingGlyphRegistry.resolveOrKeepOriginal(icon, theme))
+        imageDrawable = drawable(NothingGlyphRegistry.resolveRequired(icon, theme))
         scaleType = ImageView.ScaleType.CENTER_CROP
         isClickable = true
     }
 
-    val prevIcon = createIcon(R.drawable.ic_baseline_arrow_prev_24)
-    val nextIcon = createIcon(R.drawable.ic_baseline_arrow_next_24)
+    val prevIcon = createIcon(R.drawable.ic_pixel_previous)
+    val nextIcon = createIcon(R.drawable.ic_pixel_next)
 
     private val disabledAlpha = styledFloat(android.R.attr.disabledAlpha)
 

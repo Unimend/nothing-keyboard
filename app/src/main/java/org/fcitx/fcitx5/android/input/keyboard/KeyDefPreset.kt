@@ -61,7 +61,7 @@ class AlphabetKey(
 
 class CapsKey : KeyDef(
     Appearance.Image(
-        src = R.drawable.ic_capslock_none,
+        src = R.drawable.ic_pixel_caps_none,
         viewId = R.id.button_caps,
         percentWidth = 0.15f,
         variant = Variant.Alternative
@@ -96,7 +96,7 @@ class BackspaceKey(
     variant: Variant = Variant.Alternative
 ) : KeyDef(
     Appearance.Image(
-        src = R.drawable.ic_baseline_backspace_24,
+        src = R.drawable.ic_pixel_backspace,
         percentWidth = percentWidth,
         variant = variant,
         viewId = R.id.button_backspace,
@@ -104,7 +104,7 @@ class BackspaceKey(
     ),
     setOf(
         Behavior.Press(KeyAction.SymAction(EngineKey.Backspace)),
-        Behavior.Repeat(KeyAction.SymAction(EngineKey.Backspace))
+        Behavior.Repeat(KeyAction.RepeatBackspaceAction)
     )
 )
 
@@ -117,7 +117,7 @@ class CommaKey(
         textSize = 23f,
         percentWidth = percentWidth,
         variant = variant,
-        src = R.drawable.ic_baseline_tag_faces_24
+        src = R.drawable.ic_pixel_face
     ),
     setOf(
         Behavior.Press(KeyAction.TextKeyAction(","))
@@ -128,17 +128,17 @@ class CommaKey(
             arrayOf(
                 Popup.Menu.Item(
                     "Emoji",
-                    R.drawable.ic_baseline_tag_faces_24,
+                    R.drawable.ic_pixel_face,
                     KeyAction.PickerSwitchAction(PickerKind.Emoji)
                 ),
                 Popup.Menu.Item(
                     "QuickPhrase",
-                    R.drawable.ic_baseline_format_quote_24,
+                    R.drawable.ic_pixel_quote,
                     KeyAction.QuickPhraseAction
                 ),
                 Popup.Menu.Item(
                     "Unicode",
-                    R.drawable.ic_logo_unicode,
+                    R.drawable.ic_pixel_unicode,
                     KeyAction.UnicodeAction
                 )
             )
@@ -148,7 +148,7 @@ class CommaKey(
 
 class LanguageKey : KeyDef(
     Appearance.Image(
-        src = R.drawable.ic_baseline_language_24,
+        src = R.drawable.ic_pixel_language,
         variant = Variant.AltForeground,
         viewId = R.id.button_lang
     ),
@@ -175,7 +175,7 @@ class SpaceKey : KeyDef(
 
 class ReturnKey(percentWidth: Float = 0.15f) : KeyDef(
     Appearance.Image(
-        src = R.drawable.ic_baseline_keyboard_return_24,
+        src = R.drawable.ic_pixel_return,
         percentWidth = percentWidth,
         variant = Variant.Accent,
         border = Border.Special,
@@ -190,7 +190,7 @@ class ReturnKey(percentWidth: Float = 0.15f) : KeyDef(
             arrayOf(
                 Popup.Menu.Item(
                     "Emoji",
-                    R.drawable.ic_baseline_tag_faces_24,
+                    R.drawable.ic_pixel_face,
                     KeyAction.PickerSwitchAction(PickerKind.Emoji)
                 )
             )
@@ -275,7 +275,7 @@ class TextPickerSwitchKey(
 
 class MiniSpaceKey : KeyDef(
     Appearance.Image(
-        src = R.drawable.ic_baseline_space_bar_24,
+        src = R.drawable.ic_pixel_space,
         percentWidth = 0.15f,
         variant = Variant.Alternative,
         viewId = R.id.button_mini_space

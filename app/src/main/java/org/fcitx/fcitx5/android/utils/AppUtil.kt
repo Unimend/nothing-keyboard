@@ -72,7 +72,7 @@ object AppUtil {
     fun showRestartNotification(ctx: Context) {
         createRestartNotificationChannel(ctx)
         NotificationCompat.Builder(ctx, RESTART_CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_baseline_sync_24)
+            .setSmallIcon(R.drawable.ic_pixel_redo)
             .setContentTitle(ctx.getText(R.string.app_name))
             .setContentText(ctx.getText(R.string.restart_notify_msg))
             .setPriority(NotificationCompat.PRIORITY_HIGH)

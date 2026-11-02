@@ -61,8 +61,17 @@ class KeyboardGesturePolicyTest {
         val result = KeyboardGesturePolicy.backspace(
             GestureSnapshot(GesturePhase.Up, countX = 0, totalX = 0, totalY = 0)
         )
-        assertEquals(KeyboardGestureAction.DeleteSelection(0), result.action)
+        assertNull(result.action)
         assertFalse(result.consumed)
+    }
+
+    @Test
+    fun `horizontal backspace release keeps selection and suppresses click deletion`() {
+        val result = KeyboardGesturePolicy.backspace(
+            GestureSnapshot(GesturePhase.Up, countX = 0, totalX = -3, totalY = 0)
+        )
+        assertEquals(KeyboardGestureAction.FinishSelection(-3), result.action)
+        assertTrue(result.consumed)
     }
 
     @Test

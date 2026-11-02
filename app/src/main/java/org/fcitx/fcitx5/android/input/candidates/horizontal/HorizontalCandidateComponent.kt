@@ -69,7 +69,6 @@ class HorizontalCandidateComponent :
                     if (pendingRequest == request) pendingRequest = null
                     if (candidateInteraction.completeLoadMore(request, next.size, pageSize)) {
                         adapter.appendCandidates(next, candidateInteraction.state.total)
-                        refreshExpanded()
                     }
                 }
                 pendingDelivery = delivery
@@ -99,12 +98,6 @@ class HorizontalCandidateComponent :
         cancelPendingLoad()
     }
 
-    // Since expanded candidate window is created once the expand button was clicked,
-    // we need to replay the last offset
-    private fun refreshExpanded() {
-        candidateInteraction.publishExpandedOffset()
-    }
-
     val adapter: HorizontalCandidateViewAdapter by lazy {
         object : HorizontalCandidateViewAdapter(theme) {
             override fun onBindViewHolder(holder: CandidateViewHolder, position: Int) {
@@ -128,12 +121,7 @@ class HorizontalCandidateComponent :
     }
 
     val layoutManager: LinearLayoutManager by lazy {
-        object : LinearLayoutManager(context, HORIZONTAL, false) {
-            override fun onLayoutCompleted(state: RecyclerView.State) {
-                super.onLayoutCompleted(state)
-                refreshExpanded()
-            }
-        }
+        LinearLayoutManager(context, RecyclerView.HORIZONTAL, false)
     }
 
     override val view by lazy {
@@ -179,10 +167,6 @@ class HorizontalCandidateComponent :
         candidateInteraction.replaceCandidates(candidates.size, total)
         if (previousCandidates.toList() != candidates) {
             view.scrollToPosition(0)
-        }
-        // An empty adapter may not trigger LayoutManager.onLayoutCompleted().
-        if (candidates.isEmpty()) {
-            refreshExpanded()
         }
     }
 }

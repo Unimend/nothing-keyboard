@@ -10,6 +10,14 @@ import org.junit.Test
 
 class NothingTypographyPolicyTest {
     @Test
+    fun `full width picker digits display with Doto compatible glyphs`() {
+        assertEquals(
+            "123 ABC xyz！",
+            NothingTypographyPolicy.dotoCompatibleDisplay("１２３ ＡＢＣ ｘｙｚ！")
+        )
+    }
+
+    @Test
     fun latinAndNumbersUseDotoCategory() {
         assertEquals(
             KeyboardTextKind.LatinOrNumber,

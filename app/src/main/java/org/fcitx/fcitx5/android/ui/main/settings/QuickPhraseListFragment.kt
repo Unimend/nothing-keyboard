@@ -30,6 +30,7 @@ import org.fcitx.fcitx5.android.data.quickphrase.BuiltinQuickPhrase
 import org.fcitx.fcitx5.android.data.quickphrase.CustomQuickPhrase
 import org.fcitx.fcitx5.android.data.quickphrase.QuickPhrase
 import org.fcitx.fcitx5.android.data.quickphrase.QuickPhraseManager
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.ui.common.BaseDynamicListUi
 import org.fcitx.fcitx5.android.ui.common.OnItemChangedListener
 import org.fcitx.fcitx5.android.ui.main.EditDeleteMenuProvider
@@ -95,11 +96,11 @@ class QuickPhraseListFragment : Fragment(), OnItemChangedListener<QuickPhrase> {
                     }
                 }
 
-                var icon = R.drawable.ic_baseline_settings_24
+                var icon = R.drawable.ic_pixel_settings
                 when (entry) {
                     is BuiltinQuickPhrase -> {
                         if (entry.override != null) {
-                            icon = R.drawable.ic_baseline_expand_more_24
+                            icon = R.drawable.ic_pixel_expand_more
                             setOnClickListener {
                                 PopupMenu(requireContext(), this).apply {
                                     menu.item(R.string.edit) { edit() }
@@ -113,20 +114,20 @@ class QuickPhraseListFragment : Fragment(), OnItemChangedListener<QuickPhrase> {
                                 }
                             }
                         } else {
-                            icon = R.drawable.ic_baseline_edit_24
+                            icon = R.drawable.ic_pixel_edit
                             setOnClickListener {
                                 edit()
                             }
                         }
                     }
                     is CustomQuickPhrase -> {
-                        icon = R.drawable.ic_baseline_edit_24
+                        icon = R.drawable.ic_pixel_edit
                         setOnClickListener {
                             edit()
                         }
                     }
                 }
-                imageDrawable = drawable(icon)!!.apply {
+                imageDrawable = drawable(NothingGlyphRegistry.resolveRequired(icon))!!.apply {
                     setTint(styledColor(android.R.attr.colorControlNormal))
                 }
             }
@@ -238,7 +239,7 @@ class QuickPhraseListFragment : Fragment(), OnItemChangedListener<QuickPhrase> {
                 return@launch
             }
             NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_baseline_format_quote_24)
+                .setSmallIcon(R.drawable.ic_pixel_quote)
                 .setContentTitle(getString(R.string.quickphrase_editor))
                 .setContentText("${getString(R.string.importing)} $entryName")
                 .setOngoing(true)
@@ -268,7 +269,7 @@ class QuickPhraseListFragment : Fragment(), OnItemChangedListener<QuickPhrase> {
             if (busy.compareAndSet(false, true)) {
                 val id = RELOAD_ID++
                 NotificationCompat.Builder(requireContext(), CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_baseline_library_books_24)
+                    .setSmallIcon(R.drawable.ic_pixel_code)
                     .setContentTitle(getString(R.string.quickphrase_editor))
                     .setContentText(getString(R.string.reloading))
                     .setOngoing(true)

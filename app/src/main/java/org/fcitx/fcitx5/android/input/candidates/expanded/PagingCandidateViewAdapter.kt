@@ -35,14 +35,6 @@ open class PagingCandidateViewAdapter(val theme: Theme) :
         }
     }
 
-    var offset = 0
-        private set
-
-    fun refreshWithOffset(offset: Int) {
-        this.offset = offset
-        refresh()
-    }
-
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CandidateViewHolder {
         return CandidateViewHolder(CandidateItemUi(parent.context, theme))
     }

@@ -160,7 +160,7 @@ class PinyinDictionaryFragment : Fragment(), OnItemChangedListener<PinyinDiction
                 return@launch
             }
             NotificationCompat.Builder(ctx, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_baseline_library_books_24)
+                .setSmallIcon(R.drawable.ic_pixel_code)
                 .setContentTitle(getString(R.string.pinyin_dict))
                 .setContentText("${getString(R.string.importing)} $entryName")
                 .setOngoing(true)
@@ -191,7 +191,7 @@ class PinyinDictionaryFragment : Fragment(), OnItemChangedListener<PinyinDiction
             if (busy.compareAndSet(false, true)) {
                 val id = RELOAD_ID++
                 NotificationCompat.Builder(requireContext(), CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_baseline_library_books_24)
+                    .setSmallIcon(R.drawable.ic_pixel_code)
                     .setContentTitle(getString(R.string.pinyin_dict))
                     .setContentText(getString(R.string.reloading))
                     .setOngoing(true)

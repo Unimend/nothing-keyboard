@@ -7,4 +7,9 @@
     <color name="blue_500">#2196F3</color>
     <color name="grey_400">#BDBDBD</color>
     <color name="grey_700">#616161</color>
+    <color name="nothing_surface">#000000</color>
+    <color name="nothing_raised_surface">#0D0D0D</color>
+    <color name="nothing_content">#F2F2F2</color>
+    <color name="nothing_secondary_content">#A0A0A0</color>
+    <color name="nothing_accent">#D71921</color>
 </resources>

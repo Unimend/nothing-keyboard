@@ -3,9 +3,6 @@
  */
 package org.fcitx.fcitx5.android.input.candidates.interaction
 
-import kotlinx.coroutines.channels.BufferOverflow
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import org.fcitx.fcitx5.android.input.engine.EngineCommandPort
@@ -21,16 +18,9 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
     private var requestSequence = 0L
     private var activeRequest: CandidateLoadRequest? = null
 
-    private val _expandedOffset = MutableSharedFlow<Int>(
-        replay = 1,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST
-    )
-    val expandedOffset = _expandedOffset.asSharedFlow()
-
     fun replaceCandidates(loadedCount: Int, total: Int) {
         activeRequest = null
         update(CandidateInteractionEvent.CandidatesReplaced(loadedCount, total))
-        publishExpandedOffset()
     }
 
     fun beginLoadMore(): CandidateLoadRequest? {
@@ -56,7 +46,6 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
         val accepted = state !== before && state.generation == request.generation
         if (accepted) {
             activeRequest = null
-            publishExpandedOffset()
         }
         return accepted
     }
@@ -65,10 +54,6 @@ class CandidateInteractionController(private val commands: EngineCommandPort) :
         if (request != activeRequest) return
         activeRequest = null
         update(CandidateInteractionEvent.LoadMoreFailed(request.generation))
-    }
-
-    fun publishExpandedOffset() {
-        _expandedOffset.tryEmit(state.expandedOffset)
     }
 
     fun select(engineIndex: Int) {

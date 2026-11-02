@@ -188,7 +188,7 @@ class TextKeyboard(
     }
 
     override fun onReturnDrawableUpdate(returnDrawable: Int) {
-        `return`.img.imageResource = returnDrawable
+        `return`.setGlyph(returnDrawable)
     }
 
     override fun onPunctuationUpdate(mapping: Map<String, String>) {
@@ -256,8 +256,8 @@ class TextKeyboard(
     }
 
     private fun updateCapsButtonIcon() {
-        caps.img.apply {
-            imageResource = when (capsState) {
+        caps.apply {
+            setGlyph(when (capsState) {
                 CapsState.None -> if (theme.isNothingStyle) {
                     R.drawable.ic_pixel_caps_none
                 } else R.drawable.ic_capslock_none
@@ -267,28 +267,30 @@ class TextKeyboard(
                 CapsState.Lock -> if (theme.isNothingStyle) {
                     R.drawable.ic_pixel_caps_lock
                 } else R.drawable.ic_capslock_lock
-            }
-            if (theme.isNothingStyle) {
-                imageTintList = ColorStateList.valueOf(
-                    if (capsState == CapsState.None) colors.keyContent
-                    else colors.accentContainer
-                )
-                animate().cancel()
-                if (!InputMotionSystem.enabled) {
-                    alpha = 1f
-                    scaleX = 1f
-                    scaleY = 1f
-                } else {
-                    alpha = 0.45f
-                    scaleX = 0.88f
-                    scaleY = 0.88f
-                    animate()
-                        .alpha(1f)
-                        .scaleX(1f)
-                        .scaleY(1f)
-                        .setDuration(InputMotionSystem.duration(InputMotionRole.CapsStateChange))
-                        .setInterpolator(DecelerateInterpolator())
-                        .start()
+            })
+            img.apply {
+                if (theme.isNothingStyle) {
+                    imageTintList = ColorStateList.valueOf(
+                        if (capsState == CapsState.None) colors.keyContent
+                        else colors.accentContainer
+                    )
+                    animate().cancel()
+                    if (!InputMotionSystem.enabled) {
+                        alpha = 1f
+                        scaleX = 1f
+                        scaleY = 1f
+                    } else {
+                        alpha = 0.45f
+                        scaleX = 0.88f
+                        scaleY = 0.88f
+                        animate()
+                            .alpha(1f)
+                            .scaleX(1f)
+                            .scaleY(1f)
+                            .setDuration(InputMotionSystem.duration(InputMotionRole.CapsStateChange))
+                            .setInterpolator(DecelerateInterpolator())
+                            .start()
+                    }
                 }
             }
         }

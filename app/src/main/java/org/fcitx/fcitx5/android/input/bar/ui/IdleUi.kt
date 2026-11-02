@@ -64,11 +64,11 @@ class IdleUi(
         if (ctx.resources.configuration.layoutDirection == View.LAYOUT_DIRECTION_LTR) 1f else -1f
     }
 
-    val menuButton = ToolButton(ctx, R.drawable.ic_baseline_expand_more_24, theme).apply {
+    val menuButton = ToolButton(ctx, R.drawable.ic_pixel_expand_more, theme).apply {
         setText(expandLabel(), theme)
     }
 
-    val hideKeyboardButton = ToolButton(ctx, R.drawable.ic_baseline_arrow_drop_down_24, theme)
+    val hideKeyboardButton = ToolButton(ctx, R.drawable.ic_pixel_hide_keyboard, theme)
 
     val emptyBar = Space(ctx)
 
@@ -137,7 +137,7 @@ class IdleUi(
     }
 
     private fun updateMenuButtonIcon() {
-        if (inPrivate) menuButton.setIcon(R.drawable.ic_view_private)
+        if (inPrivate) menuButton.setIcon(R.drawable.ic_pixel_private)
         else menuButton.setText(expandLabel(), theme)
     }
 
@@ -163,10 +163,10 @@ class IdleUi(
 
     fun setHideKeyboardIsVoiceInput(isVoiceInput: Boolean, callback: View.OnClickListener) {
         if (isVoiceInput) {
-            hideKeyboardButton.setIcon(R.drawable.ic_baseline_keyboard_voice_24)
+            hideKeyboardButton.setIcon(R.drawable.ic_pixel_voice)
             hideKeyboardButton.contentDescription = ctx.getString(R.string.switch_to_voice_input)
         } else {
-            hideKeyboardButton.setIcon(R.drawable.ic_baseline_arrow_drop_down_24)
+            hideKeyboardButton.setIcon(R.drawable.ic_pixel_hide_keyboard)
             hideKeyboardButton.contentDescription = ctx.getString(R.string.hide_keyboard)
         }
         hideKeyboardButton.setOnClickListener(callback)

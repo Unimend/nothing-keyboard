@@ -54,6 +54,6 @@ object StatusIconMapping {
             "th" -> return R.drawable.ic_status_thai
             "vi" -> return R.drawable.ic_status_vi
         }
-        return R.drawable.ic_baseline_keyboard_24
+        return R.drawable.ic_pixel_keyboard
     }
 }

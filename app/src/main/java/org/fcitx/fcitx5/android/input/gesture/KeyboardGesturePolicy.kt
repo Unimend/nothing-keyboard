@@ -17,7 +17,7 @@ data class GestureSnapshot(
 sealed interface KeyboardGestureAction {
     data class MoveCursor(val steps: Int) : KeyboardGestureAction
     data class MoveSelection(val steps: Int) : KeyboardGestureAction
-    data class DeleteSelection(val steps: Int) : KeyboardGestureAction
+    data class FinishSelection(val steps: Int) : KeyboardGestureAction
     data object OpenEditingPanel : KeyboardGestureAction
     data object ClearAllText : KeyboardGestureAction
     data object Undo : KeyboardGestureAction
@@ -75,8 +75,9 @@ object KeyboardGesturePolicy {
         } else {
             // Preserve click handling when there was no horizontal swipe.
             GestureDecision(
-                KeyboardGestureAction.DeleteSelection(snapshot.totalX),
-                consumed = false
+                action = snapshot.totalX.takeIf { it != 0 }
+                    ?.let(KeyboardGestureAction::FinishSelection),
+                consumed = snapshot.totalX != 0
             )
         }
     }

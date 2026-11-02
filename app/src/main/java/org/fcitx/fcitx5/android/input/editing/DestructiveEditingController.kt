@@ -15,6 +15,7 @@ interface DestructiveEditingHost {
     val editingSelection: CursorRange
     val editingComposition: CursorRange
     val editingCompositionText: String
+    val editingCompositionInput: String
     val hasActiveComposition: Boolean
     val shouldSimulateBackspaceKey: Boolean
 
@@ -36,6 +37,12 @@ class DestructiveEditingController(
     private val host: DestructiveEditingHost,
     private val history: DestructiveEditHistory = DestructiveEditHistory()
 ) {
+    fun beginBackspaceRepeat() {
+        history.beginGroup()
+    }
+
+    fun endBackspaceRepeat() = history.endGroup()
+
     fun deleteBackward() {
         val connection = host.editingConnection ?: return
         val selection = host.editingSelection
@@ -93,12 +100,12 @@ class DestructiveEditingController(
             composition.start >= 0 && composition.end >= composition.start &&
             composition.end <= editorText.length
         if (hasValidComposition) {
-            val preedit = host.editingCompositionText.ifEmpty {
+            val rawComposition = host.editingCompositionInput.ifEmpty { host.editingCompositionText }.ifEmpty {
                 editorText.substring(composition.start, composition.end)
             }
             history.record(
                 DestructiveEditTransaction.RestoreComposition(
-                    deletedText = preedit,
+                    deletedText = rawComposition,
                     cursorAfterRestore = composition.start
                 )
             )

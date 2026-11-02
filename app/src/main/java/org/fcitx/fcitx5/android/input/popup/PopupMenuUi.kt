@@ -13,6 +13,7 @@ import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import org.fcitx.fcitx5.android.data.theme.Theme
 import org.fcitx.fcitx5.android.input.keyboard.KeyDef
+import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.input.design.toInputColorScheme
 import org.fcitx.fcitx5.android.input.design.inputSurfaceStyle
 import splitties.dimensions.dp
@@ -71,7 +72,9 @@ class PopupMenuUi(
         imageView {
             background = inactiveBackground
             scaleType = ImageView.ScaleType.CENTER_INSIDE
-            imageDrawable = drawable(it.icon)!!.apply {
+            imageDrawable = drawable(
+                NothingGlyphRegistry.resolveRequired(it.icon, theme)
+            )!!.apply {
                 setTint(colors.accentContent)
             }
         }

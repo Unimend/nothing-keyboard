@@ -32,7 +32,7 @@ fun emoticonPicker(): PickerWindow = PickerWindow(
     key = PickerWindow.Key.Emoticon,
     data = PickerData.Emoticon,
     density = PickerPageUi.Density.Low,
-    switchKey = ImagePickerSwitchKey(R.drawable.ic_baseline_tag_faces_24, PickerKind.Emoji),
+    switchKey = ImagePickerSwitchKey(R.drawable.ic_pixel_face, PickerKind.Emoji),
     popupPreview = false,
     followKeyBorder = false
 )

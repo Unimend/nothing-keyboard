@@ -6,6 +6,7 @@ package org.fcitx.fcitx5.android.input.dialog
 import android.app.AlertDialog
 import android.content.Context
 import org.fcitx.fcitx5.android.input.engine.InputEngineQueries
+import org.fcitx.fcitx5.android.data.theme.Theme
 import org.mechdancer.dependency.UniqueComponent
 
 /** Coordinates engine and Android IME choices without exposing the input service to dialog UI. */
@@ -15,10 +16,11 @@ class InputMethodPickerController(
     private val activateEngineInputMethod: (String) -> Unit,
     private val activatePlatformInputMethod: (String) -> Unit
 ) : UniqueComponent<InputMethodPickerController>() {
-    suspend fun build(context: Context): AlertDialog {
+    suspend fun build(context: Context, theme: Theme): AlertDialog {
         val entries = InputMethodData.resolve(queries(), context)
         return InputMethodPickerDialog.build(
             context = context,
+            theme = theme,
             entries = entries,
             enabledInputMethod = currentInputMethod(),
             onSelected = { entry ->

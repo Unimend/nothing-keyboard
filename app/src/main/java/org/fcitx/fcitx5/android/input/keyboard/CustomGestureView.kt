@@ -80,7 +80,9 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
     private var maybeDoubleTap = false
 
     var onDoubleTapListener: ((View) -> Unit)? = null
+    var onRepeatStartListener: ((View) -> Unit)? = null
     var onRepeatListener: ((View) -> Unit)? = null
+    var onRepeatEndListener: ((View) -> Unit)? = null
     var onGestureListener: OnGestureListener? = null
 
     var soundEffect: InputFeedbacks.SoundEffect = InputFeedbacks.SoundEffect.Standard
@@ -116,6 +118,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
         repeatJob?.cancel()
         repeatJob = null
         longPressTriggered = false
+        if (repeatStarted) onRepeatEndListener?.invoke(this)
         repeatStarted = false
         swipeRepeatTriggered = false
         swipeTracker.reset()
@@ -180,6 +183,7 @@ open class CustomGestureView(ctx: Context) : FrameLayout(ctx) {
                     repeatJob = lifecycleScope.launch {
                         delay(longPressDelay.toLong())
                         repeatStarted = true
+                        onRepeatStartListener?.invoke(this@CustomGestureView)
                         var lastTriggerTime: Long
                         while (isActive && isEnabled) {
                             lastTriggerTime = SystemClock.uptimeMillis()

@@ -31,7 +31,7 @@ class CandidateRequestOwnershipTest {
         assertFalse(controller.completeLoadMore(old, 32, 32))
         controller.failLoadMore(old)
         assertEquals(2, controller.state.loadedCount)
-        assertFalse(controller.state.canExpand)
+        assertTrue(controller.state.canExpand)
         assertEquals(controller.state, controller.snapshots.value)
     }
 
@@ -42,7 +42,7 @@ class CandidateRequestOwnershipTest {
         assertTrue(controller.state.canExpand)
         val page = controller.beginLoadMore()!!
         controller.completeLoadMore(page, 0, 32)
-        assertFalse(controller.state.canExpand)
+        assertTrue(controller.state.canExpand)
     }
 
     @Test fun `successive full pages advance offsets until a short page closes the stream`() {

@@ -13,7 +13,6 @@ import androidx.recyclerview.widget.RecyclerView
 import org.fcitx.fcitx5.android.R
 import org.fcitx.fcitx5.android.input.clipboard.ClipboardItem
 import org.fcitx.fcitx5.android.data.theme.Theme
-import org.fcitx.fcitx5.android.input.design.NothingGlyphRegistry
 import org.fcitx.fcitx5.android.utils.DeviceUtil
 import org.fcitx.fcitx5.android.utils.item
 import splitties.resources.styledColor
@@ -101,21 +100,21 @@ abstract class ClipboardAdapter(
                 val menu = popup.menu
                 val iconTint = ctx.styledColor(android.R.attr.colorControlNormal)
                 if (entry.pinned) {
-                    menu.item(R.string.unpin, R.drawable.ic_outline_push_pin_24, iconTint) {
+                    menu.item(R.string.unpin, R.drawable.ic_pixel_unpin, iconTint) {
                         onUnpin(entry.id)
                     }
                 } else {
-                    menu.item(R.string.pin, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_push_pin_24, theme), iconTint) {
+                    menu.item(R.string.pin, R.drawable.ic_pixel_pin, iconTint) {
                         onPin(entry.id)
                     }
                 }
-                menu.item(R.string.edit, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_edit_24, theme), iconTint) {
+                menu.item(R.string.edit, R.drawable.ic_pixel_edit, iconTint) {
                     onEdit(entry.id)
                 }
-                menu.item(R.string.share, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_share_24, theme), iconTint) {
+                menu.item(R.string.share, R.drawable.ic_pixel_forward, iconTint) {
                     onShare(entry)
                 }
-                menu.item(R.string.delete, NothingGlyphRegistry.resolveOrKeepOriginal(R.drawable.ic_baseline_delete_24, theme), iconTint) {
+                menu.item(R.string.delete, R.drawable.ic_pixel_delete, iconTint) {
                     onDelete(entry.id)
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && !DeviceUtil.isSamsungOneUI && !DeviceUtil.isFlyme) {
